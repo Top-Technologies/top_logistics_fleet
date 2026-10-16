@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_fleet_alert_config_form" model="ir.ui.view">
+        <field name="name">top.fleet.alert.config.form</field>
+        <field name="model">top.fleet.alert.config</field>
+        <field name="arch" type="xml">
+            <form string="Fleet Alert &amp; Threshold Configuration">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Rule Configuration Name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="GPS Telematics Safety Thresholds (Section 53)">
+                            <field name="overspeed_threshold_kmh"/>
+                            <field name="max_idling_minutes"/>
+                            <field name="alert_on_gps_offline" widget="boolean_toggle"/>
+                            <field name="offline_threshold_minutes" invisible="not alert_on_gps_offline"/>
+                            <field name="alert_on_route_deviation" widget="boolean_toggle"/>
+                            <field name="alert_on_geofence" widget="boolean_toggle"/>
+                            <field name="alert_on_unauthorized_movement" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Compliance Expiration Alerts (Section 50 &amp; 53)">
+                            <field name="license_expiry_warning_days"/>
+                            <field name="insurance_expiry_warning_days"/>
+                            <field name="registration_expiry_warning_days"/>
+                            <separator string="Mapping Provider Interface (Section 52)"/>
+                            <field name="mapping_provider"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_top_fleet_alert_config" model="ir.actions.act_window">
+        <field name="name">Safety &amp; Alert Parameters</field>
+        <field name="res_model">top.fleet.alert.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure fleet safety thresholds and automated alerts!
+            </p>
+            <p>
+                Set overspeed limits, idling timers, offline detection, and document expiration warning periods.
+            </p>
+        </field>
+    </record>
+</odoo>

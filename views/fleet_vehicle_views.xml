@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit Fleet Vehicle Form View -->
+    <record id="view_fleet_vehicle_form_inherit_logistics" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.inherit.logistics</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_view_on_map" string="View on Map" type="object" icon="fa-map-marker" class="btn-outline-primary"/>
+                <field name="operational_status" widget="statusbar"
+                       statusbar_visible="available,assigned,on_trip,maintenance"/>
+            </xpath>
+
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger" role="alert" invisible="not has_document_expired">
+                    <strong>Document Compliance Alert:</strong> <field name="document_compliance_status"/>
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="not is_service_due">
+                    <strong>Maintenance Service Due (Section 33):</strong> Vehicle has reached its scheduled service interval (<field name="odometer"/> km &gt;= <field name="next_service_odometer"/> km).
+                </div>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Logistics &amp; Compliance (FMS)" name="logistics_compliance">
+                    <group>
+                        <group string="Document Compliance &amp; Expiry (Section 12)">
+                            <field name="registration_expiry"/>
+                            <field name="insurance_expiry"/>
+                            <field name="inspection_expiry"/>
+                            <field name="has_document_expired" invisible="1"/>
+                            <field name="document_compliance_status" readonly="1" class="fw-bold"/>
+                        </group>
+                        <group string="Operational Capacity &amp; Location (Section 10)">
+                            <field name="current_location"/>
+                            <field name="capacity_passengers"/>
+                            <field name="capacity_cargo_kg"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="GPS Tracker &amp; Live Telemetry (Section 20 &amp; 25)">
+                            <field name="gps_device_id"/>
+                            <field name="live_address"/>
+                            <field name="live_last_communication"/>
+                        </group>
+                        <group string="Live Telemetry Status">
+                            <field name="live_speed"/>
+                            <field name="live_odometer"/>
+                            <field name="live_fuel_level"/>
+                            <field name="live_battery"/>
+                            <field name="live_ignition" widget="boolean_toggle"/>
+                            <field name="live_latitude"/>
+                            <field name="live_longitude"/>
+                            <field name="live_altitude"/>
+                            <field name="live_gps_signal"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Cost Analysis &amp; Utilization KPIs (Section 54)">
+                            <field name="cost_per_km" class="fw-bold fs-5 text-primary"/>
+                            <field name="fuel_cost_per_km"/>
+                            <field name="cost_per_trip"/>
+                            <field name="total_fuel_cost"/>
+                            <field name="total_fuel_litres"/>
+                        </group>
+                        <group string="Utilization &amp; Maintenance Schedule (Sections 33 &amp; 54)">
+                            <field name="utilization_rate" widget="progressbar"/>
+                            <field name="assigned_hours"/>
+                            <field name="available_hours"/>
+                            <separator string="Service Schedule"/>
+                            <field name="service_interval_km"/>
+                            <field name="last_service_odometer"/>
+                            <field name="next_service_odometer"/>
+                            <field name="is_service_due" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <field name="fuel_log_ids">
+                        <list limit="5">
+                            <field name="date"/>
+                            <field name="fuel_station"/>
+                            <field name="fuel_type"/>
+                            <field name="quantity"/>
+                            <field name="total_cost"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Telematics Fuel &amp; GPS Transactions" name="telematics_fuel_events">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-primary mb-0"><i class="fa fa-tint me-1"/> GPS-Detected Fuel Refuels &amp; Drain Events</h6>
+                        <button name="action_view_gps_fuel_transactions" string="All Fuel Transactions" type="object" class="btn-sm btn-outline-primary" icon="fa-list"/>
+                    </div>
+                    <field name="gps_fuel_transaction_ids">
+                        <list limit="10" decoration-success="transaction_type == 'refuel'" decoration-danger="transaction_type == 'drain'">
+                            <field name="timestamp"/>
+                            <field name="transaction_type" widget="badge"/>
+                            <field name="volume" string="Volume (L)" class="fw-bold"/>
+                            <field name="initial_fuel" string="Start Tank (L)"/>
+                            <field name="final_fuel" string="End Tank (L)"/>
+                            <field name="odometer" string="Odometer (km)"/>
+                            <field name="speed" string="Speed (km/h)"/>
+                            <field name="address"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit Fleet Vehicle List View -->
+    <record id="view_fleet_vehicle_list_inherit_logistics" model="ir.ui.view">
+        <field name="name">fleet.vehicle.list.inherit.logistics</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state_id']" position="after">
+                <field name="operational_status" widget="badge"
+                       decoration-success="operational_status == 'available'"
+                       decoration-info="operational_status == 'assigned'"
+                       decoration-warning="operational_status == 'on_trip'"
+                       decoration-danger="operational_status in ('maintenance', 'inactive')"/>
+                <field name="utilization_rate" string="Utilization (%)"/>
+                <field name="cost_per_km" string="Cost/KM"/>
+                <field name="service_status" widget="badge"
+                       decoration-danger="service_status == 'due'"
+                       decoration-success="service_status == 'ok'"
+                       string="Service Due"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

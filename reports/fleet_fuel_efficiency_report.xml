@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Report Action -->
+    <record id="action_report_fleet_fuel_efficiency_pdf" model="ir.actions.report">
+        <field name="name">Fleet Fuel Consumption &amp; Efficiency Report</field>
+        <field name="model">top.fuel.consumption.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">top_logistics_fleet.report_fleet_fuel_efficiency_template</field>
+        <field name="report_file">top_logistics_fleet.report_fleet_fuel_efficiency_template</field>
+        <field name="print_report_name">'Fleet Fuel Efficiency - %s' % (object.report_type)</field>
+    </record>
+
+    <!-- QWeb Template -->
+    <template id="report_fleet_fuel_efficiency_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-set="data" t-value="wizard.get_report_data()"/>
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #2C3E50;">
+                        
+                        <!-- Header Banner -->
+                        <div style="border-bottom: 3px solid #1B4F72; padding-bottom: 12px; margin-bottom: 18px;">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <h2 style="font-weight: 800; color: #1B4F72; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Fleet Fuel Consumption &amp; Efficiency Report
+                                    </h2>
+                                    <div style="font-size: 13px; color: #566573; margin-top: 4px;">
+                                        <strong>Period: </strong>
+                                        <span class="badge text-bg-primary" style="font-size: 11px; text-transform: capitalize;" t-field="wizard.report_type"/> | 
+                                        <span t-esc="wizard.date_from.strftime('%d-%b-%Y %H:%M')"/> to <span t-esc="wizard.date_to.strftime('%d-%b-%Y %H:%M')"/>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <div style="font-size: 11px; color: #7F8C8D;">
+                                        <div><strong>Generated: </strong><span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/></div>
+                                        <div><strong>Monitored Fleet: </strong><span t-esc="data['total_vehicles']"/> Vehicles</div>
+                                        <div><strong>Source: </strong>Wialon GPS Telematics</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Theft / Drain Executive Alert Banner if any drain detected -->
+                        <t t-if="data['drain_count'] &gt; 0">
+                            <div style="background-color: #FDEDEC; border-left: 5px solid #E74C3C; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                                <strong style="color: #C0392B; font-size: 12px;">
+                                    <i class="fa fa-exclamation-triangle me-1"/> AUDIT ALERT:
+                                </strong>
+                                <span style="color: #78281F;">
+                                    <strong><t t-esc="data['drain_count']"/> abnormal fuel drain events</strong> detected during this period totaling <strong><t t-esc="'%.1f' % data['total_drained']"/> Litres</strong>. Immediate fuel tank and driver debrief inspection recommended.
+                                </span>
+                            </div>
+                        </t>
+
+                        <!-- Executive KPI Cards Grid -->
+                        <div class="row mb-3 text-center" style="margin-left: -5px; margin-right: -5px;">
+                            <div class="col-3" style="padding: 0 5px;">
+                                <div style="background: #EBF5FB; border: 1px solid #AED6F1; border-radius: 6px; padding: 10px 6px;">
+                                    <div style="font-size: 10px; font-weight: bold; color: #2874A6; text-transform: uppercase;">Total Distance</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #1B4F72; margin: 3px 0;">
+                                        <t t-esc="'{:,.1f}'.format(data['total_distance'])"/> <span style="font-size: 11px; font-weight: normal;">km</span>
+                                    </div>
+                                    <div style="font-size: 9px; color: #5499C7;">Across <t t-esc="data['total_vehicles']"/> Active Units</div>
+                                </div>
+                            </div>
+                            <div class="col-3" style="padding: 0 5px;">
+                                <div style="background: #E8F8F5; border: 1px solid #A3E4D7; border-radius: 6px; padding: 10px 6px;">
+                                    <div style="font-size: 10px; font-weight: bold; color: #117864; text-transform: uppercase;">Fuel Consumed</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #0E6251; margin: 3px 0;">
+                                        <t t-esc="'{:,.1f}'.format(data['total_fuel_consumed'])"/> <span style="font-size: 11px; font-weight: normal;">L</span>
+                                    </div>
+                                    <div style="font-size: 9px; color: #16A085;">Live GPS Tank Delta</div>
+                                </div>
+                            </div>
+                            <div class="col-3" style="padding: 0 5px;">
+                                <div style="background: #FEF9E7; border: 1px solid #F9E79F; border-radius: 6px; padding: 10px 6px;">
+                                    <div style="font-size: 10px; font-weight: bold; color: #B7950B; text-transform: uppercase;">Fleet Average Rate</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #7D6608; margin: 3px 0;">
+                                        <t t-esc="'%.1f' % data['avg_rate']"/> <span style="font-size: 11px; font-weight: normal;">L/100km</span>
+                                    </div>
+                                    <div style="font-size: 9px; color: #9A7D0A;">
+                                        <t t-if="data['avg_rate'] &gt; 0">
+                                            <t t-esc="'%.2f' % (100.0 / data['avg_rate'])"/> km / Litre
+                                        </t>
+                                        <t t-else="">0.0 km/L</t>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-3" style="padding: 0 5px;">
+                                <div style="background: #F4ECF7; border: 1px solid #D2B4DE; border-radius: 6px; padding: 10px 6px;">
+                                    <div style="font-size: 10px; font-weight: bold; color: #6C3483; text-transform: uppercase;">Total Refills</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #512E5F; margin: 3px 0;">
+                                        <t t-esc="'{:,.1f}'.format(data['total_refueled'])"/> <span style="font-size: 11px; font-weight: normal;">L</span>
+                                    </div>
+                                    <div style="font-size: 9px; color: #7D3C98;"><t t-esc="data['refuel_count']"/> Detected Refuel Events</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Vehicle Performance Audit Table -->
+                        <div style="margin-top: 14px; margin-bottom: 18px;">
+                            <h5 style="color: #1B4F72; font-weight: 700; border-bottom: 2px solid #D4E6F1; padding-bottom: 4px; margin-bottom: 8px;">
+                                1. Vehicle Telematics Consumption &amp; Efficiency Breakdown
+                            </h5>
+                            <table class="table table-sm table-bordered" style="font-size: 10px; margin-bottom: 0;">
+                                <thead style="background-color: #1B4F72; color: #ffffff;">
+                                    <tr class="text-center align-middle">
+                                        <th style="width: 3%;">#</th>
+                                        <th style="width: 18%; text-align: left;">Vehicle Name</th>
+                                        <th style="width: 11%;">Plate Number</th>
+                                        <th style="width: 8%;">Distance (km)</th>
+                                        <th style="width: 8%;">Start Tank (L)</th>
+                                        <th style="width: 8%;">End Tank (L)</th>
+                                        <th style="width: 8%;">Refueled (L)</th>
+                                        <th style="width: 9%;">Consumed (L)</th>
+                                        <th style="width: 9%;">Rate (L/100km)</th>
+                                        <th style="width: 8%;">Norm (L/100km)</th>
+                                        <th style="width: 10%;">Efficiency Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="idx" t-value="1"/>
+                                    <t t-foreach="data['analyses']" t-as="row">
+                                        <tr class="align-middle">
+                                            <td class="text-center text-muted"><t t-esc="idx"/></td>
+                                            <td>
+                                                <strong style="color: #1B4F72;"><t t-esc="row.vehicle_id.name"/></strong>
+                                                <div style="font-size: 8px; color: #7F8C8D;">GPS: <t t-esc="row.device_id.name or 'N/A'"/></div>
+                                            </td>
+                                            <td class="text-center fw-bold"><t t-esc="row.license_plate"/></td>
+                                            <td class="text-end fw-bold"><t t-esc="'{:,.1f}'.format(row.distance_km)"/></td>
+                                            <td class="text-end"><t t-esc="'%.1f' % row.start_fuel"/></td>
+                                            <td class="text-end"><t t-esc="'%.1f' % row.end_fuel"/></td>
+                                            <td class="text-end"><t t-esc="'%.1f' % row.total_refueled"/></td>
+                                            <td class="text-end fw-bold" style="color: #0E6251;"><t t-esc="'%.1f' % row.fuel_consumed"/></td>
+                                            <td class="text-end fw-bold">
+                                                <t t-if="row.consumption_rate &gt; row.benchmark_rate * 1.2">
+                                                    <span style="color: #C0392B;"><t t-esc="'%.1f' % row.consumption_rate"/></span>
+                                                </t>
+                                                <t t-elif="row.consumption_rate &lt; row.benchmark_rate and row.consumption_rate &gt; 0">
+                                                    <span style="color: #27AE60;"><t t-esc="'%.1f' % row.consumption_rate"/></span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span style="color: #2C3E50;"><t t-esc="'%.1f' % row.consumption_rate"/></span>
+                                                </t>
+                                            </td>
+                                            <td class="text-end text-muted"><t t-esc="'%.1f' % row.benchmark_rate"/></td>
+                                            <td class="text-center">
+                                                <t t-if="row.theft_suspected">
+                                                    <span class="badge text-bg-danger" style="font-size: 8px;">Theft / Drain Alert</span>
+                                                </t>
+                                                <t t-elif="row.efficiency_status == 'efficient'">
+                                                    <span class="badge text-bg-success" style="font-size: 8px;">High Efficiency</span>
+                                                </t>
+                                                <t t-elif="row.efficiency_status == 'high'">
+                                                    <span class="badge text-bg-warning" style="font-size: 8px;">High Consumption</span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="badge text-bg-info" style="font-size: 8px;">Normal</span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                        <t t-set="idx" t-value="idx + 1"/>
+                                    </t>
+                                </tbody>
+                                <tfoot style="background-color: #EAEDED; font-weight: bold;">
+                                    <tr class="align-middle">
+                                        <td colspan="3" class="text-center">TOTAL FLEET AUDIT</td>
+                                        <td class="text-end"><t t-esc="'{:,.1f}'.format(data['total_distance'])"/> km</td>
+                                        <td colspan="2" class="text-center text-muted">-</td>
+                                        <td class="text-end"><t t-esc="'{:,.1f}'.format(data['total_refueled'])"/> L</td>
+                                        <td class="text-end" style="color: #0E6251;"><t t-esc="'{:,.1f}'.format(data['total_fuel_consumed'])"/> L</td>
+                                        <td class="text-end" style="color: #1B4F72;"><t t-esc="'%.1f' % data['avg_rate']"/></td>
+                                        <td colspan="2" class="text-center text-muted"><t t-esc="data['total_vehicles']"/> Vehicles Monitored</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Section 2: GPS Fuel Transactions (Refills & Drains Audit) -->
+                        <t t-if="wizard.include_transactions and data['transactions']">
+                            <div style="page-break-inside: avoid; margin-top: 18px;">
+                                <h5 style="color: #1B4F72; font-weight: 700; border-bottom: 2px solid #D4E6F1; padding-bottom: 4px; margin-bottom: 8px;">
+                                    2. GPS-Detected Fuel Refueling &amp; Abnormal Tank Drain Audit
+                                </h5>
+                                <table class="table table-sm table-bordered" style="font-size: 9px; margin-bottom: 0;">
+                                    <thead style="background-color: #2E4053; color: #ffffff;">
+                                        <tr class="text-center align-middle">
+                                            <th style="width: 14%;">Timestamp</th>
+                                            <th style="width: 20%; text-align: left;">Vehicle</th>
+                                            <th style="width: 12%;">Plate</th>
+                                            <th style="width: 14%;">Transaction Type</th>
+                                            <th style="width: 10%;">Volume (L)</th>
+                                            <th style="width: 14%;">Tank (Before &#8594; After)</th>
+                                            <th style="width: 10%;">Odometer</th>
+                                            <th style="width: 6%;">Audit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="data['transactions'][:30]" t-as="tx">
+                                            <tr class="align-middle">
+                                                <td class="text-center"><t t-esc="tx.timestamp.strftime('%Y-%m-%d %H:%M')"/></td>
+                                                <td><t t-esc="tx.vehicle_id.name"/></td>
+                                                <td class="text-center"><t t-esc="tx.license_plate"/></td>
+                                                <td class="text-center">
+                                                    <t t-if="tx.transaction_type == 'refuel'">
+                                                        <span class="badge text-bg-success" style="font-size: 8px;">Fuel Refill (+)</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="badge text-bg-danger" style="font-size: 8px;">Abnormal Drain (-)</span>
+                                                    </t>
+                                                </td>
+                                                <td class="text-end fw-bold">
+                                                    <t t-if="tx.transaction_type == 'refuel'">
+                                                        <span style="color: #27AE60;">+<t t-esc="'%.1f' % tx.volume"/> L</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span style="color: #C0392B;">-<t t-esc="'%.1f' % tx.volume"/> L</span>
+                                                    </t>
+                                                </td>
+                                                <td class="text-center">
+                                                    <t t-esc="'%.1f' % tx.initial_fuel"/> &#8594; <t t-esc="'%.1f' % tx.final_fuel"/> L
+                                                </td>
+                                                <td class="text-end"><t t-esc="'{:,.1f}'.format(tx.odometer or 0)"/> km</td>
+                                                <td class="text-center">
+                                                    <span class="badge text-bg-secondary" style="font-size: 8px;" t-field="tx.state"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- Executive Sign-off Block -->
+                        <div style="page-break-inside: avoid; margin-top: 35px; border-top: 1px solid #BDC3C7; padding-top: 15px;">
+                            <div class="row text-center" style="font-size: 10px;">
+                                <div class="col-4">
+                                    <div style="border-bottom: 1px dotted #7F8C8D; width: 80%; margin: 0 auto 5px auto; height: 35px;"></div>
+                                    <strong>Prepared By:</strong>
+                                    <div class="text-muted">Fleet Telematics Officer</div>
+                                </div>
+                                <div class="col-4">
+                                    <div style="border-bottom: 1px dotted #7F8C8D; width: 80%; margin: 0 auto 5px auto; height: 35px;"></div>
+                                    <strong>Verified By:</strong>
+                                    <div class="text-muted">Fleet Operations Manager</div>
+                                </div>
+                                <div class="col-4">
+                                    <div style="border-bottom: 1px dotted #7F8C8D; width: 80%; margin: 0 auto 5px auto; height: 35px;"></div>
+                                    <strong>Approved By:</strong>
+                                    <div class="text-muted">Head of Logistics &amp; Transport</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

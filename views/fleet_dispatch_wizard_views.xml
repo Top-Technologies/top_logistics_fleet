@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_fleet_dispatch_wizard_form" model="ir.ui.view">
+        <field name="name">top.fleet.dispatch.wizard.form</field>
+        <field name="model">top.fleet.dispatch.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Pre-Dispatch Inspection Checklist (Section 17 &amp; 35)">
+                <sheet>
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Mandatory Safety Verification:</strong> Verify the 11-point vehicle condition checklist and operational readiness prior to dispatching vehicle.
+                    </div>
+                    <group>
+                        <group string="Trip Info">
+                            <field name="trip_id" invisible="1"/>
+                            <field name="vehicle_id" readonly="1"/>
+                            <field name="driver_id" readonly="1"/>
+                        </group>
+                        <group string="Route">
+                            <field name="origin" readonly="1"/>
+                            <field name="destination" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="11-Point Vehicle Condition Checklist (Section 35)">
+                        <group string="Mechanical &amp; Fluids">
+                            <field name="chk_tires" widget="boolean_toggle"/>
+                            <field name="chk_engine" widget="boolean_toggle"/>
+                            <field name="chk_oil" widget="boolean_toggle"/>
+                            <field name="chk_coolant" widget="boolean_toggle"/>
+                            <field name="chk_brakes" widget="boolean_toggle"/>
+                            <field name="chk_lights" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Safety Equipment &amp; Body">
+                            <field name="chk_spare_tire" widget="boolean_toggle"/>
+                            <field name="chk_tools" widget="boolean_toggle"/>
+                            <field name="chk_fire_extinguisher" widget="boolean_toggle"/>
+                            <field name="chk_first_aid" widget="boolean_toggle"/>
+                            <field name="chk_body_condition" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <group string="Operational Confirmations">
+                        <group>
+                            <field name="chk_driver_confirmed" widget="boolean_toggle"/>
+                            <field name="chk_gps_online" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="chk_documents_valid" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <group string="Initial Telemetry &amp; Fuel Level">
+                        <group>
+                            <field name="start_odometer" placeholder="Current odometer reading in km..."/>
+                        </group>
+                        <group>
+                            <field name="start_fuel" string="Starting Fuel (L)"/>
+                            <field name="start_fuel_level"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="dispatch_notes" placeholder="Any observed minor scratches, dents, or pre-existing conditions..."/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Confirm &amp; Dispatch Vehicle" type="object" name="action_confirm_dispatch" class="btn-success"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_top_fleet_dispatch_wizard" model="ir.actions.act_window">
+        <field name="name">Pre-Dispatch Checklist</field>
+        <field name="res_model">top.fleet.dispatch.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

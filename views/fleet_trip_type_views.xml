@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Type List View -->
+    <record id="view_top_fleet_trip_type_list" model="ir.ui.view">
+        <field name="name">top.fleet.trip.type.list</field>
+        <field name="model">top.fleet.trip.type</field>
+        <field name="arch" type="xml">
+            <list string="Trip Types">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="description"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Trip Type Form View -->
+    <record id="view_top_fleet_trip_type_form" model="ir.ui.view">
+        <field name="name">top.fleet.trip.type.form</field>
+        <field name="model">top.fleet.trip.type</field>
+        <field name="arch" type="xml">
+            <form string="Trip Type">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description" placeholder="Operational definition for this trip type..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Trip Type Action -->
+    <record id="action_top_fleet_trip_type" model="ir.actions.act_window">
+        <field name="name">Trip Types</field>
+        <field name="res_model">top.fleet.trip.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define a new trip type!
+            </p>
+            <p>
+                Configure classifications like Round Trip, One Way, Multi-Destination, Regional, or Long Distance.
+            </p>
+        </field>
+    </record>
+</odoo>

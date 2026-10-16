@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_top_gps_provider_list" model="ir.ui.view">
+        <field name="name">top.gps.provider.list</field>
+        <field name="model">top.gps.provider</field>
+        <field name="arch" type="xml">
+            <list string="GPS Providers">
+                <field name="name"/>
+                <field name="api_url"/>
+                <field name="auth_type"/>
+                <field name="polling_interval"/>
+                <field name="device_count"/>
+                <field name="last_sync"/>
+                <field name="error_type" widget="badge" decoration-danger="error_type"/>
+                <field name="sync_status" widget="badge"
+                       decoration-success="sync_status == 'success'"
+                       decoration-danger="sync_status == 'failed'"
+                       decoration-warning="sync_status == 'running'"
+                       decoration-muted="sync_status == 'not_synced'"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_top_gps_provider_form" model="ir.ui.view">
+        <field name="name">top.gps.provider.form</field>
+        <field name="model">top.gps.provider</field>
+        <field name="arch" type="xml">
+            <form string="GPS Provider Configuration">
+                <header>
+                    <button name="action_test_connection" string="⚡ Test Connection" type="object" class="btn-primary"/>
+                    <button name="action_discover_wialon_devices" string="🔍 Discover &amp; Sync Units" type="object" class="btn-primary"/>
+                    <button name="action_sync_now" string="🔄 Sync Telemetry Now" type="object" class="btn-secondary"/>
+                    <button name="action_purge_old_positions" string="Purge Historical GPS (Section 48)" type="object" class="btn-outline-danger"
+                            confirm="Are you sure you want to purge raw GPS positions older than the configured retention threshold?"/>
+                    <field name="sync_status" widget="statusbar" statusbar_visible="not_synced,success,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Provider Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Wialon Fleet Gateway"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="API Connection Endpoint (Section 23)">
+                            <field name="api_url"/>
+                            <field name="auth_type"/>
+                            <field name="api_key" password="True"/>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                        </group>
+                        <group string="Synchronization &amp; Retention (Sections 22 &amp; 48)">
+                            <field name="polling_interval"/>
+                            <field name="timeout"/>
+                            <field name="retention_days"/>
+                            <field name="active" widget="boolean_toggle"/>
+                            <field name="last_sync"/>
+                            <field name="device_count"/>
+                        </group>
+                    </group>
+
+                    <!-- Section 46: Error Handling Diagnostic Banner -->
+                    <div class="alert alert-danger" role="alert" invisible="sync_status != 'failed'">
+                        <div class="d-flex justify-content-between">
+                            <strong><i class="fa fa-exclamation-triangle me-1"/> Synchronization Error:</strong>
+                            <span>Error Type: <strong><field name="error_type"/></strong> | Consecutive Failures: <strong><field name="retry_count"/></strong></span>
+                        </div>
+                        <p class="mb-0 mt-1"><field name="error_message" readonly="1"/></p>
+                    </div>
+
+                    <notebook>
+                        <page string="Linked GPS Devices" name="linked_devices">
+                            <field name="device_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="device_id"/>
+                                    <field name="vehicle_id"/>
+                                    <field name="speed"/>
+                                    <field name="odometer"/>
+                                    <field name="fuel_level"/>
+                                    <field name="battery"/>
+                                    <field name="ignition" widget="boolean_toggle"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="last_communication"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_top_gps_provider" model="ir.actions.act_window">
+        <field name="name">GPS API Providers</field>
+        <field name="res_model">top.gps.provider</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure an external GPS platform connection!
+            </p>
+            <p>
+                Connect to Wialon, Teltonika, or generic telematics providers for automatic position synchronization.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Fuel Consumption & Efficiency Report Action -->
+    <record id="action_report_trip_fuel_efficiency" model="ir.actions.report">
+        <field name="name">Fuel Consumption &amp; Efficiency Report</field>
+        <field name="model">top.fleet.trip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">top_logistics_fleet.report_fuel_efficiency_template</field>
+        <field name="report_file">top_logistics_fleet.report_fuel_efficiency_template</field>
+        <field name="print_report_name">'Fuel Efficiency - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_top_fleet_trip"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- QWeb Template -->
+    <template id="report_fuel_efficiency_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-size: 13px;">
+                        <!-- Report Header Banner -->
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <div>
+                                <h2 class="mb-0 text-primary" style="font-weight: 700;">
+                                    <i class="fa fa-tint me-2"/>Fuel Consumption &amp; Telematics Audit
+                                </h2>
+                                <h5 class="text-muted mb-0">Trip Reference: <span t-field="doc.name"/></h5>
+                            </div>
+                            <div class="text-end">
+                                <div><strong>Audit Date: </strong><span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/></div>
+                                <div><strong>Trip Status: </strong><span class="badge text-bg-primary" t-field="doc.state"/></div>
+                                <div><strong>Measurement: </strong><span t-field="doc.fuel_consumption_method"/></div>
+                            </div>
+                        </div>
+
+                        <!-- Theft / Anomaly Warning Banner if flagged -->
+                        <div t-if="doc.fuel_theft_suspected" class="alert alert-danger p-2 mb-3 d-flex align-items-center" role="alert">
+                            <strong class="me-2"><i class="fa fa-exclamation-triangle fa-lg me-1"/>AUDIT ALERT:</strong>
+                            <span>Potential Fuel Siphoning or Abnormal Fuel Drain flagged. Actual consumption exceeds vehicle norm benchmark by over 35%.</span>
+                        </div>
+
+                        <!-- Trip & Vehicle Summary Cards -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="card p-2 border-primary h-100">
+                                    <h6 class="text-primary border-bottom pb-1 fw-bold">Vehicle &amp; Route Telemetry</h6>
+                                    <div class="row">
+                                        <div class="col-6"><strong>Vehicle:</strong> <span t-field="doc.vehicle_id.display_name"/></div>
+                                        <div class="col-6"><strong>Plate:</strong> <span t-field="doc.vehicle_id.license_plate"/></div>
+                                        <div class="col-6"><strong>Driver:</strong> <span t-field="doc.driver_id.name"/></div>
+                                        <div class="col-6"><strong>GPS Tracker:</strong> <span t-field="doc.gps_device_id.name"/></div>
+                                        <div class="col-6"><strong>Route Origin:</strong> <span t-field="doc.origin"/></div>
+                                        <div class="col-6"><strong>Destination:</strong> <span t-field="doc.destination"/></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card p-2 border-info h-100">
+                                    <h6 class="text-info border-bottom pb-1 fw-bold">Odometer &amp; Distance Audit</h6>
+                                    <div class="row">
+                                        <div class="col-6"><strong>Starting Odo:</strong> <span t-field="doc.start_odometer"/> km</div>
+                                        <div class="col-6"><strong>Ending Odo:</strong> <span t-field="doc.end_odometer"/> km</div>
+                                        <div class="col-6"><strong>Actual Distance:</strong> <span t-field="doc.actual_distance"/> km</div>
+                                        <div class="col-6"><strong>Planned Distance:</strong> <span t-field="doc.planned_distance"/> km</div>
+                                        <div class="col-6"><strong>Distance Variance:</strong> <span t-field="doc.variance_distance"/> km</div>
+                                        <div class="col-6"><strong>Vehicle Benchmark:</strong> <span t-field="doc.vehicle_id.expected_fuel_consumption"/> L/100km</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tank Level & Telematics Fuel Balance Table -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-dashboard me-1"/>1. Tank Fuel Level Reconciliation (Telemetry vs Physical)</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Starting Tank Level (L)</th>
+                                            <th>Ending / Current Tank (L)</th>
+                                            <th>Refueled at Stations (L)</th>
+                                            <th>GPS Measured Consumption (L)</th>
+                                            <th>Benchmark Standard (L)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <strong class="text-primary"><span t-field="doc.start_fuel"/> L</strong>
+                                                <span class="text-muted small" t-if="doc.start_fuel_level">(<span t-field="doc.start_fuel_level"/>)</span>
+                                            </td>
+                                            <td>
+                                                <strong class="text-info">
+                                                    <span t-if="doc.end_fuel"><span t-field="doc.end_fuel"/> L</span>
+                                                    <span t-else=""><span t-field="doc.current_fuel"/> L (Live)</span>
+                                                </strong>
+                                                <span class="text-muted small" t-if="doc.end_fuel_level">(<span t-field="doc.end_fuel_level"/>)</span>
+                                            </td>
+                                            <td><span t-field="doc.total_refueled"/> L</td>
+                                            <td class="fw-bold"><span t-field="doc.fuel_consumed_gps"/> L</td>
+                                            <td><span t-field="doc.fuel_consumed_norm"/> L</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Refueling Station Purchases Table (Section 30) -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                                <strong class="text-dark"><i class="fa fa-shopping-cart me-1"/>2. Fuel Station Purchases &amp; Refills Log</strong>
+                                <span class="badge bg-secondary">Total Refilled: <span t-field="doc.total_refueled"/> L</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date &amp; Time</th>
+                                            <th>Station / Location</th>
+                                            <th>Fuel Type</th>
+                                            <th>Quantity (L)</th>
+                                            <th>Unit Price</th>
+                                            <th>Total Cost</th>
+                                            <th>Payment Method</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="doc.fuel_log_ids" t-as="flog">
+                                            <td><span t-field="flog.date"/></td>
+                                            <td><span t-field="flog.fuel_station"/></td>
+                                            <td><span t-field="flog.fuel_type"/></td>
+                                            <td><span t-field="flog.quantity"/> L</td>
+                                            <td><span t-field="flog.unit_price"/></td>
+                                            <td><strong><span t-field="flog.total_cost"/></strong></td>
+                                            <td><span t-field="flog.payment_method"/></td>
+                                        </tr>
+                                        <tr t-if="not doc.fuel_log_ids">
+                                            <td colspan="7" class="text-center text-muted py-2">
+                                                <em>No refueling transactions recorded during this trip (fuel consumed from existing tank supply).</em>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <t t-if="doc.fuel_log_ids">
+                                        <tfoot>
+                                            <tr class="table-secondary fw-bold">
+                                                <td colspan="3" class="text-end">Refueling Totals:</td>
+                                                <td><span t-field="doc.total_refueled"/> L</td>
+                                                <td>-</td>
+                                                <td><span t-field="doc.total_fuel_cost"/></td>
+                                                <td>-</td>
+                                            </tr>
+                                        </tfoot>
+                                    </t>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Fuel Efficiency & Variance Analysis (Section 31 & 32) -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-bar-chart me-1"/>3. Fuel Efficiency, Cost &amp; Variance Analysis</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Performance Metric</th>
+                                            <th>Planned / Benchmark Norm</th>
+                                            <th>Actual Result</th>
+                                            <th>Variance / Difference</th>
+                                            <th>Efficiency Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Total Fuel Consumed</strong></td>
+                                            <td><span t-field="doc.expected_fuel"/> L</td>
+                                            <td><strong class="text-primary"><span t-field="doc.actual_fuel"/> L</strong></td>
+                                            <td>
+                                                <span t-if="doc.variance_fuel &gt; 0" class="text-danger fw-bold">+<span t-field="doc.variance_fuel"/> L</span>
+                                                <span t-elif="doc.variance_fuel &lt; 0" class="text-success fw-bold"><span t-field="doc.variance_fuel"/> L</span>
+                                                <span t-else="">0.00 L</span>
+                                            </td>
+                                            <td>
+                                                <span t-if="doc.fuel_theft_suspected" class="badge bg-danger">Critical Excess</span>
+                                                <span t-elif="doc.variance_fuel &gt; 5" class="badge bg-warning text-dark">Above Target</span>
+                                                <span t-else="" class="badge bg-success">Optimal</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Fuel Consumption Rate</strong></td>
+                                            <td><span t-field="doc.vehicle_id.expected_fuel_consumption"/> L/100km</td>
+                                            <td><strong class="text-primary"><span t-field="doc.fuel_consumption_rate"/> L/100km</strong></td>
+                                            <td>
+                                                <span t-esc="round((doc.fuel_consumption_rate or 0.0) - (doc.vehicle_id.expected_fuel_consumption or 0.0), 2)"/> L/100km
+                                            </td>
+                                            <td>
+                                                <span t-if="(doc.fuel_consumption_rate or 0) &lt;= (doc.vehicle_id.expected_fuel_consumption or 12)" class="text-success fw-bold">Normal</span>
+                                                <span t-else="" class="text-danger fw-bold">Over Benchmark</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Fuel Value / Cost</strong></td>
+                                            <td>-</td>
+                                            <td><strong><span t-field="doc.total_trip_cost"/></strong></td>
+                                            <td>-</td>
+                                            <td>Cost/KM: <strong><span t-field="doc.cost_per_km"/></strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Audit Sign-Off Section -->
+                        <div class="row mt-4 pt-4 border-top">
+                            <div class="col-4 text-center">
+                                <div>_________________________________</div>
+                                <strong class="mt-1 d-block">Fleet Telematics Analyst</strong>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div>_________________________________</div>
+                                <strong class="mt-1 d-block">Assigned Driver (<span t-field="doc.driver_id.name"/>)</strong>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div>_________________________________</div>
+                                <strong class="mt-1 d-block">Operations &amp; Logistics Manager</strong>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

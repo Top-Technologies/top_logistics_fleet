@@ -1,0 +1,851 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="top_logistics_fleet.LogisticsDashboard">
+        <div class="o_fms_dashboard">
+
+            <!-- ── Top Hero Header Bar ── -->
+            <div class="fms_hero_bar">
+                <div class="fms_hero_title_area">
+                    <div class="fms_hero_icon">
+                        <i class="fa fa-tachometer"/>
+                    </div>
+                    <div>
+                        <h1 class="fms_hero_title">
+                            FMS Logistics &amp; Fleet Control Center
+                            <span class="fms_live_badge">
+                                <span class="fms_pulse_dot"/> Live Telematics
+                            </span>
+                        </h1>
+                        <p class="fms_hero_sub">
+                            Executive transport operations, vehicle dispatching, real-time telemetry and fleet cost control
+                        </p>
+                    </div>
+                </div>
+
+                <div class="fms_hero_actions">
+                    <button class="fms_btn fms_btn_secondary" t-on-click="openVehicleDashboard" title="Vehicle Analytics Dashboard">
+                        <i class="fa fa-line-chart text-warning"/> Vehicle Dashboard
+                    </button>
+                    <button class="fms_btn fms_btn_secondary" t-on-click="openLiveMap">
+                        <i class="fa fa-map-marker text-danger"/> Live Map
+                    </button>
+                    <button class="fms_btn fms_btn_secondary" t-on-click="openAvailabilityCalendar">
+                        <i class="fa fa-calendar text-primary"/> Schedule
+                    </button>
+                    <button class="fms_btn fms_btn_primary" t-on-click="createNewRequest">
+                        <i class="fa fa-plus"/> New Request
+                    </button>
+                    <button class="fms_btn fms_btn_success" t-on-click="createNewTrip">
+                        <i class="fa fa-truck"/> Dispatch Trip
+                    </button>
+                    <button class="fms_btn fms_btn_secondary" t-on-click="refresh" title="Refresh Dashboard">
+                        <i t-att-class="'fa fa-refresh ' + (state.refreshing ? 'fa-spin' : '')"/>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Loading state ── -->
+            <t t-if="state.loading">
+                <div class="fms_loading_container">
+                    <div class="fms_spinner"/>
+                    <h4>Loading live fleet telemetry &amp; logistics metrics...</h4>
+                </div>
+            </t>
+
+            <!-- ── Error state ── -->
+            <t t-elif="state.error">
+                <div class="fms_empty_box">
+                    <i class="fa fa-exclamation-triangle fms_empty_icon text-danger"/>
+                    <h4>Could not load dashboard data</h4>
+                    <p class="text-muted"><t t-esc="state.error"/></p>
+                    <button class="fms_btn fms_btn_primary mt-2" t-on-click="loadData">
+                        <i class="fa fa-refresh"/> Retry
+                    </button>
+                </div>
+            </t>
+
+            <!-- ── Loaded Dashboard Content ── -->
+            <t t-elif="state.data">
+
+                <!-- ── Controls & Filters Bar ── -->
+                <div class="fms_controls_bar">
+                    <!-- Period Filter Pills -->
+                    <div class="fms_period_pills">
+                        <button type="button"
+                                t-att-class="'fms_period_btn ' + (state.period === 'all' ? 'active' : '')"
+                                t-on-click="() => this.setPeriod('all')">
+                            All Time
+                        </button>
+                        <button type="button"
+                                t-att-class="'fms_period_btn ' + (state.period === 'this_month' ? 'active' : '')"
+                                t-on-click="() => this.setPeriod('this_month')">
+                            This Month
+                        </button>
+                        <button type="button"
+                                t-att-class="'fms_period_btn ' + (state.period === 'this_week' ? 'active' : '')"
+                                t-on-click="() => this.setPeriod('this_week')">
+                            This Week
+                        </button>
+                        <button type="button"
+                                t-att-class="'fms_period_btn ' + (state.period === 'today' ? 'active' : '')"
+                                t-on-click="() => this.setPeriod('today')">
+                            Today
+                        </button>
+                    </div>
+
+                    <!-- Quick Shortcuts Bar -->
+                    <div class="fms_quick_actions">
+                        <button class="fms_btn fms_btn_outline" t-on-click="createNewFuelLog">
+                            <i class="fa fa-tint text-primary"/> Log Fuel
+                        </button>
+                        <button class="fms_btn fms_btn_outline" t-on-click="createNewAccident">
+                            <i class="fa fa-shield text-danger"/> Report Incident
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── Category Navigation Tabs ── -->
+                <div class="fms_nav_tabs">
+                    <div t-att-class="'fms_tab_item ' + (state.activeTab === 'overview' ? 'active' : '')"
+                         t-on-click="() => this.setActiveTab('overview')">
+                        <i class="fa fa-th-large"/> Executive Overview
+                    </div>
+                    <div t-att-class="'fms_tab_item ' + (state.activeTab === 'requests' ? 'active' : '')"
+                         t-on-click="() => this.setActiveTab('requests')">
+                        <i class="fa fa-exchange"/> Transport Pipeline
+                        <span class="fms_tab_badge"><t t-esc="state.data.summary.total_requests"/></span>
+                    </div>
+                    <div t-att-class="'fms_tab_item ' + (state.activeTab === 'fleet' ? 'active' : '')"
+                         t-on-click="() => this.setActiveTab('fleet')">
+                        <i class="fa fa-truck"/> Fleet &amp; Drivers
+                        <span class="fms_tab_badge"><t t-esc="state.data.summary.total_vehicles"/></span>
+                    </div>
+                    <div t-att-class="'fms_tab_item ' + (state.activeTab === 'safety' ? 'active' : '')"
+                         t-on-click="() => this.setActiveTab('safety')">
+                        <i class="fa fa-satellite-dish"/> GPS &amp; Safety
+                        <span class="fms_tab_badge"><t t-esc="state.data.summary.total_events"/></span>
+                    </div>
+                    <div t-att-class="'fms_tab_item ' + (state.activeTab === 'costs' ? 'active' : '')"
+                         t-on-click="() => this.setActiveTab('costs')">
+                        <i class="fa fa-dollar"/> Fuel &amp; Costs
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════════
+                     TAB 1: EXECUTIVE OVERVIEW
+                     ══════════════════════════════════════════════════════════════ -->
+                <t t-if="state.activeTab === 'overview'">
+
+                    <!-- ── KPI Cards Grid ── -->
+                    <div class="fms_kpi_grid">
+
+                        <!-- Card 1: Active Trips -->
+                        <div class="fms_kpi_card fms_kpi_blue"
+                             t-on-click="() => this.openTrips([['state', 'in', ['ready', 'dispatched', 'in_transit']]], 'Active Fleet Trips')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Active Trips</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-play"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val">
+                                <t t-esc="state.data.summary.active_trips"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.in_transit_trips"/> on route / <t t-esc="state.data.summary.completed_trips"/> done</span>
+                                <span class="fms_kpi_action_hint">View <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Pending Approval Requests -->
+                        <div class="fms_kpi_card fms_kpi_amber"
+                             t-on-click="() => this.openRequests([['state', 'in', ['submitted', 'under_review']]], 'Pending Approval Requests')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">To Approve</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-clock-o"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val text-warning">
+                                <t t-esc="state.data.summary.pending_approval_requests"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.emergency_requests"/> emergency priority</span>
+                                <span class="fms_kpi_action_hint">Review <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Available Vehicles -->
+                        <div class="fms_kpi_card fms_kpi_green"
+                             t-on-click="() => this.openVehicles([['operational_status', '=', 'available']], 'Available Vehicles')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Available Fleet</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-check-circle"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val text-success">
+                                <t t-esc="state.data.summary.available_vehicles"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.availability_rate"/>% of <t t-esc="state.data.summary.total_vehicles"/> total</span>
+                                <span class="fms_kpi_action_hint">Allocate <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: GPS Health & Online -->
+                        <div class="fms_kpi_card fms_kpi_cyan"
+                             t-on-click="() => this.openGPSDevices([['status', '=', 'active']], 'Online GPS Devices')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">GPS Online</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-satellite"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val">
+                                <t t-esc="state.data.summary.gps_online"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.gps_online_rate"/>% online (<t t-esc="state.data.summary.gps_offline"/> offline)</span>
+                                <span class="fms_kpi_action_hint">Devices <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <!-- Card 5: Overspeed & Safety Violations -->
+                        <div class="fms_kpi_card fms_kpi_rose"
+                             t-on-click="() => this.openGPSEvents([['event_type', '=', 'overspeed']], 'Overspeed Events')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Overspeed Events</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-bolt"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val text-danger">
+                                <t t-esc="state.data.summary.overspeed_events"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.critical_violations"/> critical violations</span>
+                                <span class="fms_kpi_action_hint">Inspect <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <!-- Card 6: Fuel & Operating Expenses -->
+                        <div class="fms_kpi_card fms_kpi_purple"
+                             t-on-click="() => this.openFuelLogs([], 'Fuel Logs')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Total Fuel Cost</span>
+                                <div class="fms_kpi_icon_wrapper">
+                                    <i class="fa fa-tint"/>
+                                </div>
+                            </div>
+                            <div class="fms_kpi_val text-purple">
+                                <t t-esc="state.data.summary.total_fuel_cost.toLocaleString()"/>
+                            </div>
+                            <div class="fms_kpi_footer">
+                                <span>Avg <t t-esc="state.data.summary.avg_cost_per_km"/> / KM</span>
+                                <span class="fms_kpi_action_hint">Audit <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── Charts Grid Row 1 ── -->
+                    <div class="fms_charts_grid">
+
+                        <!-- Chart 1: Pipeline Distribution -->
+                        <div class="fms_chart_card">
+                            <div class="fms_chart_header">
+                                <div>
+                                    <h4 class="fms_chart_title">
+                                        <i class="fa fa-pie-chart text-primary"/> Transport Requests Pipeline
+                                    </h4>
+                                    <span class="fms_chart_sub">Workflow stages distribution</span>
+                                </div>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openRequests([], 'All Requests')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="fms_chart_canvas_wrap">
+                                <canvas t-ref="chartPipeline"/>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Weekly Trends -->
+                        <div class="fms_chart_card">
+                            <div class="fms_chart_header">
+                                <div>
+                                    <h4 class="fms_chart_title">
+                                        <i class="fa fa-line-chart text-info"/> Operational Performance Trend
+                                    </h4>
+                                    <span class="fms_chart_sub">Trips completed vs. Total Kilometers (Last 7 Days)</span>
+                                </div>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openTrips([['state', 'in', ['completed', 'reconciled', 'closed']]], 'Completed Trips')">
+                                    Trips
+                                </button>
+                            </div>
+                            <div class="fms_chart_canvas_wrap">
+                                <canvas t-ref="chartTrends"/>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── Split Section: Active Trips & Urgent Watchlist ── -->
+                    <div class="fms_split_row">
+
+                        <!-- Left Panel: Live In-Transit Trips -->
+                        <div class="fms_panel_card">
+                            <div class="fms_panel_header">
+                                <h4 class="fms_panel_title">
+                                    <i class="fa fa-location-arrow text-primary"/> Live Active &amp; In-Transit Trips
+                                </h4>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openTrips([['state', 'in', ['ready', 'dispatched', 'in_transit']]], 'Active Trips')">
+                                    View All (<t t-esc="state.data.summary.active_trips"/>)
+                                </button>
+                            </div>
+                            <div class="fms_panel_body">
+                                <t t-if="state.data.active_trips.length > 0">
+                                    <table class="fms_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Trip</th>
+                                                <th>Vehicle / Driver</th>
+                                                <th>Route</th>
+                                                <th>Departure</th>
+                                                <th>Speed</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.data.active_trips" t-as="trip" t-key="trip.id">
+                                                <tr t-on-click="() => this.openSingleTrip(trip.id)">
+                                                    <td>
+                                                        <strong class="text-primary"><t t-esc="trip.name"/></strong>
+                                                    </td>
+                                                    <td>
+                                                        <div><t t-esc="trip.vehicle"/></div>
+                                                        <span class="text-muted small"><i class="fa fa-user me-1"/><t t-esc="trip.driver"/></span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="fms_route_cell">
+                                                            <span><t t-esc="trip.origin"/></span>
+                                                            <i class="fa fa-arrow-right fms_route_arrow"/>
+                                                            <span><t t-esc="trip.destination"/></span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="small"><t t-esc="trip.actual_departure || trip.planned_departure || '—'"/></span>
+                                                    </td>
+                                                    <td>
+                                                        <span t-att-class="'badge ' + (trip.speed > 80 ? 'bg-danger' : (trip.speed > 0 ? 'bg-success' : 'bg-secondary'))">
+                                                            <t t-esc="trip.speed"/> km/h
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span t-att-class="'fms_badge ' + (trip.state === 'in_transit' ? 'fms_badge_primary' : 'fms_badge_warning')">
+                                                            <t t-esc="trip.state_label"/>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary"
+                                                                t-on-click.stop="() => this.openSingleTrip(trip.id)">
+                                                            Track
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                                <t t-else="">
+                                    <div class="fms_empty_box">
+                                        <i class="fa fa-truck fms_empty_icon"/>
+                                        <p class="fms_empty_text">No active trips currently in transit</p>
+                                        <button class="fms_btn fms_btn_primary btn-sm mt-2" t-on-click="createNewTrip">
+                                            <i class="fa fa-plus me-1"/> Dispatch a Trip
+                                        </button>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Urgent Alerts & Compliance Watchlist -->
+                        <div class="fms_panel_card">
+                            <div class="fms_panel_header">
+                                <h4 class="fms_panel_title">
+                                    <i class="fa fa-bell text-danger"/> Safety &amp; Compliance Watchlist
+                                </h4>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openGPSEvents([], 'All Alerts &amp; Events')">
+                                    All Events
+                                </button>
+                            </div>
+                            <div class="fms_panel_body">
+                                <t t-if="state.data.recent_alerts.length > 0">
+                                    <div class="fms_alert_list">
+                                        <t t-foreach="state.data.recent_alerts" t-as="alert" t-key="alert.id">
+                                            <div class="fms_alert_item" t-on-click="() => this.openGPSEvents([['id', '=', alert.id]], alert.name)">
+                                                <div t-att-class="'fms_alert_icon_box ' + (alert.severity === 'danger' ? 'bg-danger text-white' : 'bg-warning text-dark')">
+                                                    <i t-att-class="'fa ' + (alert.severity === 'danger' ? 'fa-bolt' : 'fa-exclamation-triangle')"/>
+                                                </div>
+                                                <div class="fms_alert_content">
+                                                    <h5 class="fms_alert_title"><t t-esc="alert.name"/></h5>
+                                                    <div class="fms_alert_meta">
+                                                        <span class="me-2"><i class="fa fa-car me-1"/><t t-esc="alert.vehicle"/></span>
+                                                        <span t-if="alert.driver" class="me-2"><i class="fa fa-user me-1"/><t t-esc="alert.driver"/></span>
+                                                        <span t-if="alert.speed"><strong class="text-danger"><t t-esc="alert.speed"/> km/h</strong></span>
+                                                        <span class="ms-2 text-muted"><t t-esc="alert.time"/></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                                <t t-else="">
+                                    <div class="fms_empty_box">
+                                        <i class="fa fa-shield fms_empty_icon text-success"/>
+                                        <p class="fms_empty_text">No critical safety alerts recorded recently</p>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── Charts Grid Row 2 ── -->
+                    <div class="fms_charts_grid">
+
+                        <!-- Chart 3: Fleet Status -->
+                        <div class="fms_chart_card">
+                            <div class="fms_chart_header">
+                                <div>
+                                    <h4 class="fms_chart_title">
+                                        <i class="fa fa-car text-success"/> Fleet Operational Health
+                                    </h4>
+                                    <span class="fms_chart_sub">Vehicle availability vs. maintenance vs. deployed</span>
+                                </div>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openVehicles([], 'Fleet')">
+                                    Vehicles
+                                </button>
+                            </div>
+                            <div class="fms_chart_canvas_wrap">
+                                <canvas t-ref="chartFleetStatus"/>
+                            </div>
+                        </div>
+
+                        <!-- Chart 4: Safety Events Breakdown -->
+                        <div class="fms_chart_card">
+                            <div class="fms_chart_header">
+                                <div>
+                                    <h4 class="fms_chart_title">
+                                        <i class="fa fa-exclamation-circle text-danger"/> Safety Incidents Breakdown
+                                    </h4>
+                                    <span class="fms_chart_sub">Telematics violations &amp; driver events</span>
+                                </div>
+                                <button class="fms_btn fms_btn_outline btn-sm"
+                                        t-on-click="() => this.openGPSEvents([], 'GPS Events')">
+                                    Events
+                                </button>
+                            </div>
+                            <div class="fms_chart_canvas_wrap">
+                                <canvas t-ref="chartSafety"/>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </t>
+
+                <!-- ══════════════════════════════════════════════════════════════
+                     TAB 2: TRANSPORT REQUESTS PIPELINE
+                     ══════════════════════════════════════════════════════════════ -->
+                <t t-if="state.activeTab === 'requests'">
+
+                    <!-- Pipeline Progression Bar -->
+                    <div class="fms_pipeline_progress">
+                        <div class="fms_pipeline_step" style="border-left-color: #94a3b8;"
+                             t-on-click="() => this.openRequests([['state', '=', 'draft']], 'Draft Requests')">
+                            <div class="fms_pipeline_step_title">Draft</div>
+                            <div class="fms_pipeline_step_count"><t t-esc="state.data.summary.draft_requests"/></div>
+                        </div>
+                        <div class="fms_pipeline_step" style="border-left-color: #f59e0b;"
+                             t-on-click="() => this.openRequests([['state', 'in', ['submitted', 'under_review']]], 'Pending Review')">
+                            <div class="fms_pipeline_step_title">Under Review</div>
+                            <div class="fms_pipeline_step_count text-warning"><t t-esc="state.data.summary.pending_approval_requests"/></div>
+                        </div>
+                        <div class="fms_pipeline_step" style="border-left-color: #3b82f6;"
+                             t-on-click="() => this.openRequests([['state', '=', 'approved']], 'Approved Requests')">
+                            <div class="fms_pipeline_step_title">Approved</div>
+                            <div class="fms_pipeline_step_count text-primary"><t t-esc="state.data.summary.approved_requests"/></div>
+                        </div>
+                        <div class="fms_pipeline_step" style="border-left-color: #06b6d4;"
+                             t-on-click="() => this.openRequests([['state', '=', 'assigned']], 'Assigned Requests')">
+                            <div class="fms_pipeline_step_title">Assigned</div>
+                            <div class="fms_pipeline_step_count"><t t-esc="state.data.summary.assigned_requests"/></div>
+                        </div>
+                        <div class="fms_pipeline_step" style="border-left-color: #8b5cf6;"
+                             t-on-click="() => this.openRequests([['state', 'in', ['dispatched', 'in_transit']]], 'In Transit')">
+                            <div class="fms_pipeline_step_title">In Transit</div>
+                            <div class="fms_pipeline_step_count text-purple"><t t-esc="state.data.summary.in_transit_requests"/></div>
+                        </div>
+                        <div class="fms_pipeline_step" style="border-left-color: #10b981;"
+                             t-on-click="() => this.openRequests([['state', 'in', ['completed', 'reconciled', 'closed']]], 'Completed Requests')">
+                            <div class="fms_pipeline_step_title">Completed</div>
+                            <div class="fms_pipeline_step_count text-success"><t t-esc="state.data.summary.completed_requests"/></div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Approval Action Panel -->
+                    <div class="fms_panel_card mb-4">
+                        <div class="fms_panel_header">
+                            <h4 class="fms_panel_title">
+                                <i class="fa fa-clock-o text-warning"/> Requests Awaiting Action &amp; Approval
+                            </h4>
+                            <button class="fms_btn fms_btn_primary btn-sm" t-on-click="createNewRequest">
+                                <i class="fa fa-plus me-1"/> New Request
+                            </button>
+                        </div>
+                        <div class="fms_panel_body">
+                            <t t-if="state.data.pending_requests.length > 0">
+                                <table class="fms_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Request #</th>
+                                            <th>Requester &amp; Dept</th>
+                                            <th>Route (Origin &gt; Destination)</th>
+                                            <th>Required Date</th>
+                                            <th>Passengers</th>
+                                            <th>Priority</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.pending_requests" t-as="req" t-key="req.id">
+                                            <tr t-on-click="() => this.openSingleRequest(req.id)">
+                                                <td><strong class="text-primary"><t t-esc="req.name"/></strong></td>
+                                                <td>
+                                                    <div><t t-esc="req.requester"/></div>
+                                                    <span class="text-muted small"><t t-esc="req.department"/></span>
+                                                </td>
+                                                <td>
+                                                    <div class="fms_route_cell">
+                                                        <span><t t-esc="req.origin"/></span>
+                                                        <i class="fa fa-arrow-right fms_route_arrow"/>
+                                                        <span><t t-esc="req.destination"/></span>
+                                                    </div>
+                                                </td>
+                                                <td><t t-esc="req.required_date"/></td>
+                                                <td><t t-esc="req.passenger_count"/></td>
+                                                <td>
+                                                    <span t-att-class="'fms_badge ' + (req.priority === 'emergency' ? 'fms_badge_danger' : (req.priority === 'high' ? 'fms_badge_warning' : 'fms_badge_neutral'))">
+                                                        <t t-esc="req.priority"/>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary"
+                                                            t-on-click.stop="() => this.openSingleRequest(req.id)">
+                                                        Review &amp; Approve
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </t>
+                            <t t-else="">
+                                <div class="fms_empty_box">
+                                    <i class="fa fa-check-circle fms_empty_icon text-success"/>
+                                    <p class="fms_empty_text">All transport requests are reviewed and up to date!</p>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                </t>
+
+                <!-- ══════════════════════════════════════════════════════════════
+                     TAB 3: FLEET & DRIVERS
+                     ══════════════════════════════════════════════════════════════ -->
+                <t t-if="state.activeTab === 'fleet'">
+                    <div class="fms_kpi_grid mb-4">
+                        <div class="fms_kpi_card fms_kpi_green"
+                             t-on-click="() => this.openVehicles([['operational_status', '=', 'available']], 'Available Vehicles')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Available Vehicles</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-truck"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-success"><t t-esc="state.data.summary.available_vehicles"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Compliant &amp; ready to assign</span>
+                                <span class="fms_kpi_action_hint">View <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_blue"
+                             t-on-click="() => this.openVehicles([['operational_status', '=', 'on_trip']], 'Vehicles On Trip')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">On Active Trip</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-road"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-primary"><t t-esc="state.data.summary.on_trip_vehicles"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Currently on the road</span>
+                                <span class="fms_kpi_action_hint">View <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_rose"
+                             t-on-click="() => this.openVehicles([['operational_status', '=', 'maintenance']], 'Vehicles in Maintenance')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Under Maintenance</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-wrench"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-danger"><t t-esc="state.data.summary.maintenance_vehicles"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Service due or in workshop</span>
+                                <span class="fms_kpi_action_hint">Service <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_amber"
+                             t-on-click="() => this.openVehicles([['has_document_expired', '=', true]], 'Document Expiration Alert')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Compliance Issues</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-id-card-o"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-warning"><t t-esc="state.data.summary.compliance_issues_count"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Registration/Insurance due</span>
+                                <span class="fms_kpi_action_hint">Audit <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Driver Workforce Card -->
+                    <div class="fms_kpi_grid mb-4">
+                        <div class="fms_kpi_card fms_kpi_cyan">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Total Drivers</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-users"/></div>
+                            </div>
+                            <div class="fms_kpi_val"><t t-esc="state.data.summary.total_drivers"/></div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.available_drivers"/> Available for dispatch</span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_blue">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Drivers on Trip</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-steering-wheel"/></div>
+                            </div>
+                            <div class="fms_kpi_val"><t t-esc="state.data.summary.on_trip_drivers"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Active driving assignments</span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_rose">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">License Alerts</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-warning"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-danger"><t t-esc="state.data.summary.license_expired_drivers"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Expired or expiring licenses</span>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+
+                <!-- ══════════════════════════════════════════════════════════════
+                     TAB 4: GPS TELEMATICS & SAFETY
+                     ══════════════════════════════════════════════════════════════ -->
+                <t t-if="state.activeTab === 'safety'">
+                    <div class="fms_kpi_grid mb-4">
+                        <div class="fms_kpi_card fms_kpi_green"
+                             t-on-click="() => this.openGPSDevices([['status', '=', 'active']], 'Active GPS Trackers')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">GPS Online</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-wifi"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-success"><t t-esc="state.data.summary.gps_online"/></div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.gps_online_rate"/>% fleet coverage</span>
+                                <span class="fms_kpi_action_hint">Devices <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_rose"
+                             t-on-click="() => this.openGPSDevices([['status', 'in', ['offline', 'faulty']]], 'Offline GPS Trackers')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">GPS Offline</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-chain-broken"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-danger"><t t-esc="state.data.summary.gps_offline"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Needs inspection / reconnect</span>
+                                <span class="fms_kpi_action_hint">Fix <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_rose"
+                             t-on-click="() => this.openGPSEvents([['event_type', '=', 'overspeed']], 'Overspeed Events')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Overspeed Alerts</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-tachometer"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-danger"><t t-esc="state.data.summary.overspeed_events"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Speed limit breaches</span>
+                                <span class="fms_kpi_action_hint">Audit <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_amber"
+                             t-on-click="() => this.openGPSEvents([['event_type', '=', 'route_deviation']], 'Route Deviations')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Route Deviations</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-random"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-warning"><t t-esc="state.data.summary.route_deviations"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Unplanned route exits</span>
+                                <span class="fms_kpi_action_hint">Check <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Map Banner -->
+                    <div class="fms_panel_card mb-4" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff;">
+                        <div class="p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="fw-bold mb-1"><i class="fa fa-map text-primary me-2"/> Real-time Interactive Fleet Map</h3>
+                                <p class="text-muted mb-0">Track all active vehicles with live GPS speed, ignition state, and route breadcrumbs.</p>
+                            </div>
+                            <button class="fms_btn fms_btn_primary" t-on-click="openLiveMap">
+                                <i class="fa fa-external-link me-1"/> Open Live Tracking Map
+                            </button>
+                        </div>
+                    </div>
+                </t>
+
+                <!-- ══════════════════════════════════════════════════════════════
+                     TAB 5: FUEL & COSTS
+                     ══════════════════════════════════════════════════════════════ -->
+                <t t-if="state.activeTab === 'costs'">
+                    <div class="fms_kpi_grid mb-4">
+                        <div class="fms_kpi_card fms_kpi_purple"
+                             t-on-click="() => this.openFuelLogs([], 'All Fuel Logs')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Total Fuel Expense</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-dollar"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-purple"><t t-esc="state.data.summary.total_fuel_cost.toLocaleString()"/></div>
+                            <div class="fms_kpi_footer">
+                                <span><t t-esc="state.data.summary.total_fuel_litres"/> Litres logged</span>
+                                <span class="fms_kpi_action_hint">Logs <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_rose"
+                             t-on-click="() => this.openAccidents([], 'Accident Costs')">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Accident / Repair Cost</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-shield"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-danger"><t t-esc="state.data.summary.total_repair_cost.toLocaleString()"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Vehicle damage claims</span>
+                                <span class="fms_kpi_action_hint">Claims <i class="fa fa-arrow-right"/></span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_blue">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Avg Cost / KM</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-calculator"/></div>
+                            </div>
+                            <div class="fms_kpi_val text-primary"><t t-esc="state.data.summary.avg_cost_per_km"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Operating expense benchmark</span>
+                            </div>
+                        </div>
+
+                        <div class="fms_kpi_card fms_kpi_cyan">
+                            <div class="fms_kpi_top">
+                                <span class="fms_kpi_label">Consumption Rate</span>
+                                <div class="fms_kpi_icon_wrapper"><i class="fa fa-tachometer"/></div>
+                            </div>
+                            <div class="fms_kpi_val"><t t-esc="state.data.summary.avg_consumption_rate"/></div>
+                            <div class="fms_kpi_footer">
+                                <span>Litres per 100 km (L/100km)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Fuel Transactions Table -->
+                    <div class="fms_panel_card mb-4">
+                        <div class="fms_panel_header">
+                            <h4 class="fms_panel_title">
+                                <i class="fa fa-tint text-primary"/> Recent Fuel Fill-ups
+                            </h4>
+                            <button class="fms_btn fms_btn_primary btn-sm" t-on-click="createNewFuelLog">
+                                <i class="fa fa-plus me-1"/> Log Fuel
+                            </button>
+                        </div>
+                        <div class="fms_panel_body">
+                            <t t-if="state.data.recent_fuel.length > 0">
+                                <table class="fms_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Reference</th>
+                                            <th>Date</th>
+                                            <th>Vehicle</th>
+                                            <th>Driver</th>
+                                            <th>Station</th>
+                                            <th>Type</th>
+                                            <th>Quantity (L)</th>
+                                            <th>Total Cost</th>
+                                            <th>Payment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.recent_fuel" t-as="fuel" t-key="fuel.id">
+                                            <tr t-on-click="() => this.openFuelLogs([['id', '=', fuel.id]], fuel.name)">
+                                                <td><strong class="text-primary"><t t-esc="fuel.name"/></strong></td>
+                                                <td><t t-esc="fuel.date"/></td>
+                                                <td><strong><t t-esc="fuel.vehicle"/></strong></td>
+                                                <td><t t-esc="fuel.driver"/></td>
+                                                <td><t t-esc="fuel.station"/></td>
+                                                <td><t t-esc="fuel.fuel_type"/></td>
+                                                <td><t t-esc="fuel.quantity"/> L</td>
+                                                <td><strong class="text-success"><t t-esc="fuel.total_cost"/></strong></td>
+                                                <td><span class="fms_badge fms_badge_neutral"><t t-esc="fuel.payment"/></span></td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </t>
+                            <t t-else="">
+                                <div class="fms_empty_box">
+                                    <i class="fa fa-tint fms_empty_icon text-muted"/>
+                                    <p class="fms_empty_text">No recent fuel transactions found</p>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+
+            </t>
+
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,1076 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- ================================================================= -->
+        <!-- 1. DEPARTMENTS & EMPLOYEES / DRIVERS                              -->
+        <!-- ================================================================= -->
+        
+        <!-- Departments -->
+        <record id="demo_dept_operations" model="hr.department">
+            <field name="name">Fleet &amp; Logistics Operations</field>
+        </record>
+
+        <record id="demo_dept_engineering" model="hr.department">
+            <field name="name">Field Engineering &amp; IT Operations</field>
+        </record>
+
+        <record id="demo_dept_sales" model="hr.department">
+            <field name="name">Sales &amp; Client Relations</field>
+        </record>
+
+        <!-- Drivers (HR Employees with is_driver=True) -->
+        <!-- Driver 1: Senior Heavy Truck Driver (Valid License Cat 4) -->
+        <record id="demo_driver_teshale" model="hr.employee">
+            <field name="name">Teshale Worku</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1985-05-10</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2018-99412</field>
+            <field name="license_category">cat_4</field>
+            <field name="license_issue_date">2018-05-10</field>
+            <field name="license_expiry_date">2028-05-15</field>
+            <field name="driver_status">available</field>
+            <field name="emergency_contact">Almaz Teshale (Spouse)</field>
+            <field name="emergency_contact_phone">+251 911 234567</field>
+            <field name="work_phone">+251 922 110022</field>
+            <field name="work_email">teshale.driver@toplogistics.et</field>
+        </record>
+
+        <!-- Driver 2: Commercial Pickup & Van Driver (Currently On Trip) -->
+        <record id="demo_driver_mulugeta" model="hr.employee">
+            <field name="name">Mulugeta Kebede</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1988-09-12</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2019-45123</field>
+            <field name="license_category">cat_3</field>
+            <field name="license_issue_date">2019-09-01</field>
+            <field name="license_expiry_date">2027-09-10</field>
+            <field name="driver_status">on_trip</field>
+            <field name="emergency_contact">Tirhas Kebede (Sister)</field>
+            <field name="emergency_contact_phone">+251 912 345678</field>
+            <field name="work_phone">+251 922 334455</field>
+            <field name="work_email">mulugeta.driver@toplogistics.et</field>
+        </record>
+
+        <!-- Driver 3: Light Vehicle / VIP Chauffeur (Valid License Cat 2) -->
+        <record id="demo_driver_girma" model="hr.employee">
+            <field name="name">Girma Assefa</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1990-01-20</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2020-78564</field>
+            <field name="license_category">cat_2</field>
+            <field name="license_issue_date">2020-01-15</field>
+            <field name="license_expiry_date">2028-01-20</field>
+            <field name="driver_status">available</field>
+            <field name="emergency_contact">Sara Girma (Daughter)</field>
+            <field name="emergency_contact_phone">+251 913 456789</field>
+            <field name="work_phone">+251 922 556677</field>
+            <field name="work_email">girma.driver@toplogistics.et</field>
+        </record>
+
+        <!-- Driver 4: Heavy Freight / Articulated Trailer Driver (Cat 5) -->
+        <record id="demo_driver_tariku" model="hr.employee">
+            <field name="name">Tariku Mengistu</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1982-11-25</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2016-11234</field>
+            <field name="license_category">cat_5</field>
+            <field name="license_issue_date">2016-12-10</field>
+            <field name="license_expiry_date">2027-12-30</field>
+            <field name="driver_status">available</field>
+            <field name="emergency_contact">Bethel Mengistu (Sister)</field>
+            <field name="emergency_contact_phone">+251 914 567890</field>
+            <field name="work_phone">+251 922 778899</field>
+            <field name="work_email">tariku.driver@toplogistics.et</field>
+        </record>
+
+        <!-- Driver 5: EXPIRED LICENSE (Demonstrates Compliance Alert & Assignment Block) -->
+        <record id="demo_driver_henok" model="hr.employee">
+            <field name="name">Henok Tefera (Expired License)</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1987-03-14</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2015-88321</field>
+            <field name="license_category">cat_2</field>
+            <field name="license_issue_date">2015-08-01</field>
+            <field name="license_expiry_date">2025-08-10</field>
+            <field name="driver_status">suspended</field>
+            <field name="emergency_contact">Helen Tefera</field>
+            <field name="emergency_contact_phone">+251 915 678901</field>
+            <field name="work_phone">+251 922 889900</field>
+            <field name="work_email">henok.tefera@toplogistics.et</field>
+        </record>
+
+        <!-- Driver 6: ON LEAVE (Demonstrates Availability Schedule Conflict Block) -->
+        <record id="demo_driver_solomon" model="hr.employee">
+            <field name="name">Solomon Getachew (On Leave)</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1992-07-08</field>
+            <field name="is_driver" eval="True"/>
+            <field name="driver_license_number">DL-ET-2021-33441</field>
+            <field name="license_category">cat_3</field>
+            <field name="license_issue_date">2021-02-14</field>
+            <field name="license_expiry_date">2029-02-14</field>
+            <field name="driver_status">leave</field>
+            <field name="work_phone">+251 916 789012</field>
+        </record>
+
+        <!-- Requester Staff Employees -->
+        <record id="demo_employee_dawit" model="hr.employee">
+            <field name="name">Dawit Bekele</field>
+            <field name="department_id" ref="demo_dept_engineering"/>
+            <field name="birthday">1989-10-04</field>
+            <field name="work_email">dawit.bekele@toplogistics.et</field>
+            <field name="work_phone">+251 930 112233</field>
+        </record>
+
+        <record id="demo_employee_selamawit" model="hr.employee">
+            <field name="name">Selamawit Tadesse</field>
+            <field name="department_id" ref="demo_dept_sales"/>
+            <field name="birthday">1994-04-18</field>
+            <field name="work_email">selamawit.tadesse@toplogistics.et</field>
+            <field name="work_phone">+251 930 445566</field>
+        </record>
+
+        <record id="demo_employee_abebe" model="hr.employee">
+            <field name="name">Abebe Bikila</field>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="birthday">1980-08-22</field>
+            <field name="work_email">abebe.manager@toplogistics.et</field>
+            <field name="work_phone">+251 930 778899</field>
+        </record>
+
+        <!-- Link Manager to Operations Department -->
+        <record id="demo_dept_operations" model="hr.department">
+            <field name="manager_id" ref="demo_employee_abebe"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 2. FLEET VEHICLE BRANDS, MODELS & VEHICLES                        -->
+        <!-- ================================================================= -->
+
+        <!-- Brands -->
+        <record id="demo_brand_toyota" model="fleet.vehicle.model.brand">
+            <field name="name">Toyota</field>
+        </record>
+
+        <record id="demo_brand_isuzu" model="fleet.vehicle.model.brand">
+            <field name="name">Isuzu</field>
+        </record>
+
+        <record id="demo_brand_mercedes" model="fleet.vehicle.model.brand">
+            <field name="name">Mercedes-Benz</field>
+        </record>
+
+        <record id="demo_brand_sinotruk" model="fleet.vehicle.model.brand">
+            <field name="name">Sinotruk</field>
+        </record>
+
+        <!-- Vehicle Models -->
+        <record id="demo_model_prado" model="fleet.vehicle.model">
+            <field name="name">Land Cruiser Prado TX</field>
+            <field name="brand_id" ref="demo_brand_toyota"/>
+            <field name="category_id" ref="top_logistics_fleet.vehicle_category_sedan"/>
+            <field name="vehicle_type">car</field>
+            <field name="default_fuel_type">diesel</field>
+            <field name="seats">7</field>
+            <field name="doors">5</field>
+        </record>
+
+        <record id="demo_model_hilux" model="fleet.vehicle.model">
+            <field name="name">Hilux Double Cab 4x4</field>
+            <field name="brand_id" ref="demo_brand_toyota"/>
+            <field name="category_id" ref="top_logistics_fleet.vehicle_category_pickup"/>
+            <field name="vehicle_type">car</field>
+            <field name="default_fuel_type">diesel</field>
+            <field name="seats">5</field>
+            <field name="doors">4</field>
+        </record>
+
+        <record id="demo_model_sprinter" model="fleet.vehicle.model">
+            <field name="name">Sprinter Cargo Van 316</field>
+            <field name="brand_id" ref="demo_brand_mercedes"/>
+            <field name="category_id" ref="top_logistics_fleet.vehicle_category_van"/>
+            <field name="vehicle_type">car</field>
+            <field name="default_fuel_type">diesel</field>
+            <field name="seats">3</field>
+            <field name="doors">4</field>
+        </record>
+
+        <record id="demo_model_isuzu_fsr" model="fleet.vehicle.model">
+            <field name="name">FSR 33 Medium Freight Truck</field>
+            <field name="brand_id" ref="demo_brand_isuzu"/>
+            <field name="category_id" ref="top_logistics_fleet.vehicle_category_truck"/>
+            <field name="vehicle_type">car</field>
+            <field name="default_fuel_type">diesel</field>
+            <field name="seats">3</field>
+            <field name="doors">2</field>
+        </record>
+
+        <record id="demo_model_howo" model="fleet.vehicle.model">
+            <field name="name">Howo 371 Heavy Dump &amp; Haulage</field>
+            <field name="brand_id" ref="demo_brand_sinotruk"/>
+            <field name="category_id" ref="top_logistics_fleet.vehicle_category_truck"/>
+            <field name="vehicle_type">car</field>
+            <field name="default_fuel_type">diesel</field>
+            <field name="seats">2</field>
+            <field name="doors">2</field>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 3. GPS TELEMATICS DEVICES                                         -->
+        <!-- ================================================================= -->
+
+        <!-- GPS Device 1: Assigned to Prado (Online at Corporate HQ) -->
+        <record id="demo_gps_device_prado" model="top.gps.device">
+            <field name="name">GPS-TELT-PRADO-01</field>
+            <field name="device_id">TELT-FMB920-8801</field>
+            <field name="imei">864209048123001</field>
+            <field name="sim_number">+251 988 112201</field>
+            <field name="provider_id" ref="top_logistics_fleet.gps_provider_wialon_default"/>
+            <field name="provider">teltonika</field>
+            <field name="status">active</field>
+            <field name="latitude">9.012345</field>
+            <field name="longitude">38.789123</field>
+            <field name="address">Corporate Headquarters, Bole Sub-City, Addis Ababa</field>
+            <field name="speed">0.0</field>
+            <field name="direction">180.0</field>
+            <field name="ignition" eval="False"/>
+            <field name="odometer">34200.0</field>
+            <field name="fuel_level">68.5</field>
+            <field name="battery">12.6</field>
+            <field name="altitude">2355.0</field>
+            <field name="gps_signal">12</field>
+            <field name="last_communication" eval="(datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <!-- GPS Device 2: Assigned to Hilux (Online & Moving on Expressway) -->
+        <record id="demo_gps_device_hilux" model="top.gps.device">
+            <field name="name">GPS-RUP-HILUX-02</field>
+            <field name="device_id">RUP-PRO4-7702</field>
+            <field name="imei">864209048123002</field>
+            <field name="sim_number">+251 988 112202</field>
+            <field name="provider_id" ref="top_logistics_fleet.gps_provider_wialon_default"/>
+            <field name="provider">ruptela</field>
+            <field name="status">active</field>
+            <field name="latitude">7.054321</field>
+            <field name="longitude">38.476543</field>
+            <field name="address">Mojo-Hawassa Expressway, Km 142 Near Batu</field>
+            <field name="speed">68.4</field>
+            <field name="direction">165.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">48650.0</field>
+            <field name="fuel_level">42.0</field>
+            <field name="battery">13.8</field>
+            <field name="altitude">1710.0</field>
+            <field name="gps_signal">14</field>
+            <field name="last_communication" eval="(datetime.now() - relativedelta(minutes=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <!-- GPS Device 3: Assigned to Sprinter Van (Online at Central Depot) -->
+        <record id="demo_gps_device_sprinter" model="top.gps.device">
+            <field name="name">GPS-CON-SPRINT-03</field>
+            <field name="device_id">CON-GT06-6603</field>
+            <field name="imei">864209048123003</field>
+            <field name="sim_number">+251 988 112203</field>
+            <field name="provider_id" ref="top_logistics_fleet.gps_provider_wialon_default"/>
+            <field name="provider">concox</field>
+            <field name="status">active</field>
+            <field name="latitude">9.005401</field>
+            <field name="longitude">38.763611</field>
+            <field name="address">Central Logistics Depot &amp; Workshop, Kality</field>
+            <field name="speed">0.0</field>
+            <field name="direction">90.0</field>
+            <field name="ignition" eval="False"/>
+            <field name="odometer">62100.0</field>
+            <field name="fuel_level">55.0</field>
+            <field name="battery">12.4</field>
+            <field name="altitude">2280.0</field>
+            <field name="gps_signal">11</field>
+            <field name="last_communication" eval="(datetime.now() - relativedelta(minutes=8)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <!-- GPS Device 4: Assigned to Isuzu Freight Truck (Online in Adama Corridor) -->
+        <record id="demo_gps_device_isuzu" model="top.gps.device">
+            <field name="name">GPS-TELT-ISUZU-04</field>
+            <field name="device_id">TELT-FMC130-5504</field>
+            <field name="imei">864209048123004</field>
+            <field name="sim_number">+251 988 112204</field>
+            <field name="provider_id" ref="top_logistics_fleet.gps_provider_wialon_default"/>
+            <field name="provider">teltonika</field>
+            <field name="status">active</field>
+            <field name="latitude">8.541234</field>
+            <field name="longitude">39.267890</field>
+            <field name="address">Adama Expressway Toll Plaza East</field>
+            <field name="speed">45.2</field>
+            <field name="direction">115.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">89400.0</field>
+            <field name="fuel_level">110.0</field>
+            <field name="battery">24.6</field>
+            <field name="altitude">1715.0</field>
+            <field name="gps_signal">15</field>
+            <field name="last_communication" eval="(datetime.now() - relativedelta(minutes=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <!-- GPS Device 5: OFFLINE DEVICE (Demonstrates GPS Offline Alert Scan) -->
+        <record id="demo_gps_device_offline" model="top.gps.device">
+            <field name="name">GPS-WIA-OFFLINE-05</field>
+            <field name="device_id">WIA-GT06-9905</field>
+            <field name="imei">864209048123005</field>
+            <field name="sim_number">+251 988 112205</field>
+            <field name="provider_id" ref="top_logistics_fleet.gps_provider_wialon_default"/>
+            <field name="provider">wialon</field>
+            <field name="status">offline</field>
+            <field name="latitude">9.600000</field>
+            <field name="longitude">39.500000</field>
+            <field name="address">Debre Birhan Industrial Outskirts</field>
+            <field name="speed">0.0</field>
+            <field name="odometer">110000.0</field>
+            <field name="fuel_level">28.0</field>
+            <field name="battery">11.2</field>
+            <field name="last_communication" eval="(datetime.now() - relativedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 4. FLEET VEHICLES WITH LOGISTICS EXTENSIONS                       -->
+        <!-- ================================================================= -->
+
+        <!-- Vehicle 1: Executive Prado (Available, 100% Compliant) -->
+        <record id="demo_vehicle_prado" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_prado"/>
+            <field name="license_plate">ET-3-A12345</field>
+            <field name="vin_sn">JTEBU5JR005123456</field>
+            <field name="odometer">34200.0</field>
+            <field name="operational_status">available</field>
+            <field name="current_location">Corporate HQ, Bole</field>
+            <field name="capacity_passengers">6</field>
+            <field name="capacity_cargo_kg">350.0</field>
+            <field name="expected_fuel_consumption">12.5</field>
+            <field name="service_interval_km">5000.0</field>
+            <field name="last_service_odometer">30000.0</field>
+            <field name="available_hours">240.0</field>
+            <field name="registration_expiry" eval="(datetime.now() + relativedelta(months=9)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() + relativedelta(months=11)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() + relativedelta(months=10)).strftime('%Y-%m-%d')"/>
+            <field name="gps_device_id" ref="demo_gps_device_prado"/>
+        </record>
+
+        <!-- Vehicle 2: 4WD Hilux Pickup (Currently On Trip, Active GPS) -->
+        <record id="demo_vehicle_hilux" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_hilux"/>
+            <field name="license_plate">ET-3-B67890</field>
+            <field name="vin_sn">MROER22G001987654</field>
+            <field name="odometer">48650.0</field>
+            <field name="operational_status">on_trip</field>
+            <field name="current_location">En Route Hawassa (Batu)</field>
+            <field name="capacity_passengers">5</field>
+            <field name="capacity_cargo_kg">900.0</field>
+            <field name="expected_fuel_consumption">11.0</field>
+            <field name="service_interval_km">5000.0</field>
+            <field name="last_service_odometer">45000.0</field>
+            <field name="available_hours">240.0</field>
+            <field name="registration_expiry" eval="(datetime.now() + relativedelta(months=6)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() + relativedelta(months=8)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() + relativedelta(months=7)).strftime('%Y-%m-%d')"/>
+            <field name="gps_device_id" ref="demo_gps_device_hilux"/>
+        </record>
+
+        <!-- Vehicle 3: Sprinter Cargo Van (Available at Depot) -->
+        <record id="demo_vehicle_sprinter" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_sprinter"/>
+            <field name="license_plate">ET-3-C11223</field>
+            <field name="vin_sn">WDB9066331S445566</field>
+            <field name="odometer">62100.0</field>
+            <field name="operational_status">available</field>
+            <field name="current_location">Central Depot, Kality</field>
+            <field name="capacity_passengers">3</field>
+            <field name="capacity_cargo_kg">1500.0</field>
+            <field name="expected_fuel_consumption">10.5</field>
+            <field name="service_interval_km">7500.0</field>
+            <field name="last_service_odometer">60000.0</field>
+            <field name="available_hours">240.0</field>
+            <field name="registration_expiry" eval="(datetime.now() + relativedelta(months=5)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() + relativedelta(months=5)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() + relativedelta(months=6)).strftime('%Y-%m-%d')"/>
+            <field name="gps_device_id" ref="demo_gps_device_sprinter"/>
+        </record>
+
+        <!-- Vehicle 4: Isuzu FSR Freight Truck (Heavy Haulage, Available) -->
+        <record id="demo_vehicle_isuzu" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_isuzu_fsr"/>
+            <field name="license_plate">ET-3-D44556</field>
+            <field name="vin_sn">JAAL5V1X0E1778899</field>
+            <field name="odometer">89400.0</field>
+            <field name="operational_status">available</field>
+            <field name="current_location">Modjo Dry Port Yard</field>
+            <field name="capacity_passengers">3</field>
+            <field name="capacity_cargo_kg">8500.0</field>
+            <field name="expected_fuel_consumption">24.0</field>
+            <field name="service_interval_km">10000.0</field>
+            <field name="last_service_odometer">80000.0</field>
+            <field name="available_hours">240.0</field>
+            <field name="registration_expiry" eval="(datetime.now() + relativedelta(months=4)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() + relativedelta(months=4)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() + relativedelta(months=5)).strftime('%Y-%m-%d')"/>
+            <field name="gps_device_id" ref="demo_gps_device_isuzu"/>
+        </record>
+
+        <!-- Vehicle 5: EXPIRED INSURANCE & REGISTRATION (Demonstrates Compliance Blocking) -->
+        <record id="demo_vehicle_expired_docs" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_hilux"/>
+            <field name="license_plate">ET-3-E77889</field>
+            <field name="vin_sn">MROER22G002334455</field>
+            <field name="odometer">110000.0</field>
+            <field name="operational_status">available</field>
+            <field name="current_location">Depot Quarantine Yard</field>
+            <field name="capacity_passengers">5</field>
+            <field name="capacity_cargo_kg">800.0</field>
+            <field name="expected_fuel_consumption">11.5</field>
+            <field name="registration_expiry" eval="(datetime.now() - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')"/>
+            <field name="gps_device_id" ref="demo_gps_device_offline"/>
+        </record>
+
+        <!-- Vehicle 6: HIGH MILEAGE SERVICE OVERDUE (Demonstrates Service Due Trigger) -->
+        <record id="demo_vehicle_service_due" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_howo"/>
+            <field name="license_plate">ET-3-F99001</field>
+            <field name="vin_sn">LZZ5CLVB6EA129876</field>
+            <field name="odometer">155400.0</field>
+            <field name="operational_status">maintenance</field>
+            <field name="current_location">Central Workshop Bay 2</field>
+            <field name="capacity_passengers">2</field>
+            <field name="capacity_cargo_kg">15000.0</field>
+            <field name="expected_fuel_consumption">32.0</field>
+            <field name="service_interval_km">5000.0</field>
+            <field name="last_service_odometer">150000.0</field>
+            <field name="registration_expiry" eval="(datetime.now() + relativedelta(months=8)).strftime('%Y-%m-%d')"/>
+            <field name="insurance_expiry" eval="(datetime.now() + relativedelta(months=9)).strftime('%Y-%m-%d')"/>
+            <field name="inspection_expiry" eval="(datetime.now() + relativedelta(months=8)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Backlink vehicle to GPS devices -->
+        <record id="demo_gps_device_prado" model="top.gps.device">
+            <field name="vehicle_id" ref="demo_vehicle_prado"/>
+        </record>
+        <record id="demo_gps_device_hilux" model="top.gps.device">
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+        </record>
+        <record id="demo_gps_device_sprinter" model="top.gps.device">
+            <field name="vehicle_id" ref="demo_vehicle_sprinter"/>
+        </record>
+        <record id="demo_gps_device_isuzu" model="top.gps.device">
+            <field name="vehicle_id" ref="demo_vehicle_isuzu"/>
+        </record>
+        <record id="demo_gps_device_offline" model="top.gps.device">
+            <field name="vehicle_id" ref="demo_vehicle_expired_docs"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 5. SCENARIO 1: ROUTINE OFFICIAL TRAVEL (APPROVED & READY)          -->
+        <!-- ================================================================= -->
+        <record id="demo_req_scenario_1" model="top.transport.request">
+            <field name="name">TR/2026/00001</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_selamawit"/>
+            <field name="department_id" ref="demo_dept_sales"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_official_travel"/>
+            <field name="priority">normal</field>
+            <field name="origin">Addis Ababa Head Office</field>
+            <field name="destination">Adama Regional Commercial Hub</field>
+            <field name="passenger_count">3</field>
+            <field name="cargo_required" eval="False"/>
+            <field name="purpose">Quarterly corporate client business review and regional partner meeting.</field>
+            <field name="required_date" eval="(datetime.now() + relativedelta(days=1, hour=8, minute=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() + relativedelta(days=1, hour=18, minute=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_type_id" ref="top_logistics_fleet.vehicle_category_sedan"/>
+            <field name="state">approved</field>
+            <field name="approval_date" eval="datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="approved_by_id" ref="base.user_admin"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 6. SCENARIO 2: FIELD TECHNICAL MISSION WITH WAYPOINTS (IN TRANSIT)-->
+        <!-- ================================================================= -->
+        <record id="demo_trip_scenario_2" model="top.fleet.trip">
+            <field name="name">TRIP/2026/00002</field>
+            <field name="trip_type_id" ref="top_logistics_fleet.trip_type_multi_destination"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="trip_coordinator_id" ref="base.user_admin"/>
+            <field name="origin">Addis Ababa Central Depot</field>
+            <field name="destination">Hawassa Regional Data Center</field>
+            <field name="planned_distance">275.0</field>
+            <field name="actual_distance">145.0</field>
+            <field name="planned_duration">5.5</field>
+            <field name="expected_fuel">30.25</field>
+            <field name="planned_departure" eval="(datetime.now() - relativedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_departure" eval="(datetime.now() - relativedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="planned_arrival" eval="(datetime.now() + relativedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="purpose">Optical transmission link maintenance and solar relay battery replacement.</field>
+            
+            <!-- Pre-Dispatch Condition Checklist Passed -->
+            <field name="chk_tires" eval="True"/>
+            <field name="chk_engine" eval="True"/>
+            <field name="chk_oil" eval="True"/>
+            <field name="chk_coolant" eval="True"/>
+            <field name="chk_brakes" eval="True"/>
+            <field name="chk_lights" eval="True"/>
+            <field name="chk_spare_tire" eval="True"/>
+            <field name="chk_tools" eval="True"/>
+            <field name="chk_fire_extinguisher" eval="True"/>
+            <field name="chk_first_aid" eval="True"/>
+            <field name="chk_body_condition" eval="True"/>
+            <field name="chk_driver_confirmed" eval="True"/>
+            <field name="chk_gps_online" eval="True"/>
+            <field name="chk_documents_valid" eval="True"/>
+            <field name="start_odometer">48505.0</field>
+            <field name="start_fuel">70.0</field>
+            <field name="start_fuel_level">full</field>
+            <field name="dispatched_by_id" ref="base.user_admin"/>
+            <field name="dispatch_date" eval="(datetime.now() - relativedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="state">in_transit</field>
+        </record>
+
+        <!-- Transport Request for Scenario 2 -->
+        <record id="demo_req_scenario_2" model="top.transport.request">
+            <field name="name">TR/2026/00002</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_dawit"/>
+            <field name="department_id" ref="demo_dept_engineering"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_field_operation"/>
+            <field name="priority">high</field>
+            <field name="origin">Addis Ababa Central Depot</field>
+            <field name="destination">Hawassa Regional Data Center</field>
+            <field name="passenger_count">4</field>
+            <field name="cargo_required" eval="True"/>
+            <field name="cargo_description">Network server blades, solar batteries, fusion splicer kit (350 kg).</field>
+            <field name="purpose">Critical telecommunication link repairs and battery backup installation.</field>
+            <field name="required_date" eval="(datetime.now() - relativedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() + relativedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="assigned_vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="assigned_driver_id" ref="demo_driver_mulugeta"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="state">in_transit</field>
+            <field name="approval_date" eval="(datetime.now() - relativedelta(hours=6)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="approved_by_id" ref="base.user_admin"/>
+        </record>
+
+        <record id="demo_trip_scenario_2" model="top.fleet.trip">
+            <field name="request_id" ref="demo_req_scenario_2"/>
+        </record>
+
+        <!-- Intermediate Stops / Waypoints for Scenario 2 -->
+        <record id="demo_waypoint_mojo" model="top.fleet.trip.waypoint">
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="sequence">10</field>
+            <field name="location_name">Mojo Telecom Substation Site A</field>
+            <field name="estimated_arrival" eval="(datetime.now() - relativedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_arrival" eval="(datetime.now() - relativedelta(hours=2, minutes=50)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="completed" eval="True"/>
+            <field name="notes">Primary switch cabinet inspected and diagnostic log extracted.</field>
+        </record>
+
+        <record id="demo_waypoint_batu" model="top.fleet.trip.waypoint">
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="sequence">20</field>
+            <field name="location_name">Batu Repeater Tower Tower Site</field>
+            <field name="estimated_arrival" eval="(datetime.now() - relativedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_arrival" eval="(datetime.now() - relativedelta(minutes=55)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="completed" eval="True"/>
+            <field name="notes">Solar charge controller replaced and transmission restored.</field>
+        </record>
+
+        <record id="demo_waypoint_hawassa" model="top.fleet.trip.waypoint">
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="sequence">30</field>
+            <field name="location_name">Hawassa Regional Data Center</field>
+            <field name="estimated_arrival" eval="(datetime.now() + relativedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="completed" eval="False"/>
+            <field name="notes">Final destination: hand over spare parts to regional engineers.</field>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 7. SCENARIO 3: HEAVY CARGO HAULAGE (COMPLETED & RECONCILED)       -->
+        <!-- ================================================================= -->
+        <record id="demo_trip_scenario_3" model="top.fleet.trip">
+            <field name="name">TRIP/2026/00003</field>
+            <field name="trip_type_id" ref="top_logistics_fleet.trip_type_cargo"/>
+            <field name="vehicle_id" ref="demo_vehicle_isuzu"/>
+            <field name="driver_id" ref="demo_driver_teshale"/>
+            <field name="trip_coordinator_id" ref="base.user_admin"/>
+            <field name="origin">Modjo Dry Port Customs Yard</field>
+            <field name="destination">Central Logistics Depot, Kality</field>
+            <field name="planned_distance">75.0</field>
+            <field name="actual_distance">78.0</field>
+            <field name="planned_duration">2.5</field>
+            <field name="actual_duration">2.8</field>
+            <field name="expected_fuel">18.0</field>
+            <field name="actual_fuel">18.72</field>
+            <field name="planned_departure" eval="(datetime.now() - relativedelta(days=1, hours=6)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_departure" eval="(datetime.now() - relativedelta(days=1, hours=6)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="planned_arrival" eval="(datetime.now() - relativedelta(days=1, hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_arrival" eval="(datetime.now() - relativedelta(days=1, hours=3, minutes=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="purpose">Heavy freight transfer: 8.5 tons imported machinery from customs bonded warehouse.</field>
+            <field name="start_odometer">89322.0</field>
+            <field name="end_odometer">89400.0</field>
+            <field name="start_fuel">128.72</field>
+            <field name="end_fuel">110.0</field>
+            <field name="start_fuel_level">full</field>
+            <field name="end_fuel_level">three_quarter</field>
+            <field name="vehicle_returned" eval="True"/>
+            <field name="return_cleanliness">acceptable</field>
+            <field name="has_damage" eval="False"/>
+            <field name="driver_comments">Road conditions were good on expressway; customs gate clearance took 45 minutes.</field>
+            <field name="state">reconciled</field>
+        </record>
+
+        <record id="demo_req_scenario_3" model="top.transport.request">
+            <field name="name">TR/2026/00003</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_abebe"/>
+            <field name="department_id" ref="demo_dept_operations"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_cargo_movement"/>
+            <field name="priority">normal</field>
+            <field name="origin">Modjo Dry Port Customs Yard</field>
+            <field name="destination">Central Logistics Depot, Kality</field>
+            <field name="passenger_count">2</field>
+            <field name="cargo_required" eval="True"/>
+            <field name="cargo_description">8,500 kg imported mechanical assemblies on wooden pallets.</field>
+            <field name="purpose">Bonded container haulage from dry port to central warehouse.</field>
+            <field name="required_date" eval="(datetime.now() - relativedelta(days=1, hours=6)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() - relativedelta(days=1, hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="assigned_vehicle_id" ref="demo_vehicle_isuzu"/>
+            <field name="assigned_driver_id" ref="demo_driver_teshale"/>
+            <field name="trip_id" ref="demo_trip_scenario_3"/>
+            <field name="state">reconciled</field>
+            <field name="approval_date" eval="(datetime.now() - relativedelta(days=1, hours=8)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="approved_by_id" ref="base.user_admin"/>
+        </record>
+
+        <record id="demo_trip_scenario_3" model="top.fleet.trip">
+            <field name="request_id" ref="demo_req_scenario_3"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 8. SCENARIO 4: EXECUTIVE VIP TRIP (FULLY CLOSED)                  -->
+        <!-- ================================================================= -->
+        <record id="demo_trip_scenario_4" model="top.fleet.trip">
+            <field name="name">TRIP/2026/00004</field>
+            <field name="trip_type_id" ref="top_logistics_fleet.trip_type_round_trip"/>
+            <field name="vehicle_id" ref="demo_vehicle_prado"/>
+            <field name="driver_id" ref="demo_driver_girma"/>
+            <field name="trip_coordinator_id" ref="base.user_admin"/>
+            <field name="origin">Addis Ababa Head Office</field>
+            <field name="destination">Bishoftu Resort Conference Center</field>
+            <field name="planned_distance">90.0</field>
+            <field name="actual_distance">92.0</field>
+            <field name="planned_duration">3.0</field>
+            <field name="actual_duration">3.2</field>
+            <field name="expected_fuel">11.25</field>
+            <field name="actual_fuel">11.5</field>
+            <field name="planned_departure" eval="(datetime.now() - relativedelta(days=2, hours=8)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_departure" eval="(datetime.now() - relativedelta(days=2, hours=8)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="planned_arrival" eval="(datetime.now() - relativedelta(days=2, hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_arrival" eval="(datetime.now() - relativedelta(days=2, hours=4, minutes=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="purpose">Executive delegate transfer to annual international investment summit.</field>
+            <field name="start_odometer">34108.0</field>
+            <field name="end_odometer">34200.0</field>
+            <field name="start_fuel">80.0</field>
+            <field name="end_fuel">68.5</field>
+            <field name="vehicle_returned" eval="True"/>
+            <field name="return_cleanliness">clean</field>
+            <field name="has_damage" eval="False"/>
+            <field name="state">closed</field>
+        </record>
+
+        <record id="demo_req_scenario_4" model="top.transport.request">
+            <field name="name">TR/2026/00004</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_selamawit"/>
+            <field name="department_id" ref="demo_dept_sales"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_client_visit"/>
+            <field name="priority">high</field>
+            <field name="origin">Addis Ababa Head Office</field>
+            <field name="destination">Bishoftu Resort Conference Center</field>
+            <field name="passenger_count">4</field>
+            <field name="purpose">Executive transport for keynote speakers and corporate sponsors.</field>
+            <field name="required_date" eval="(datetime.now() - relativedelta(days=2, hours=8)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() - relativedelta(days=2, hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="assigned_vehicle_id" ref="demo_vehicle_prado"/>
+            <field name="assigned_driver_id" ref="demo_driver_girma"/>
+            <field name="trip_id" ref="demo_trip_scenario_4"/>
+            <field name="state">closed</field>
+            <field name="approval_date" eval="(datetime.now() - relativedelta(days=2, hours=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="approved_by_id" ref="base.user_admin"/>
+        </record>
+
+        <record id="demo_trip_scenario_4" model="top.fleet.trip">
+            <field name="request_id" ref="demo_req_scenario_4"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 9. SCENARIO 5: EMERGENCY REQUEST (FAST-TRACK APPROVAL BYPASS)     -->
+        <!-- ================================================================= -->
+        <record id="demo_req_scenario_5" model="top.transport.request">
+            <field name="name">TR/2026/00005</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_dawit"/>
+            <field name="department_id" ref="demo_dept_engineering"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_emergency"/>
+            <field name="priority">emergency</field>
+            <field name="origin">Central Depot, Kality</field>
+            <field name="destination">Debre Birhan Power Substation</field>
+            <field name="passenger_count">3</field>
+            <field name="cargo_required" eval="True"/>
+            <field name="cargo_description">Emergency high-voltage circuit breaker replacements.</field>
+            <field name="purpose">CRITICAL BREAKDOWN: Transformer blackout threatening hospital grid. Immediate deployment authorized.</field>
+            <field name="required_date" eval="datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() + relativedelta(hours=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="post_trip_review_required" eval="True"/>
+            <field name="state">assigned</field>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 10. SCENARIO 6: REJECTED TRANSPORT REQUEST                        -->
+        <!-- ================================================================= -->
+        <record id="demo_req_scenario_6" model="top.transport.request">
+            <field name="name">TR/2026/00006</field>
+            <field name="requester_id" ref="base.user_admin"/>
+            <field name="employee_id" ref="demo_employee_selamawit"/>
+            <field name="department_id" ref="demo_dept_sales"/>
+            <field name="trip_type_id" ref="top_logistics_fleet.request_type_official_travel"/>
+            <field name="priority">low</field>
+            <field name="origin">Addis Ababa</field>
+            <field name="destination">Sodere Thermal Springs Resort</field>
+            <field name="passenger_count">5</field>
+            <field name="purpose">Weekend leisure travel for department social committee.</field>
+            <field name="required_date" eval="(datetime.now() + relativedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="return_date" eval="(datetime.now() + relativedelta(days=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="state">rejected</field>
+            <field name="rejection_reason">Policy Violation: Company vehicles are strictly reserved for official corporate operations. Personal or leisure requisitions are prohibited under Section 9 of the Fleet Management SOP.</field>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 11. SCENARIO 7: RETURN INSPECTION DAMAGE & INCIDENT AUTO-TRIGGER -->
+        <!-- ================================================================= -->
+        <record id="demo_trip_scenario_7" model="top.fleet.trip">
+            <field name="name">TRIP/2026/00007</field>
+            <field name="trip_type_id" ref="top_logistics_fleet.trip_type_regional"/>
+            <field name="vehicle_id" ref="demo_vehicle_sprinter"/>
+            <field name="driver_id" ref="demo_driver_tariku"/>
+            <field name="trip_coordinator_id" ref="base.user_admin"/>
+            <field name="origin">Central Depot, Kality</field>
+            <field name="destination">Kombolcha Industrial Logistics Hub</field>
+            <field name="planned_distance">375.0</field>
+            <field name="actual_distance">382.0</field>
+            <field name="planned_duration">7.0</field>
+            <field name="actual_duration">7.5</field>
+            <field name="planned_departure" eval="(datetime.now() - relativedelta(days=3, hours=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_departure" eval="(datetime.now() - relativedelta(days=3, hours=10)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="planned_arrival" eval="(datetime.now() - relativedelta(days=3, hours=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="actual_arrival" eval="(datetime.now() - relativedelta(days=3, hours=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="purpose">Express delivery of pharmaceutical cold chain containers.</field>
+            <field name="start_odometer">61718.0</field>
+            <field name="end_odometer">62100.0</field>
+            <field name="start_fuel">80.0</field>
+            <field name="end_fuel">38.0</field>
+            <field name="vehicle_returned" eval="True"/>
+            <field name="return_cleanliness">needs_wash</field>
+            <field name="has_damage" eval="True"/>
+            <field name="damage_description">Cracked rear bumper and fractured right reverse taillight lens sustained while backing into unloading bay ramp in poor lighting.</field>
+            <field name="driver_comments">Visibility was restricted during heavy rain; ramp guardrail made contact with lower bumper.</field>
+            <field name="state">completed</field>
+        </record>
+
+        <!-- Auto-Created Accident & Incident Case -->
+        <record id="demo_accident_scenario_7" model="top.fleet.accident">
+            <field name="name">ACC/2026/00001</field>
+            <field name="vehicle_id" ref="demo_vehicle_sprinter"/>
+            <field name="driver_id" ref="demo_driver_tariku"/>
+            <field name="trip_id" ref="demo_trip_scenario_7"/>
+            <field name="date" eval="(datetime.now() - relativedelta(days=3, hours=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="location">Kombolcha Logistics Loading Bay 4</field>
+            <field name="latitude">11.085432</field>
+            <field name="longitude">39.734567</field>
+            <field name="description">Post-trip return inspection identified collision damage sustained against warehouse ramp barrier.</field>
+            <field name="damage_description">Rear bumper cracked, right tail lamp cracked, sensor bracket displaced.</field>
+            <field name="third_party_involved" eval="False"/>
+            <field name="police_report_filed" eval="True"/>
+            <field name="police_report_reference">KMB-TRAF-2026-9942</field>
+            <field name="insurance_claim_filed" eval="True"/>
+            <field name="insurance_claim_number">EIC-CLM-2026-0814</field>
+            <field name="insurance_status">under_assessment</field>
+            <field name="estimated_cost">38500.0</field>
+            <field name="actual_cost">0.0</field>
+            <field name="state">insurance_claim</field>
+        </record>
+
+        <record id="demo_trip_scenario_7" model="top.fleet.trip">
+            <field name="accident_id" ref="demo_accident_scenario_7"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 12. SCENARIO 8: FUEL MANAGEMENT, RECEIPTS & THEFT DRAIN AUDIT     -->
+        <!-- ================================================================= -->
+
+        <!-- Manual Fuel Receipts (Logged by Drivers) -->
+        <record id="demo_fuel_log_1" model="top.fleet.fuel.log">
+            <field name="name">FUEL/2026/00001</field>
+            <field name="date" eval="(datetime.now() - relativedelta(days=2, hours=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_id" ref="demo_vehicle_prado"/>
+            <field name="driver_id" ref="demo_driver_girma"/>
+            <field name="trip_id" ref="demo_trip_scenario_4"/>
+            <field name="odometer">34150.0</field>
+            <field name="fuel_station">TotalEnergies Bole Medhanialem Station</field>
+            <field name="fuel_type">diesel</field>
+            <field name="quantity">40.0</field>
+            <field name="unit_price">91.50</field>
+            <field name="payment_method">fuel_card</field>
+            <field name="notes">Corporate card swipe approved. Tank filled to full.</field>
+        </record>
+
+        <record id="demo_fuel_log_2" model="top.fleet.fuel.log">
+            <field name="name">FUEL/2026/00002</field>
+            <field name="date" eval="(datetime.now() - relativedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="odometer">48590.0</field>
+            <field name="fuel_station">NOC Mojo Expressway Service Plaza</field>
+            <field name="fuel_type">diesel</field>
+            <field name="quantity">35.0</field>
+            <field name="unit_price">91.50</field>
+            <field name="payment_method">fuel_card</field>
+            <field name="notes">Mid-trip top-up before descending Rift Valley.</field>
+        </record>
+
+        <record id="demo_fuel_log_3" model="top.fleet.fuel.log">
+            <field name="name">FUEL/2026/00003</field>
+            <field name="date" eval="(datetime.now() - relativedelta(days=1, hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_id" ref="demo_vehicle_isuzu"/>
+            <field name="driver_id" ref="demo_driver_teshale"/>
+            <field name="trip_id" ref="demo_trip_scenario_3"/>
+            <field name="odometer">89350.0</field>
+            <field name="fuel_station">OiLibya Kality Ring Road Interchange</field>
+            <field name="fuel_type">diesel</field>
+            <field name="quantity">65.0</field>
+            <field name="unit_price">91.50</field>
+            <field name="payment_method">fuel_card</field>
+            <field name="notes">Heavy haulage fuel voucher processed.</field>
+        </record>
+
+        <!-- GPS Telematics Fuel Transactions (Auto-detected Sensor Events) -->
+        <!-- 1. Legitimate Refuel Event -->
+        <record id="demo_gps_fuel_refuel" model="top.gps.fuel.transaction">
+            <field name="name">REF-20260410-0001</field>
+            <field name="transaction_type">refuel</field>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="device_id" ref="demo_gps_device_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="initial_fuel">35.0</field>
+            <field name="final_fuel">70.0</field>
+            <field name="volume">35.0</field>
+            <field name="odometer">48590.0</field>
+            <field name="speed">0.0</field>
+            <field name="latitude">8.587654</field>
+            <field name="longitude">39.123456</field>
+            <field name="address">NOC Mojo Service Station, Mojo</field>
+            <field name="state">verified</field>
+            <field name="notes">GPS tank level rise (+35.0 L) perfectly matches manual receipt FUEL/2026/00002.</field>
+        </record>
+
+        <!-- 2. Abnormal Fuel Drain / Theft Event (Flagged for Audit!) -->
+        <record id="demo_gps_fuel_drain" model="top.gps.fuel.transaction">
+            <field name="name">DRN-20260409-0002</field>
+            <field name="transaction_type">drain</field>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(days=1, hours=20)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="vehicle_id" ref="demo_vehicle_sprinter"/>
+            <field name="device_id" ref="demo_gps_device_sprinter"/>
+            <field name="initial_fuel">75.0</field>
+            <field name="final_fuel">42.0</field>
+            <field name="volume">33.0</field>
+            <field name="odometer">61718.0</field>
+            <field name="speed">0.0</field>
+            <field name="latitude">9.005401</field>
+            <field name="longitude">38.763611</field>
+            <field name="address">Depot Outer Perimeter Wall Zone, Kality</field>
+            <field name="state">flagged</field>
+            <field name="notes">ALERT: 33.0 Litre tank drop recorded in 12 minutes while vehicle ignition was OFF and stationary overnight.</field>
+        </record>
+
+        <!-- Fuel Efficiency & Telematics Analysis Record -->
+        <record id="demo_fuel_analysis_sprinter" model="top.fleet.fuel.analysis">
+            <field name="name">Daily Telematics Audit: ET-3-C11223 (Yesterday)</field>
+            <field name="vehicle_id" ref="demo_vehicle_sprinter"/>
+            <field name="device_id" ref="demo_gps_device_sprinter"/>
+            <field name="period_type">daily</field>
+            <field name="date" eval="(datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d')"/>
+            <field name="date_from" eval="(datetime.now() - relativedelta(days=1, hours=12)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="date_to" eval="datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="start_odometer">61718.0</field>
+            <field name="end_odometer">62100.0</field>
+            <field name="distance_km">382.0</field>
+            <field name="start_fuel">80.0</field>
+            <field name="end_fuel">38.0</field>
+            <field name="total_refueled">0.0</field>
+            <field name="refuel_count">0</field>
+            <field name="total_drained">33.0</field>
+            <field name="drain_count">1</field>
+            <field name="fuel_consumed">42.0</field>
+            <field name="consumption_rate">11.0</field>
+            <field name="benchmark_rate">10.5</field>
+            <field name="variance_pct">4.8</field>
+            <field name="efficiency_status">alert</field>
+            <field name="theft_suspected" eval="True"/>
+        </record>
+
+
+        <!-- ================================================================= -->
+        <!-- 13. SCENARIO 9: GPS TELEMATICS EVENTS & BREADCRUMB POSITIONS      -->
+        <!-- ================================================================= -->
+
+        <!-- Event 1: Overspeed Alert on Expressway -->
+        <record id="demo_gps_event_overspeed" model="top.gps.event">
+            <field name="name">Overspeed Violation: 94.5 km/h (Limit: 80 km/h)</field>
+            <field name="event_type">overspeed</field>
+            <field name="severity">danger</field>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=2, minutes=15)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">7.843210</field>
+            <field name="longitude">38.712345</field>
+            <field name="speed">94.5</field>
+            <field name="speed_limit">80.0</field>
+            <field name="duration_minutes">4.5</field>
+            <field name="notes">Speed sustained above 80 km/h threshold between Mojo and Batu toll gates.</field>
+        </record>
+
+        <!-- Event 2: Geofence Exit from Depot -->
+        <record id="demo_gps_event_geofence_exit" model="top.gps.event">
+            <field name="name">Geofence Departure: Central Logistics Depot</field>
+            <field name="event_type">geofence_exit</field>
+            <field name="severity">info</field>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="geofence_id" ref="top_logistics_fleet.geofence_main_depot"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=3, minutes=58)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">9.005401</field>
+            <field name="longitude">38.763611</field>
+            <field name="speed">22.0</field>
+            <field name="notes">Automated dispatch trigger: vehicle departed depot boundary gate.</field>
+        </record>
+
+        <!-- Event 3: Excessive Idling / Unplanned Stop -->
+        <record id="demo_gps_event_excessive_stop" model="top.gps.event">
+            <field name="name">Excessive Stop: 28 Minutes Idle Outside Authorized Stop</field>
+            <field name="event_type">excessive_stop</field>
+            <field name="severity">warning</field>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=1, minutes=40)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">7.412345</field>
+            <field name="longitude">38.601234</field>
+            <field name="speed">0.0</field>
+            <field name="duration_minutes">28.0</field>
+            <field name="notes">Driver stopped on road shoulder with engine idling for 28 minutes.</field>
+        </record>
+
+        <!-- Event 4: Harsh Braking Deceleration -->
+        <record id="demo_gps_event_harsh_driving" model="top.gps.event">
+            <field name="name">Harsh Braking Event: -14.2 km/h/s</field>
+            <field name="event_type">harsh_driving</field>
+            <field name="severity">warning</field>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="driver_id" ref="demo_driver_mulugeta"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">7.123456</field>
+            <field name="longitude">38.512345</field>
+            <field name="speed">42.0</field>
+            <field name="notes">Emergency braking detected approaching cattle crossing.</field>
+        </record>
+
+        <!-- Breadcrumb GPS Positions for Route Tracking (Trip 2) -->
+        <record id="demo_pos_1" model="top.gps.position">
+            <field name="device_id" ref="demo_gps_device_hilux"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=3, minutes=50)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">8.980000</field>
+            <field name="longitude">38.775000</field>
+            <field name="speed">45.0</field>
+            <field name="direction">150.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">48512.0</field>
+            <field name="fuel_level">69.0</field>
+            <field name="address">Kality Ring Road Exit South</field>
+        </record>
+
+        <record id="demo_pos_2" model="top.gps.position">
+            <field name="device_id" ref="demo_gps_device_hilux"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">8.587654</field>
+            <field name="longitude">39.123456</field>
+            <field name="speed">62.0</field>
+            <field name="direction">140.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">48590.0</field>
+            <field name="fuel_level">35.0</field>
+            <field name="address">Mojo Toll Plaza Entrance</field>
+        </record>
+
+        <record id="demo_pos_3" model="top.gps.position">
+            <field name="device_id" ref="demo_gps_device_hilux"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(hours=1, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">7.932100</field>
+            <field name="longitude">38.721000</field>
+            <field name="speed">75.0</field>
+            <field name="direction">175.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">48620.0</field>
+            <field name="fuel_level">58.0</field>
+            <field name="address">Batu Lake Zway Bypass</field>
+        </record>
+
+        <record id="demo_pos_4" model="top.gps.position">
+            <field name="device_id" ref="demo_gps_device_hilux"/>
+            <field name="vehicle_id" ref="demo_vehicle_hilux"/>
+            <field name="trip_id" ref="demo_trip_scenario_2"/>
+            <field name="timestamp" eval="(datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="latitude">7.054321</field>
+            <field name="longitude">38.476543</field>
+            <field name="speed">68.4</field>
+            <field name="direction">165.0</field>
+            <field name="ignition" eval="True"/>
+            <field name="odometer">48650.0</field>
+            <field name="fuel_level">42.0</field>
+            <field name="address">Mojo-Hawassa Expressway, Km 142 Near Batu</field>
+        </record>
+    </data>
+</odoo>

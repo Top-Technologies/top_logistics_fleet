@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_gps_geofence_list" model="ir.ui.view">
+        <field name="name">top.gps.geofence.list</field>
+        <field name="model">top.gps.geofence</field>
+        <field name="arch" type="xml">
+            <list string="Geofences">
+                <field name="name"/>
+                <field name="category" widget="badge"/>
+                <field name="geofence_type"/>
+                <field name="latitude"/>
+                <field name="longitude"/>
+                <field name="radius"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_top_gps_geofence_form" model="ir.ui.view">
+        <field name="name">top.gps.geofence.form</field>
+        <field name="model">top.gps.geofence</field>
+        <field name="arch" type="xml">
+            <form string="Geofence Zone">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Geofence Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Central Warehouse or Adama Project Depot"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Zone Type &amp; Purpose (Section 27)">
+                            <field name="category"/>
+                            <field name="geofence_type"/>
+                            <field name="color" widget="color"/>
+                        </group>
+                        <group string="Coordinates &amp; Boundary">
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                            <field name="radius" invisible="geofence_type != 'circle'"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description &amp; Operational Rules">
+                            <field name="description" placeholder="Specify maximum allowed idling time, authorized vehicle types, or security restrictions..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_top_gps_geofence" model="ir.actions.act_window">
+        <field name="name">Geofence Zones</field>
+        <field name="res_model">top.gps.geofence</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first geofence boundary!
+            </p>
+            <p>
+                Define operational boundaries for Head Office, Warehouses, Project Sites, or Restricted Zones.
+            </p>
+        </field>
+    </record>
+</odoo>

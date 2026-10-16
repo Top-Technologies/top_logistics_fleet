@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Accident List View -->
+    <record id="view_top_fleet_accident_list" model="ir.ui.view">
+        <field name="name">top.fleet.accident.list</field>
+        <field name="model">top.fleet.accident</field>
+        <field name="arch" type="xml">
+            <list string="Accidents &amp; Incidents" sample="1">
+                <field name="name" decoration-bf="1"/>
+                <field name="date"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="trip_id"/>
+                <field name="location"/>
+                <field name="insurance_status" widget="badge"/>
+                <field name="estimated_cost" sum="Total Estimated"/>
+                <field name="actual_cost" sum="Total Actual Cost"/>
+                <field name="state" widget="badge"
+                       decoration-danger="state in ('reported', 'under_investigation')"
+                       decoration-warning="state == 'insurance_claim'"
+                       decoration-success="state == 'resolved'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Accident Form View -->
+    <record id="view_top_fleet_accident_form" model="ir.ui.view">
+        <field name="name">top.fleet.accident.form</field>
+        <field name="model">top.fleet.accident</field>
+        <field name="arch" type="xml">
+            <form string="Accident Record">
+                <header>
+                    <button name="action_report" string="Report Incident" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_investigate" string="Start Investigation" type="object" class="btn-secondary" invisible="state != 'reported'"/>
+                    <button name="action_file_claim" string="File Insurance Claim" type="object" class="btn-warning" invisible="state not in ('reported', 'under_investigation')"/>
+                    <button name="action_resolve" string="Mark Resolved" type="object" class="btn-success" invisible="state not in ('under_investigation', 'insurance_claim')"/>
+                    <button name="action_view_on_map" string="View Location on Map" type="object" icon="fa-map-marker" class="btn-outline-primary" invisible="not latitude"/>
+                    <button name="action_cancel" string="Cancel" type="object" class="btn-secondary" invisible="state in ('resolved', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,reported,under_investigation,insurance_claim,resolved"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Resolved" bg_color="text-bg-success" invisible="state != 'resolved'"/>
+                    <widget name="web_ribbon" title="Cancelled" bg_color="text-bg-secondary" invisible="state != 'cancelled'"/>
+
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Incident Reference"/>
+                        <h1>
+                            <field name="name" class="text-danger"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Incident Specifics (Section 34)">
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                            <field name="trip_id"/>
+                            <field name="date"/>
+                        </group>
+                        <group string="Location &amp; Coordinates">
+                            <field name="location"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Description &amp; Damage" name="damage_page">
+                            <group>
+                                <field name="description" placeholder="Explain the incident circumstances, road conditions, and speed..."/>
+                                <field name="damage_description" placeholder="Detailed inventory of vehicle physical and mechanical damage..."/>
+                            </group>
+                            <group string="Third Party Involved">
+                                <field name="third_party_involved" widget="boolean_toggle"/>
+                                <field name="third_party_details" invisible="not third_party_involved" placeholder="Driver name, vehicle plate, phone number, insurer..."/>
+                            </group>
+                        </page>
+
+                        <page string="Police &amp; Legal Report">
+                            <group>
+                                <group>
+                                    <field name="police_report_filed" widget="boolean_toggle"/>
+                                    <field name="police_report_reference" invisible="not police_report_filed"/>
+                                </group>
+                                <group>
+                                    <field name="police_report_attachment" filename="police_report_filename" invisible="not police_report_filed"/>
+                                    <field name="police_report_filename" invisible="1"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Insurance &amp; Financials">
+                            <group>
+                                <group string="Insurance Claim">
+                                    <field name="insurance_claim_filed" widget="boolean_toggle"/>
+                                    <field name="insurance_claim_number" invisible="not insurance_claim_filed"/>
+                                    <field name="insurance_status" invisible="not insurance_claim_filed"/>
+                                </group>
+                                <group string="Repair &amp; Settlement Costs">
+                                    <field name="estimated_cost"/>
+                                    <field name="actual_cost" class="fw-bold fs-5 text-danger"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Photos &amp; Evidence">
+                            <field name="photo_ids" widget="many2many_binary" string="Upload Damage Photos"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Accident Action -->
+    <record id="action_top_fleet_accident" model="ir.actions.act_window">
+        <field name="name">Accidents &amp; Incidents</field>
+        <field name="res_model">top.fleet.accident</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No accidents recorded!
+            </p>
+            <p>
+                Track vehicle collisions, third-party liability, insurance claims, and damage repair costs.
+            </p>
+        </field>
+    </record>
+</odoo>

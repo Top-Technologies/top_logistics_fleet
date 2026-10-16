@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- GPS Fuel Transactions List View -->
+    <record id="view_top_gps_fuel_transaction_list" model="ir.ui.view">
+        <field name="name">top.gps.fuel.transaction.list</field>
+        <field name="model">top.gps.fuel.transaction</field>
+        <field name="arch" type="xml">
+            <list string="GPS Fuel Transactions"
+                  decoration-success="transaction_type == 'refuel'"
+                  decoration-danger="transaction_type == 'drain'"
+                  decoration-muted="state == 'dismissed'">
+                <field name="name"/>
+                <field name="timestamp"/>
+                <field name="vehicle_id"/>
+                <field name="license_plate"/>
+                <field name="transaction_type" widget="badge"
+                       decoration-success="transaction_type == 'refuel'"
+                       decoration-danger="transaction_type == 'drain'"/>
+                <field name="volume" string="Volume (L)" class="fw-bold"/>
+                <field name="initial_fuel" string="Initial (L)"/>
+                <field name="final_fuel" string="Final (L)"/>
+                <field name="odometer" string="Odometer (km)"/>
+                <field name="speed" string="Speed (km/h)"/>
+                <field name="driver_id"/>
+                <field name="address"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'detected'"
+                       decoration-success="state == 'verified'"
+                       decoration-danger="state == 'flagged'"
+                       decoration-muted="state == 'dismissed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- GPS Fuel Transactions Form View -->
+    <record id="view_top_gps_fuel_transaction_form" model="ir.ui.view">
+        <field name="name">top.gps.fuel.transaction.form</field>
+        <field name="model">top.gps.fuel.transaction</field>
+        <field name="arch" type="xml">
+            <form string="GPS Fuel Transaction">
+                <header>
+                    <button name="action_verify" string="Verify &amp; Confirm" type="object" class="btn-success"
+                            invisible="state == 'verified'"/>
+                    <button name="action_flag" string="Flag for Audit" type="object" class="btn-danger"
+                            invisible="state == 'flagged'"/>
+                    <button name="action_dismiss" string="Dismiss (False Alarm)" type="object" class="btn-secondary"
+                            invisible="state == 'dismissed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="detected,verified,flagged"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Vehicle &amp; Tracker Info">
+                            <field name="vehicle_id"/>
+                            <field name="license_plate"/>
+                            <field name="device_id"/>
+                            <field name="driver_id"/>
+                            <field name="trip_id"/>
+                        </group>
+                        <group string="Event Telematics Data">
+                            <field name="transaction_type" widget="radio"/>
+                            <field name="timestamp"/>
+                            <field name="volume" class="fw-bold fs-4 text-primary"/>
+                            <field name="initial_fuel"/>
+                            <field name="final_fuel"/>
+                            <field name="odometer"/>
+                            <field name="speed"/>
+                        </group>
+                    </group>
+                    <group string="Geographic Coordinates &amp; Location">
+                        <group>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                        </group>
+                        <group>
+                            <field name="address"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="notes_page" string="Auditor Remarks">
+                            <field name="notes" placeholder="Add investigation remarks or notes on this fuel event..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- GPS Fuel Transactions Search View -->
+    <record id="view_top_gps_fuel_transaction_search" model="ir.ui.view">
+        <field name="name">top.gps.fuel.transaction.search</field>
+        <field name="model">top.gps.fuel.transaction</field>
+        <field name="arch" type="xml">
+            <search string="Search GPS Fuel Transactions">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="license_plate"/>
+                <field name="driver_id"/>
+                <filter string="Refills (Refuel)" name="filter_refuels" domain="[('transaction_type', '=', 'refuel')]"/>
+                <filter string="Fuel Drains / Theft Alerts" name="filter_drains" domain="[('transaction_type', '=', 'drain')]"/>
+                <separator/>
+                <filter string="Flagged for Audit" name="filter_flagged" domain="[('state', '=', 'flagged')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Vehicle" name="group_by_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Event Type" name="group_by_type" context="{'group_by': 'transaction_type'}"/>
+                    <filter string="Audit Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Date" name="group_by_date" context="{'group_by': 'timestamp:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_top_gps_fuel_transaction" model="ir.actions.act_window">
+        <field name="name">GPS Fuel Transactions</field>
+        <field name="res_model">top.gps.fuel.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_top_gps_fuel_transaction_search"/>
+        <field name="context">{'search_default_group_by_vehicle': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No GPS fuel transactions recorded yet.
+            </p>
+            <p>
+                Fuel refills and abnormal fuel drain events are auto-detected from Wialon live tank telemetry.
+            </p>
+        </field>
+    </record>
+</odoo>

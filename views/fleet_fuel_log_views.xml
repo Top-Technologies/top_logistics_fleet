@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_top_fleet_fuel_log_list" model="ir.ui.view">
+        <field name="name">top.fleet.fuel.log.list</field>
+        <field name="model">top.fleet.fuel.log</field>
+        <field name="arch" type="xml">
+            <list string="Fuel Logs" sample="1">
+                <field name="name" decoration-bf="1"/>
+                <field name="date"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="trip_id"/>
+                <field name="fuel_station"/>
+                <field name="fuel_type" widget="badge"/>
+                <field name="quantity" sum="Total Litres"/>
+                <field name="unit_price"/>
+                <field name="total_cost" sum="Total Fuel Cost"/>
+                <field name="payment_method"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_top_fleet_fuel_log_form" model="ir.ui.view">
+        <field name="name">top.fleet.fuel.log.form</field>
+        <field name="model">top.fleet.fuel.log</field>
+        <field name="arch" type="xml">
+            <form string="Fuel Transaction Record">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Fuel Ref"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Vehicle &amp; Trip (Section 30)">
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                            <field name="trip_id"/>
+                            <field name="date"/>
+                            <field name="odometer"/>
+                        </group>
+                        <group string="Fuel Details &amp; Cost">
+                            <field name="fuel_station"/>
+                            <field name="fuel_type"/>
+                            <field name="quantity"/>
+                            <field name="unit_price"/>
+                            <field name="total_cost" class="fw-bold fs-5 text-primary"/>
+                            <field name="payment_method"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Receipt &amp; Notes">
+                            <group>
+                                <field name="receipt" filename="receipt_filename" widget="binary"/>
+                                <field name="receipt_filename" invisible="1"/>
+                            </group>
+                            <separator string="Station Remarks"/>
+                            <field name="notes" placeholder="Notes on voucher, fuel card reference, or attendant observations..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_top_fleet_fuel_log" model="ir.actions.act_window">
+        <field name="name">Fuel Transactions</field>
+        <field name="res_model">top.fleet.fuel.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a vehicle refueling transaction!
+            </p>
+            <p>
+                Keep track of fuel quantities, costs, stations, payment methods, and calculate fuel consumption rates.
+            </p>
+        </field>
+    </record>
+</odoo>

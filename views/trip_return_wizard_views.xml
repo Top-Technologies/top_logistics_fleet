@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_trip_return_wizard_form" model="ir.ui.view">
+        <field name="name">top.trip.return.wizard.form</field>
+        <field name="model">top.trip.return.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Post-Trip Return Inspection Checklist (Section 36)">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Vehicle Return Confirmation:</strong> Inspect the vehicle upon depot arrival, record ending mileage and verify condition.
+                    </div>
+                    <group>
+                        <group string="Trip Context">
+                            <field name="trip_id" invisible="1"/>
+                            <field name="vehicle_id" readonly="1"/>
+                            <field name="driver_id" readonly="1"/>
+                            <field name="start_odometer" readonly="1"/>
+                        </group>
+                        <group string="Return Readings (Section 36)">
+                            <field name="vehicle_returned" widget="boolean_toggle"/>
+                            <field name="end_odometer"/>
+                            <field name="start_fuel"/>
+                            <field name="end_fuel" string="Ending Fuel (L)"/>
+                            <field name="fuel_consumed_preview" class="fw-bold text-primary"/>
+                            <field name="end_fuel_level"/>
+                            <field name="cleanliness_status"/>
+                        </group>
+                    </group>
+                    <group string="Condition &amp; Damage Audit">
+                        <group>
+                            <field name="has_damage" widget="boolean_toggle"/>
+                            <field name="missing_equipment" placeholder="Jack, wheel spanner, spare tire, etc."/>
+                        </group>
+                        <group>
+                            <field name="damage_description" invisible="not has_damage" required="has_damage" placeholder="Specific location and description of body/mechanical damage..."/>
+                            <field name="new_defects" placeholder="Any new engine or transmission noises, electrical issues..."/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert" invisible="not has_damage">
+                        <strong>Automatic Incident Creation:</strong> Submitting with damage flagged will automatically generate an Incident record and Corrective Maintenance ticket.
+                    </div>
+                    <group string="Damage Evidence &amp; Photos (Section 51)" invisible="not has_damage">
+                        <field name="damage_photo_ids" widget="many2many_binary"/>
+                    </group>
+                    <notebook>
+                        <page string="Driver Comments &amp; Debrief">
+                            <field name="driver_comments" placeholder="Driver remarks regarding road conditions, fuel stops, delays, or police checks..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button string="Complete Inspection &amp; Close Trip" type="object" name="action_confirm_return" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_top_trip_return_wizard" model="ir.actions.act_window">
+        <field name="name">Return Inspection Checklist</field>
+        <field name="res_model">top.trip.return.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

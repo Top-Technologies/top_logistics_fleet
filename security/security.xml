@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Module Category -->
+        <record model="ir.module.category" id="module_category_logistics">
+            <field name="name">FMS Logistics</field>
+            <field name="description">Manage Transport Requests, Fleet Dispatching, and Trips.</field>
+            <field name="sequence">25</field>
+        </record>
+
+        <!-- User Roles based on Specification Section 49 -->
+        <!-- 1. Transport Request User -->
+        <record id="group_transport_request_user" model="res.groups">
+            <field name="name">Transport Request User</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="comment">Can create and monitor their own transport requests.</field>
+        </record>
+
+        <!-- 2. Department Approver -->
+        <record id="group_department_approver" model="res.groups">
+            <field name="name">Department Approver</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_transport_request_user'))]"/>
+            <field name="comment">Can review and approve/reject transport requests for their department.</field>
+        </record>
+
+        <!-- 3. Fleet Officer -->
+        <record id="group_fleet_officer" model="res.groups">
+            <field name="name">Fleet Officer</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_transport_request_user')), (4, ref('fleet.fleet_group_user'))]"/>
+            <field name="comment">Can assign vehicles, drivers, dispatch, and manage trips.</field>
+        </record>
+
+        <!-- 4. Fleet Manager -->
+        <record id="group_fleet_manager" model="res.groups">
+            <field name="name">Fleet Manager</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_fleet_officer')), (4, ref('group_department_approver')), (4, ref('fleet.fleet_group_manager'))]"/>
+            <field name="comment">Full fleet operations, emergency overrides, and report access.</field>
+        </record>
+
+        <!-- 5. GPS Operator -->
+        <record id="group_gps_operator" model="res.groups">
+            <field name="name">GPS Operator</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="comment">GPS monitoring, device management, and GPS troubleshooting.</field>
+        </record>
+
+        <!-- 6. Logistics Finance -->
+        <record id="group_logistics_finance" model="res.groups">
+            <field name="name">Logistics Finance</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_transport_request_user'))]"/>
+            <field name="comment">View fuel, costs, expenses, and trip reconciliation.</field>
+        </record>
+
+        <!-- 7. Logistics Management -->
+        <record id="group_logistics_management" model="res.groups">
+            <field name="name">Management</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_transport_request_user'))]"/>
+            <field name="comment">Executive dashboard, utilization reports, and operational visibility.</field>
+        </record>
+
+        <!-- 8. Administrator -->
+        <record id="group_logistics_admin" model="res.groups">
+            <field name="name">Administrator</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_fleet_manager')), (4, ref('base.group_system'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+            <field name="comment">Full configuration and administrative rights over logistics.</field>
+        </record>
+    </data>
+
+    <!-- Record Rules -->
+    <data noupdate="1">
+        <!-- Multi-Company Rule -->
+        <record id="rule_transport_request_multicompany" model="ir.rule">
+            <field name="name">Transport Request Multi-Company</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <!-- Transport Request User: Can only read/edit their own requests -->
+        <record id="rule_transport_request_user_own" model="ir.rule">
+            <field name="name">Transport Request User: Own Requests</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="domain_force">['|', ('requester_id', '=', user.id), ('create_uid', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_transport_request_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Department Approver: Can view all requests in their company -->
+        <record id="rule_transport_request_approver_all" model="ir.rule">
+            <field name="name">Transport Request Approver: Company Requests</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+            <field name="groups" eval="[(4, ref('group_department_approver')), (4, ref('group_fleet_officer')), (4, ref('group_fleet_manager')), (4, ref('group_logistics_management'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+    </data>
+</odoo>

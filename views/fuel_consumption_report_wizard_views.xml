@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Fuel Consumption Report Wizard Form View -->
+    <record id="view_top_fuel_consumption_report_wizard_form" model="ir.ui.view">
+        <field name="name">top.fuel.consumption.report.wizard.form</field>
+        <field name="model">top.fuel.consumption.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate Fuel Consumption &amp; Efficiency Report">
+                <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                    <i class="fa fa-info-circle fa-2x me-3 text-info"/>
+                    <div>
+                        <strong>Telematics GPS Fuel Audit Engine</strong>
+                        <div class="small text-muted">
+                            Calculate fuel consumed, distance traveled, and fuel efficiency rates (L/100km &amp; km/L) directly from Wialon live tank sensor telemetry.
+                        </div>
+                    </div>
+                </div>
+
+                <group>
+                    <group string="Report Configuration">
+                        <field name="report_type" widget="radio"/>
+                        <field name="include_transactions"/>
+                    </group>
+                    <group string="Date Range Filter">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+
+                <group string="Vehicle Selection (Defaults to All 16 Monitored Fleet Vehicles)">
+                    <field name="vehicle_ids" widget="many2many_tags" placeholder="Leave blank to include all active vehicles with GPS..."/>
+                </group>
+
+                <footer>
+                    <button name="action_print_pdf" string="Print Professional PDF Report" type="object"
+                            class="btn-primary" icon="fa-print"/>
+                    <button name="action_generate_analytics" string="View Interactive Analytics (Pivot &amp; Graph)"
+                            type="object" class="btn-outline-primary" icon="fa-bar-chart"/>
+                    <button name="action_view_transactions" string="View GPS Refills &amp; Drains"
+                            type="object" class="btn-outline-info" icon="fa-tint"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open Wizard -->
+    <record id="action_top_fuel_consumption_report_wizard" model="ir.actions.act_window">
+        <field name="name">Fuel Consumption &amp; Efficiency Report</field>
+        <field name="res_model">top.fuel.consumption.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

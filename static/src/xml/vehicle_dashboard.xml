@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="top_logistics_fleet.VehicleDashboard">
+        <div class="o_fms_vehicle_dashboard">
+
+            <!-- ── Top Global Navbar & Brand Pill ── -->
+            <div class="fvd_top_navbar">
+                <div class="fvd_nav_left">
+                    <div class="fvd_brand" t-on-click="openControlCenter" title="FMS FleetTrack">
+                        <div class="fvd_brand_icon">
+                            <i class="fa fa-truck"/>
+                        </div>
+                        <span class="fvd_brand_name">FleetTrack</span>
+                    </div>
+
+                    <!-- Center Pill Navigation Container -->
+                    <div class="fvd_nav_pills">
+                        <button type="button" class="fvd_pill_btn" t-on-click="openControlCenter" title="Control Center">
+                            <i class="fa fa-home"/>
+                        </button>
+                        <button type="button" class="fvd_pill_btn" t-on-click="openVehicleList" title="Fleet Vehicles">
+                            <i class="fa fa-truck"/>
+                        </button>
+                        <button type="button" class="fvd_pill_btn" t-on-click="openTrips" title="Trips &amp; Routes">
+                            <i class="fa fa-map-marker"/>
+                        </button>
+                        <button type="button" class="fvd_pill_btn" t-on-click="openFuelLogs" title="Fuel &amp; Costs">
+                            <i class="fa fa-file-text-o"/>
+                        </button>
+                        <button type="button" class="fvd_pill_btn active" title="Vehicle Analytics">
+                            <i class="fa fa-line-chart me-1"/> Analytics
+                        </button>
+                    </div>
+                </div>
+
+                <div class="fvd_nav_right">
+                    <div class="fvd_search_box">
+                        <i class="fa fa-search fvd_search_icon"/>
+                        <input type="text"
+                               class="fvd_search_input"
+                               placeholder="Search vehicles..."
+                               t-att-value="state.searchQuery"
+                               t-on-input="onSearchInput"/>
+                    </div>
+                    <button class="fvd_icon_btn" t-on-click="refresh" title="Refresh Live Metrics">
+                        <i t-att-class="'fa fa-refresh ' + (state.refreshing ? 'fa-spin' : '')"/>
+                    </button>
+                    <div class="fvd_avatar_pill" title="Fleet Manager">
+                        <i class="fa fa-user-circle-o"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Header & Overview Intro ── -->
+            <div class="fvd_header_row">
+                <div class="fvd_header_title_block">
+                    <h2 class="fvd_header_title">Analytics Overview</h2>
+                    <p class="fvd_header_subtitle">Track real-time performance, fuel telematics, and hourly/minute telemetry across your entire fleet.</p>
+                </div>
+
+                <!-- Custom Date Range Bar & Period Selectors -->
+                <div class="fvd_header_actions_right">
+                    <div class="fvd_date_range_bar">
+                        <div class="fvd_period_pills">
+                            <button type="button"
+                                    t-att-class="'fvd_ppill ' + (state.period === 'daily' ? 'active' : '')"
+                                    t-on-click="() => this.setPeriod('daily')">
+                                Daily
+                            </button>
+                            <button type="button"
+                                    t-att-class="'fvd_ppill ' + (state.period === 'weekly' ? 'active' : '')"
+                                    t-on-click="() => this.setPeriod('weekly')">
+                                Weekly
+                            </button>
+                            <button type="button"
+                                    t-att-class="'fvd_ppill ' + (state.period === 'monthly' ? 'active' : '')"
+                                    t-on-click="() => this.setPeriod('monthly')">
+                                Monthly
+                            </button>
+                            <button type="button"
+                                    t-att-class="'fvd_ppill ' + (state.period === 'custom' ? 'active' : '')"
+                                    t-on-click="toggleCustomDateInputs">
+                                <i class="fa fa-calendar me-1"/> Custom Range
+                            </button>
+                        </div>
+                        <t t-if="state.showCustomDateInputs or state.period === 'custom'">
+                            <div class="fvd_custom_date_inputs">
+                                <input type="date"
+                                       class="fvd_date_input"
+                                       t-att-value="state.customDateFrom"
+                                       t-on-change="(ev) => this.onCustomDateChange('from', ev.target.value)"/>
+                                <span class="fvd_date_to_sep">to</span>
+                                <input type="date"
+                                       class="fvd_date_input"
+                                       t-att-value="state.customDateTo"
+                                       t-on-change="(ev) => this.onCustomDateChange('to', ev.target.value)"/>
+                                <button type="button" class="fvd_apply_btn" t-on-click="applyCustomDateRange">
+                                    Apply
+                                </button>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Secondary Dashboard Switcher Pill -->
+                    <div class="fvd_dashboard_switcher">
+                        <button type="button" class="fvd_switch_btn" t-on-click="openControlCenter">
+                            <i class="fa fa-tachometer me-1 text-primary"/> Control Center
+                        </button>
+                        <button type="button" class="fvd_switch_btn active">
+                            <i class="fa fa-truck me-1 text-warning"/> Vehicle Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Loading state ── -->
+            <t t-if="state.loading">
+                <div class="fvd_loading_box">
+                    <div class="fvd_spinner"/>
+                    <h4>Loading real-time vehicle analytics &amp; telematics...</h4>
+                </div>
+            </t>
+
+            <!-- ── Error state ── -->
+            <t t-elif="state.error">
+                <div class="fvd_error_box">
+                    <i class="fa fa-exclamation-triangle fvd_error_icon"/>
+                    <h4>Could not load vehicle analytics</h4>
+                    <p class="text-muted"><t t-esc="state.error"/></p>
+                    <button class="fvd_btn_retry" t-on-click="loadData">
+                        <i class="fa fa-refresh me-1"/> Retry
+                    </button>
+                </div>
+            </t>
+
+            <!-- ── Loaded Dashboard Content ── -->
+            <t t-elif="state.data">
+
+                <!-- ── 1. Top KPI Horizontal Strip (4 Cards) ── -->
+                <div class="fvd_kpi_row">
+                    <!-- KPI 1: Total Trips -->
+                    <div class="fvd_kpi_card" t-on-click="openTrips">
+                        <div class="fvd_kpi_icon_circle">
+                            <i class="fa fa-plane"/>
+                        </div>
+                        <div class="fvd_kpi_data">
+                            <span class="fvd_kpi_label">TOTAL TRIPS</span>
+                            <div class="fvd_kpi_value_wrap">
+                                <span class="fvd_kpi_val"><t t-esc="state.data.kpis.total_trips"/></span>
+                                <span class="fvd_kpi_trend up">
+                                    <i class="fa fa-arrow-up"/> <t t-esc="state.data.kpis.total_trips_trend"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Total Distance -->
+                    <div class="fvd_kpi_card">
+                        <div class="fvd_kpi_icon_circle">
+                            <i class="fa fa-map-marker"/>
+                        </div>
+                        <div class="fvd_kpi_data">
+                            <span class="fvd_kpi_label">TOTAL DISTANCE</span>
+                            <div class="fvd_kpi_value_wrap">
+                                <span class="fvd_kpi_val"><t t-esc="state.data.kpis.total_distance"/></span>
+                                <span class="fvd_kpi_trend up">
+                                    <i class="fa fa-arrow-up"/> <t t-esc="state.data.kpis.total_distance_trend"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Total Fuel -->
+                    <div class="fvd_kpi_card" t-on-click="openFuelLogs">
+                        <div class="fvd_kpi_icon_circle">
+                            <i class="fa fa-tint"/>
+                        </div>
+                        <div class="fvd_kpi_data">
+                            <span class="fvd_kpi_label">TOTAL FUEL</span>
+                            <div class="fvd_kpi_value_wrap">
+                                <span class="fvd_kpi_val"><t t-esc="state.data.kpis.total_fuel"/></span>
+                                <span class="fvd_kpi_trend down">
+                                    <i class="fa fa-arrow-down"/> <t t-esc="state.data.kpis.total_fuel_trend"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Average Fuel Efficiency -->
+                    <div class="fvd_kpi_card" t-on-click="openFuelLogs">
+                        <div class="fvd_kpi_icon_circle">
+                            <i class="fa fa-line-chart"/>
+                        </div>
+                        <div class="fvd_kpi_data">
+                            <span class="fvd_kpi_label">AVG FUEL EFFICIENCY</span>
+                            <div class="fvd_kpi_value_wrap">
+                                <span class="fvd_kpi_val"><t t-esc="state.data.kpis.avg_efficiency"/></span>
+                                <span class="fvd_kpi_trend up">
+                                    <i class="fa fa-arrow-up"/> <t t-esc="state.data.kpis.avg_efficiency_trend"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── 2. Main Two-Column Layout (Left Main Content & Right Sidebar) ── -->
+                <div class="fvd_main_grid">
+
+                    <!-- ── LEFT MAIN CONTENT (8 Cols) ── -->
+                    <div class="fvd_col_main">
+
+                        <!-- Row 2: Two Interactive Charts Side by Side -->
+                        <div class="fvd_charts_row">
+
+                            <!-- Chart 1: Fuel Efficiency (Km/L) -->
+                            <div class="fvd_chart_card">
+                                <div class="fvd_chart_header">
+                                    <h4 class="fvd_card_title">Fuel Efficiency (Km/L)</h4>
+                                    <div class="fvd_period_dropdown">
+                                        <select class="fvd_select_pill"
+                                                t-att-value="state.period"
+                                                t-on-change="(ev) => this.setPeriod(ev.target.value)">
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="custom">Custom Range</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="fvd_chart_canvas_wrap">
+                                    <canvas t-ref="fuelEfficiencyChart"/>
+                                </div>
+                            </div>
+
+                            <!-- Chart 2: Distance Over Time -->
+                            <div class="fvd_chart_card">
+                                <div class="fvd_chart_header">
+                                    <h4 class="fvd_card_title">Distance Over Time</h4>
+                                    <div class="fvd_period_dropdown">
+                                        <select class="fvd_select_pill"
+                                                t-att-value="state.period"
+                                                t-on-change="(ev) => this.setPeriod(ev.target.value)">
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="custom">Custom Range</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="fvd_chart_canvas_wrap">
+                                    <canvas t-ref="distanceOverTimeChart"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Vehicle Performance Table with Filter Tags & Telematics Action -->
+                        <div class="fvd_table_card">
+                            <div class="fvd_table_header">
+                                <h4 class="fvd_card_title">Vehicle Performance</h4>
+                                <div class="fvd_table_controls">
+                                    <div class="fvd_status_filters">
+                                        <button type="button"
+                                                t-att-class="'fvd_filter_tag ' + (state.statusFilter === 'all' ? 'active' : '')"
+                                                t-on-click="() => this.setStatusFilter('all')">
+                                            All
+                                        </button>
+                                        <button type="button"
+                                                t-att-class="'fvd_filter_tag ' + (state.statusFilter === 'available' ? 'active' : '')"
+                                                t-on-click="() => this.setStatusFilter('available')">
+                                            Available
+                                        </button>
+                                        <button type="button"
+                                                t-att-class="'fvd_filter_tag ' + (state.statusFilter === 'active' ? 'active' : '')"
+                                                t-on-click="() => this.setStatusFilter('active')">
+                                            On Trip
+                                        </button>
+                                        <button type="button"
+                                                t-att-class="'fvd_filter_tag ' + (state.statusFilter === 'maintenance' ? 'active' : '')"
+                                                t-on-click="() => this.setStatusFilter('maintenance')">
+                                            Maintenance
+                                        </button>
+                                        <button type="button"
+                                                t-att-class="'fvd_filter_tag ' + (state.statusFilter === 'inactive' ? 'active' : '')"
+                                                t-on-click="() => this.setStatusFilter('inactive')">
+                                            Inactive
+                                        </button>
+                                    </div>
+                                    <button class="fvd_see_all_btn" t-on-click="openVehicleList">
+                                        See All <i class="fa fa-angle-right ms-1"/>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="fvd_table_responsive">
+                                <table class="fvd_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Vehicle ID</th>
+                                            <th>Vehicle Type</th>
+                                            <th>Total Distance</th>
+                                            <th>Total Trips</th>
+                                            <th>Fuel Consumed</th>
+                                            <th>Fuel Efficiency</th>
+                                            <th>Status</th>
+                                            <th class="text-center">Telematics &amp; Audit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="filteredPerformanceRecords.length === 0">
+                                            <tr>
+                                                <td colspan="8" class="text-center py-4 text-muted">
+                                                    <i class="fa fa-search me-1"/> No matching vehicle records found.
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-else="">
+                                            <t t-foreach="filteredPerformanceRecords" t-as="veh" t-key="veh.id">
+                                                <tr class="fvd_table_row" t-on-click="() => this.openVehicleTelemetry(veh)" title="Click to view detailed hourly &amp; minute telematics">
+                                                    <td>
+                                                        <div class="fvd_veh_cell">
+                                                            <div class="fvd_veh_icon">
+                                                                <i class="fa fa-truck"/>
+                                                            </div>
+                                                            <span class="fvd_veh_code" t-on-click.stop="() => this.openVehicleRecord(veh.id)" title="Open vehicle master form">
+                                                                <t t-esc="veh.code"/>
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="fvd_cell_type">
+                                                        <t t-esc="veh.type"/>
+                                                    </td>
+                                                    <td class="fvd_cell_metric">
+                                                        <t t-esc="veh.distance"/>
+                                                    </td>
+                                                    <td class="fvd_cell_metric">
+                                                        <t t-esc="veh.trips"/>
+                                                    </td>
+                                                    <td class="fvd_cell_metric">
+                                                        <t t-esc="veh.fuel"/>
+                                                    </td>
+                                                    <td class="fvd_cell_metric">
+                                                        <t t-esc="veh.efficiency"/>
+                                                    </td>
+                                                    <td>
+                                                        <span t-att-class="'fvd_status_pill ' + veh.status_cls">
+                                                            <t t-esc="veh.status"/>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button"
+                                                                class="fvd_btn_telematics"
+                                                                t-on-click.stop="() => this.openVehicleTelemetry(veh)"
+                                                                title="View Hourly &amp; Minute Telematics Audit">
+                                                            <i class="fa fa-line-chart me-1"/> Audit
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── RIGHT SIDEBAR CONTENT (4 Cols) ── -->
+                    <div class="fvd_col_sidebar">
+
+                        <!-- Sidebar Card 1: Utilization Gauge -->
+                        <div class="fvd_card fvd_gauge_card">
+                            <h4 class="fvd_card_title">Vehicle Utilization</h4>
+                            <div class="fvd_gauge_container">
+                                <div class="fvd_gauge_canvas_wrap">
+                                    <canvas t-ref="utilizationGaugeChart"/>
+                                    <div class="fvd_gauge_center_text">
+                                        <span class="fvd_gauge_pct"><t t-esc="state.data.utilization_gauge.rate"/>%</span>
+                                        <span class="fvd_gauge_sub">Utilization</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fvd_gauge_legend_row">
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_blue"/>
+                                    <span class="fvd_g_label">Active:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.utilization_gauge.active_count"/> (<t t-esc="state.data.utilization_gauge.active_pct"/>%)</span>
+                                </div>
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_orange"/>
+                                    <span class="fvd_g_label">Idle:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.utilization_gauge.idle_count"/> (<t t-esc="state.data.utilization_gauge.idle_pct"/>%)</span>
+                                </div>
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_gray"/>
+                                    <span class="fvd_g_label">Inactive:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.utilization_gauge.inactive_count"/> (<t t-esc="state.data.utilization_gauge.inactive_pct"/>%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar Card 2: Status Gauge -->
+                        <div class="fvd_card fvd_gauge_card">
+                            <h4 class="fvd_card_title">Vehicle Status</h4>
+                            <div class="fvd_gauge_container">
+                                <div class="fvd_gauge_canvas_wrap">
+                                    <canvas t-ref="vehicleStatusGaugeChart"/>
+                                    <div class="fvd_gauge_center_text">
+                                        <span class="fvd_gauge_pct"><t t-esc="state.data.status_gauge.total"/></span>
+                                        <span class="fvd_gauge_sub">Vehicles</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fvd_gauge_legend_row">
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_orange"/>
+                                    <span class="fvd_g_label">Active:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.status_gauge.active_count"/> (<t t-esc="state.data.status_gauge.active_pct"/>%)</span>
+                                </div>
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_blue"/>
+                                    <span class="fvd_g_label">Maint:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.status_gauge.maintenance_count"/> (<t t-esc="state.data.status_gauge.maintenance_pct"/>%)</span>
+                                </div>
+                                <div class="fvd_g_item">
+                                    <span class="fvd_dot bg_gray"/>
+                                    <span class="fvd_g_label">Inactive:</span>
+                                    <span class="fvd_g_val"><t t-esc="state.data.status_gauge.inactive_count"/> (<t t-esc="state.data.status_gauge.inactive_pct"/>%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar Card 3: Top Fuel Consuming Vehicles -->
+                        <div class="fvd_card fvd_fuel_card">
+                            <h4 class="fvd_card_title">Top Fuel Consuming Vehicles</h4>
+                            <div class="fvd_fuel_list">
+                                <t t-foreach="state.data.top_fuel_vehicles" t-as="tf" t-key="tf.id">
+                                    <div class="fvd_fc_item" t-on-click="() => this.openVehicleTelemetry(tf)" title="Click to view telematics breakdown">
+                                        <div class="fvd_fc_left">
+                                            <span class="fvd_fc_code"><t t-esc="tf.code"/></span>
+                                        </div>
+                                        <div class="fvd_fc_center">
+                                            <div class="fvd_fc_striped_bar_container">
+                                                <div class="fvd_fc_striped_bar" t-attf-style="width: #{tf.percentage}%;"/>
+                                            </div>
+                                        </div>
+                                        <div class="fvd_fc_right">
+                                            <span class="fvd_fc_fuel_val"><t t-esc="tf.fuel"/></span>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </t>
+
+            <!-- ═══════════════════════════════════════════════════════════════════
+                 Telematics Drill-Down Drawer (Hourly & Minute Telematics Audit)
+                 ═══════════════════════════════════════════════════════════════════ -->
+            <t t-if="state.drawerOpen">
+                <div class="fvd_drawer_backdrop" t-on-click="closeDrawer"/>
+                <div class="fvd_drawer">
+                    <div class="fvd_drawer_header">
+                        <div class="fvd_drawer_title_wrap">
+                            <div class="fvd_drawer_badge">
+                                <i class="fa fa-tachometer me-1"/> Telematics Fuel Audit
+                            </div>
+                            <h3 class="fvd_drawer_title">
+                                <t t-esc="state.selectedVehicle.code"/>
+                                <span class="fvd_drawer_subtitle"><t t-esc="state.selectedVehicle.name"/></span>
+                            </h3>
+                        </div>
+                        <div class="fvd_drawer_header_actions">
+                            <button class="fvd_drawer_close_btn" t-on-click="closeDrawer" title="Close Panel">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                    </div>
+
+                    <t t-if="state.drawerLoading">
+                        <div class="fvd_drawer_loading">
+                            <div class="fvd_spinner"/>
+                            <p>Retrieving high-resolution telematics &amp; sensor telemetry...</p>
+                        </div>
+                    </t>
+                    <t t-elif="state.drawerData">
+                        <div class="fvd_drawer_body">
+                            <!-- Telematics Summary Strip -->
+                            <div class="fvd_drawer_kpis">
+                                <div class="fvd_dkpi_card">
+                                    <span class="fvd_dkpi_label">TOTAL CONSUMED</span>
+                                    <span class="fvd_dkpi_val text-primary"><t t-esc="state.drawerData.summary.total_fuel"/></span>
+                                    <span class="fvd_dkpi_sub">Rate: <t t-esc="state.drawerData.summary.efficiency_rate"/></span>
+                                </div>
+                                <div class="fvd_dkpi_card">
+                                    <span class="fvd_dkpi_label">DRIVING FUEL</span>
+                                    <span class="fvd_dkpi_val text-success"><t t-esc="state.drawerData.summary.driving_fuel"/></span>
+                                    <span class="fvd_dkpi_sub">Distance: <t t-esc="state.drawerData.summary.total_distance"/></span>
+                                </div>
+                                <div class="fvd_dkpi_card">
+                                    <span class="fvd_dkpi_label">IDLING FUEL WASTE</span>
+                                    <span class="fvd_dkpi_val text-warning"><t t-esc="state.drawerData.summary.idling_fuel"/></span>
+                                    <span class="fvd_dkpi_sub">Cost: <t t-esc="state.drawerData.summary.idling_waste_cost"/> (<t t-esc="state.drawerData.summary.idling_hours"/>)</span>
+                                </div>
+                                <div class="fvd_dkpi_card">
+                                    <span class="fvd_dkpi_label">REFILLS &amp; ALERTS</span>
+                                    <span class="fvd_dkpi_val text-info"><t t-esc="state.drawerData.summary.refills_count"/> Refills</span>
+                                    <span class="fvd_dkpi_sub text-danger"><t t-esc="state.drawerData.summary.drain_count"/> Theft Alerts</span>
+                                </div>
+                            </div>
+
+                            <!-- Tabs: Hourly Breakdown vs Minute-by-Minute Telemetry -->
+                            <div class="fvd_drawer_tabs">
+                                <button type="button"
+                                        t-att-class="'fvd_drawer_tab_btn ' + (state.drawerTab === 'hourly' ? 'active' : '')"
+                                        t-on-click="() => this.setDrawerTab('hourly')">
+                                    <i class="fa fa-bar-chart me-1"/> Hourly Fuel Consumption (Driving vs Idling)
+                                </button>
+                                <button type="button"
+                                        t-att-class="'fvd_drawer_tab_btn ' + (state.drawerTab === 'minute' ? 'active' : '')"
+                                        t-on-click="() => this.setDrawerTab('minute')">
+                                    <i class="fa fa-area-chart me-1"/> Minute-by-Minute Tank Level Curve (Raw vs Filtered)
+                                </button>
+                            </div>
+
+                            <!-- Tab 1: Hourly Consumption -->
+                            <t t-if="state.drawerTab === 'hourly'">
+                                <div class="fvd_drawer_tab_content">
+                                    <div class="fvd_chart_container_drawer">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="fvd_chart_subhead mb-0">Hour-by-Hour Fuel Burned (Litres)</h5>
+                                            <div class="fvd_chart_legend_custom">
+                                                <span class="badge bg-primary me-2">● Driving Fuel</span>
+                                                <span class="badge bg-warning text-dark">● Idling Fuel</span>
+                                            </div>
+                                        </div>
+                                        <div style="height: 230px; position: relative;">
+                                            <canvas t-ref="hourlyFuelChart"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hourly Breakdown Table -->
+                                    <div class="fvd_hourly_table_wrap mt-4">
+                                        <h5 class="fvd_chart_subhead">Hourly Telemetry Log</h5>
+                                        <table class="table table-sm fvd_hourly_table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Hour Interval</th>
+                                                    <th>Distance</th>
+                                                    <th>Driving Fuel</th>
+                                                    <th>Idling Fuel</th>
+                                                    <th>Total Fuel</th>
+                                                    <th>Avg Speed</th>
+                                                    <th>Operational State</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.drawerData.hourly_buckets" t-as="bucket" t-key="bucket.hour">
+                                                    <tr>
+                                                        <td class="fw-bold"><t t-esc="bucket.label"/></td>
+                                                        <td><t t-esc="bucket.distance_km"/> km</td>
+                                                        <td class="text-primary"><t t-esc="bucket.driving_fuel"/> L</td>
+                                                        <td class="text-warning"><t t-esc="bucket.idling_fuel"/> L</td>
+                                                        <td class="fw-bold"><t t-esc="bucket.total_fuel"/> L</td>
+                                                        <td><t t-esc="bucket.avg_speed"/> km/h</td>
+                                                        <td>
+                                                            <span t-att-class="'badge ' + (bucket.status === 'In Transit' ? 'bg-primary' : (bucket.status === 'Excessive Idling' ? 'bg-warning text-dark' : 'bg-secondary'))">
+                                                                <t t-esc="bucket.status"/>
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- Tab 2: Minute-by-Minute Telemetry -->
+                            <t t-if="state.drawerTab === 'minute'">
+                                <div class="fvd_drawer_tab_content">
+                                    <div class="fvd_chart_container_drawer">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="fvd_chart_subhead mb-0">High-Resolution Fuel Tank Level (Litres over Time)</h5>
+                                            <div class="small text-muted">
+                                                <span class="badge bg-success me-2">● Refuel Detected</span>
+                                                <span class="badge bg-danger">● Fuel Drain Alert</span>
+                                            </div>
+                                        </div>
+                                        <div style="height: 250px; position: relative;">
+                                            <canvas t-ref="minuteFuelChart"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- Detected Events Cards -->
+                                    <div class="fvd_events_wrap mt-4">
+                                        <h5 class="fvd_chart_subhead">Detected GPS Telemetry Events</h5>
+                                        <t t-if="state.drawerData.minute_series.events.length === 0">
+                                            <p class="text-muted small">No sudden refill or drain events recorded in this time window.</p>
+                                        </t>
+                                        <t t-else="">
+                                            <div class="fvd_event_grid">
+                                                <t t-foreach="state.drawerData.minute_series.events" t-as="evt" t-key="evt.timestamp + evt.type">
+                                                    <div t-att-class="'fvd_event_card ' + evt.type">
+                                                        <div class="fvd_event_icon">
+                                                            <i t-att-class="'fa ' + (evt.type === 'refuel' ? 'fa-plus text-success' : 'fa-minus text-danger')"/>
+                                                        </div>
+                                                        <div class="fvd_event_details">
+                                                            <span class="fvd_event_type"><t t-esc="evt.label"/>: <t t-esc="evt.volume"/> L</span>
+                                                            <span class="fvd_event_time"><i class="fa fa-clock-o me-1"/><t t-esc="evt.timestamp"/></span>
+                                                            <span class="fvd_event_address" t-if="evt.address"><t t-esc="evt.address"/></span>
+                                                        </div>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </div>
+            </t>
+
+        </div>
+    </t>
+
+</templates>

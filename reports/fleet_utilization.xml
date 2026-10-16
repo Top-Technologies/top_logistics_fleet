@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_fleet_utilization" model="ir.actions.report">
+        <field name="name">Vehicle Utilization Report</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">top_logistics_fleet.report_fleet_utilization_template</field>
+        <field name="report_file">top_logistics_fleet.report_fleet_utilization_template</field>
+        <field name="print_report_name">'Vehicle_Utilization_%s' % (object.name)</field>
+        <field name="binding_model_id" ref="fleet.model_fleet_vehicle"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_fleet_utilization_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="vehicle">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <div>
+                                <h2 class="mb-0 text-primary">Vehicle Operating &amp; Utilization Report</h2>
+                                <h4 class="text-muted"><span t-field="vehicle.name"/></h4>
+                            </div>
+                            <div class="text-end">
+                                <strong>Date: </strong><span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/><br/>
+                                <strong>Status: </strong><span t-field="vehicle.operational_status"/>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="card p-2">
+                                    <h6 class="text-secondary border-bottom pb-1">Vehicle Specifications</h6>
+                                    <div><strong>License Plate: </strong><span t-field="vehicle.license_plate"/></div>
+                                    <div><strong>Model: </strong><span t-field="vehicle.model_id.name"/></div>
+                                    <div><strong>Driver: </strong><span t-field="vehicle.driver_id.name"/></div>
+                                    <div><strong>Current Location: </strong><span t-field="vehicle.current_location"/></div>
+                                    <div><strong>Current Odometer: </strong><span t-field="vehicle.odometer"/> km</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card p-2">
+                                    <h6 class="text-secondary border-bottom pb-1">Cost &amp; Maintenance KPIs</h6>
+                                    <div><strong>Total Fuel Litres: </strong><span t-field="vehicle.total_fuel_litres"/> L</div>
+                                    <div><strong>Total Fuel Cost: </strong><span t-field="vehicle.total_fuel_cost"/></div>
+                                    <div><strong>Operating Cost / KM: </strong><span t-field="vehicle.cost_per_km"/> / km</div>
+                                    <div><strong>Next Service Due: </strong><span t-field="vehicle.next_service_odometer"/> km</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-secondary border-bottom pb-1 mt-4">Refueling History (Recent)</h6>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr class="table-light">
+                                    <th>Date</th>
+                                    <th>Fuel Station</th>
+                                    <th>Fuel Type</th>
+                                    <th>Quantity (L)</th>
+                                    <th>Unit Price</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="vehicle.fuel_log_ids[:10]" t-as="log">
+                                    <td><span t-field="log.date"/></td>
+                                    <td><span t-field="log.fuel_station"/></td>
+                                    <td><span t-field="log.fuel_type"/></td>
+                                    <td><span t-field="log.quantity"/></td>
+                                    <td><span t-field="log.unit_price"/></td>
+                                    <td><span t-field="log.total_cost"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

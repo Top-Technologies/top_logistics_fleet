@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Transport Request Sequence -->
+        <record id="seq_top_transport_request" model="ir.sequence">
+            <field name="name">Transport Request</field>
+            <field name="code">top.transport.request</field>
+            <field name="prefix">TR/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Fleet Trip Sequence (Section 14) -->
+        <record id="seq_top_fleet_trip" model="ir.sequence">
+            <field name="name">Fleet Trip</field>
+            <field name="code">top.fleet.trip</field>
+            <field name="prefix">TRIP/%(year)s/</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Fuel Log Sequence (Section 30) -->
+        <record id="seq_top_fleet_fuel_log" model="ir.sequence">
+            <field name="name">Fuel Log Transaction</field>
+            <field name="code">top.fleet.fuel.log</field>
+            <field name="prefix">FUEL/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Accident Sequence (Section 34) -->
+        <record id="seq_top_fleet_accident" model="ir.sequence">
+            <field name="name">Accident Record</field>
+            <field name="code">top.fleet.accident</field>
+            <field name="prefix">ACC/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

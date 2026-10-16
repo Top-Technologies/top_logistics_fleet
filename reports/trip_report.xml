@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Execution Sheet Report Action -->
+    <record id="action_report_trip_execution" model="ir.actions.report">
+        <field name="name">Trip Execution Sheet</field>
+        <field name="model">top.fleet.trip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">top_logistics_fleet.report_trip_execution_template</field>
+        <field name="report_file">top_logistics_fleet.report_trip_execution_template</field>
+        <field name="print_report_name">'Trip - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_top_fleet_trip"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- QWeb Template -->
+    <template id="report_trip_execution_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <div>
+                                <h2 class="mb-0 text-primary">Trip Execution Sheet &amp; Waybill</h2>
+                                <h4 class="text-muted"><span t-field="doc.name"/></h4>
+                            </div>
+                            <div class="text-end">
+                                <strong>Date: </strong><span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/><br/>
+                                <strong>Status: </strong><span t-field="doc.state"/>
+                            </div>
+                        </div>
+
+                        <!-- Route & Schedule Overview -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="card p-2">
+                                    <h6 class="text-secondary border-bottom pb-1">Route &amp; Assignment</h6>
+                                    <div><strong>Origin: </strong><span t-field="doc.origin"/></div>
+                                    <div><strong>Destination: </strong><span t-field="doc.destination"/></div>
+                                    <div><strong>Vehicle: </strong><span t-field="doc.vehicle_id.name"/></div>
+                                    <div><strong>Primary Driver: </strong><span t-field="doc.driver_id.name"/></div>
+                                    <div t-if="doc.backup_driver_id"><strong>Backup Driver: </strong><span t-field="doc.backup_driver_id.name"/></div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card p-2">
+                                    <h6 class="text-secondary border-bottom pb-1">Schedule, Odometer &amp; Fuel</h6>
+                                    <div><strong>Planned Departure: </strong><span t-field="doc.planned_departure"/></div>
+                                    <div><strong>Planned Arrival: </strong><span t-field="doc.planned_arrival"/></div>
+                                    <div><strong>Starting Odometer: </strong><span t-field="doc.start_odometer"/> km (Fuel: <span t-field="doc.start_fuel"/> L)</div>
+                                    <div><strong>Ending Odometer: </strong><span t-field="doc.end_odometer"/> km (Fuel: <span t-field="doc.end_fuel"/> L)</div>
+                                    <div><strong>Actual Distance: </strong><span t-field="doc.actual_distance"/> km</div>
+                                    <div><strong>Fuel Consumed: </strong><span t-field="doc.actual_fuel"/> L (<span t-field="doc.fuel_consumption_rate"/> L/100km)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Intermediate Waypoints -->
+                        <div t-if="doc.waypoint_ids" class="mb-3">
+                            <h6 class="text-secondary border-bottom pb-1">Intermediate Waypoints / Stops</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th>Stop Order</th>
+                                        <th>Location</th>
+                                        <th>Est. Arrival</th>
+                                        <th>Act. Arrival</th>
+                                        <th>Visited</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="doc.waypoint_ids" t-as="wp">
+                                        <td><span t-field="wp.sequence"/></td>
+                                        <td><span t-field="wp.location_name"/></td>
+                                        <td><span t-field="wp.estimated_arrival"/></td>
+                                        <td><span t-field="wp.actual_arrival"/></td>
+                                        <td><span t-if="wp.completed">Yes</span><span t-else="">No</span></td>
+                                        <td><span t-field="wp.notes"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Section 29 Reconciliation Summary -->
+                        <div class="mb-3">
+                            <h6 class="text-secondary border-bottom pb-1">Reconciliation &amp; Efficiency (Section 29 &amp; 31)</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th>Metric</th>
+                                        <th>Planned</th>
+                                        <th>Actual</th>
+                                        <th>Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Distance (km)</strong></td>
+                                        <td><span t-field="doc.planned_distance"/></td>
+                                        <td><span t-field="doc.actual_distance"/></td>
+                                        <td><span t-field="doc.variance_distance"/> km</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Duration (Hours)</strong></td>
+                                        <td><span t-field="doc.planned_duration"/></td>
+                                        <td><span t-field="doc.actual_duration"/></td>
+                                        <td><span t-field="doc.variance_duration"/> hrs</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fuel (Litres)</strong></td>
+                                        <td><span t-field="doc.expected_fuel"/> L</td>
+                                        <td><span t-field="doc.actual_fuel"/> L <span class="text-muted small">(Refueled: <span t-field="doc.total_refueled"/> L)</span></td>
+                                        <td><span t-field="doc.variance_fuel"/> L</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Signatures & Authorization -->
+                        <div class="row mt-4 pt-4 border-top">
+                            <div class="col-4 text-center">
+                                _______________________<br/>
+                                <strong>Fleet Officer Signature</strong>
+                            </div>
+                            <div class="col-4 text-center">
+                                _______________________<br/>
+                                <strong>Driver Signature</strong>
+                            </div>
+                            <div class="col-4 text-center">
+                                _______________________<br/>
+                                <strong>Authorized Approval</strong>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

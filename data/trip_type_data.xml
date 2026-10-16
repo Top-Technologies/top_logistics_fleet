@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="trip_type_one_way" model="top.fleet.trip.type">
+            <field name="name">One Way</field>
+            <field name="code">ONE_WAY</field>
+            <field name="sequence">10</field>
+            <field name="description">Single leg trip with no return journey.</field>
+        </record>
+
+        <record id="trip_type_round_trip" model="top.fleet.trip.type">
+            <field name="name">Round Trip</field>
+            <field name="code">ROUND_TRIP</field>
+            <field name="sequence">20</field>
+            <field name="description">Outbound and return journey back to origin.</field>
+        </record>
+
+        <record id="trip_type_multi_destination" model="top.fleet.trip.type">
+            <field name="name">Multi-Destination</field>
+            <field name="code">MULTI_DEST</field>
+            <field name="sequence">30</field>
+            <field name="description">Trip with multiple consecutive intermediate stops.</field>
+        </record>
+
+        <record id="trip_type_local" model="top.fleet.trip.type">
+            <field name="name">Local</field>
+            <field name="code">LOCAL</field>
+            <field name="sequence">40</field>
+            <field name="description">Short-distance travel within city or metropolitan radius.</field>
+        </record>
+
+        <record id="trip_type_regional" model="top.fleet.trip.type">
+            <field name="name">Regional</field>
+            <field name="code">REGIONAL</field>
+            <field name="sequence">50</field>
+            <field name="description">Travel between regional centers or neighboring zones.</field>
+        </record>
+
+        <record id="trip_type_long_distance" model="top.fleet.trip.type">
+            <field name="name">Long Distance</field>
+            <field name="code">LONG_DIST</field>
+            <field name="sequence">60</field>
+            <field name="description">Cross-country or extended inter-city journeys.</field>
+        </record>
+
+        <record id="trip_type_delivery" model="top.fleet.trip.type">
+            <field name="name">Delivery</field>
+            <field name="code">DELIVERY</field>
+            <field name="sequence">70</field>
+            <field name="description">Goods or cargo drop-off dispatch.</field>
+        </record>
+
+        <record id="trip_type_cargo" model="top.fleet.trip.type">
+            <field name="name">Cargo</field>
+            <field name="code">CARGO</field>
+            <field name="sequence">80</field>
+            <field name="description">Heavy freight or container logistics haulage.</field>
+        </record>
+
+        <record id="trip_type_passenger" model="top.fleet.trip.type">
+            <field name="name">Passenger</field>
+            <field name="code">PASSENGER</field>
+            <field name="sequence">90</field>
+            <field name="description">Employee or delegate passenger transport.</field>
+        </record>
+
+        <record id="trip_type_field_operation" model="top.fleet.trip.type">
+            <field name="name">Field Operation</field>
+            <field name="code">FIELD_OP</field>
+            <field name="sequence">100</field>
+            <field name="description">Technical project, survey, or site field operation trip.</field>
+        </record>
+    </data>
+</odoo>

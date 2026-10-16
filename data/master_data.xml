@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- 1. Default GPS API Provider (Section 19 & 55) -->
+        <record id="gps_provider_wialon_default" model="top.gps.provider">
+            <field name="name">Primary GPS Gateway (Wialon Protocol)</field>
+            <field name="api_url">https://hst-api.wialon.com/wialon/ajax.html</field>
+            <field name="auth_type">token</field>
+            <field name="api_key">1ea33589be418cbc5cb8357e696bddc3D66E756371E7D6836733113312C8C8379E95DD80</field>
+            <field name="polling_interval">5</field>
+            <field name="timeout">30</field>
+            <field name="retention_days">60</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 2. Master Geofences (Section 27 & 55) -->
+        <record id="geofence_main_depot" model="top.gps.geofence">
+            <field name="name">Central Logistics Depot &amp; Workshop</field>
+            <field name="category">warehouse</field>
+            <field name="geofence_type">circle</field>
+            <field name="latitude">9.005401</field>
+            <field name="longitude">38.763611</field>
+            <field name="radius">300.0</field>
+            <field name="color">#2ecc71</field>
+            <field name="description">Main vehicle depot, overnight parking, and maintenance yard.</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="geofence_head_office" model="top.gps.geofence">
+            <field name="name">Corporate Headquarters</field>
+            <field name="category">office</field>
+            <field name="geofence_type">circle</field>
+            <field name="latitude">9.012345</field>
+            <field name="longitude">38.789123</field>
+            <field name="radius">150.0</field>
+            <field name="color">#3498db</field>
+            <field name="description">Executive headquarters and administrative office.</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="geofence_airport_cargo" model="top.gps.geofence">
+            <field name="name">Bole Airport Cargo Hub</field>
+            <field name="category">warehouse</field>
+            <field name="geofence_type">circle</field>
+            <field name="latitude">8.977889</field>
+            <field name="longitude">38.799306</field>
+            <field name="radius">500.0</field>
+            <field name="color">#f39c12</field>
+            <field name="description">Air freight terminal and customs clearance pickup zone.</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="geofence_fuel_station" model="top.gps.geofence">
+            <field name="name">Approved Fleet Fuel Station</field>
+            <field name="category">fuel_station</field>
+            <field name="geofence_type">circle</field>
+            <field name="latitude">9.020000</field>
+            <field name="longitude">38.770000</field>
+            <field name="radius">100.0</field>
+            <field name="color">#9b59b6</field>
+            <field name="description">Authorized fuel dispensing station for fleet card refueling.</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 3. Default Fleet Safety & Alert Parameters (Section 53 & 55) -->
+        <record id="fleet_alert_config_default" model="top.fleet.alert.config">
+            <field name="name">Standard Corporate Fleet Safety Thresholds</field>
+            <field name="overspeed_threshold_kmh">80.0</field>
+            <field name="max_idling_minutes">15.0</field>
+            <field name="alert_on_gps_offline" eval="True"/>
+            <field name="offline_threshold_minutes">30</field>
+            <field name="alert_on_geofence" eval="True"/>
+            <field name="alert_on_route_deviation" eval="True"/>
+            <field name="alert_on_unauthorized_movement" eval="True"/>
+            <field name="license_expiry_warning_days">30</field>
+            <field name="insurance_expiry_warning_days">30</field>
+            <field name="registration_expiry_warning_days">30</field>
+            <field name="mapping_provider">google</field>
+        </record>
+
+        <!-- 4. Master Vehicle Categories / Types (Section 10 & 55) -->
+        <record id="vehicle_category_sedan" model="fleet.vehicle.model.category">
+            <field name="name">Executive Sedan</field>
+        </record>
+
+        <record id="vehicle_category_pickup" model="fleet.vehicle.model.category">
+            <field name="name">4WD Commercial Pickup</field>
+        </record>
+
+        <record id="vehicle_category_van" model="fleet.vehicle.model.category">
+            <field name="name">Light Cargo Van (1.5 Ton)</field>
+        </record>
+
+        <record id="vehicle_category_bus" model="fleet.vehicle.model.category">
+            <field name="name">Passenger Minibus (14-seater)</field>
+        </record>
+
+        <record id="vehicle_category_truck" model="fleet.vehicle.model.category">
+            <field name="name">Heavy Duty Freight Truck (10+ Ton)</field>
+        </record>
+    </data>
+</odoo>

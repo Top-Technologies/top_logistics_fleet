@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_vehicle_assignment_wizard_form" model="ir.ui.view">
+        <field name="name">top.vehicle.assignment.wizard.form</field>
+        <field name="model">top.vehicle.assignment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Vehicle &amp; Driver">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Request:</strong> <field name="origin" class="fw-bold"/> ➔ <field name="destination" class="fw-bold"/>
+                        (<field name="required_date"/> to <field name="return_date"/>)
+                    </div>
+                    <group>
+                        <group string="Vehicle Selection (Section 10 &amp; 11)">
+                            <field name="request_id" invisible="1"/>
+                            <field name="vehicle_id" placeholder="Select vehicle..."
+                                   domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False)]"
+                                   options="{'no_create': True}"/>
+                            <field name="vehicle_status_info" class="text-muted fw-bold" readonly="1"/>
+                        </group>
+                        <group string="Driver Selection (Section 11 &amp; 13)">
+                            <field name="driver_id" placeholder="Select primary driver..."
+                                   domain="[('is_driver', '=', True), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]"
+                                   options="{'no_create': True}"/>
+                            <field name="driver_status_info" class="text-muted fw-bold" readonly="1"/>
+                            <field name="backup_driver_id" placeholder="Optional backup driver..."
+                                   domain="[('is_driver', '=', True), ('id', '!=', driver_id)]"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group string="Trip Planning (Section 16)">
+                        <group>
+                            <field name="trip_type_id"/>
+                            <field name="trip_coordinator_id"/>
+                        </group>
+                        <group>
+                            <field name="planned_distance"/>
+                            <field name="planned_duration"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Instructions / Notes">
+                            <field name="special_instructions" placeholder="Special routing, cargo handling, or mission instructions..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button string="Confirm &amp; Generate Trip" type="object" name="action_confirm_assignment" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_top_vehicle_assignment_wizard" model="ir.actions.act_window">
+        <field name="name">Assign Vehicle &amp; Driver</field>
+        <field name="res_model">top.vehicle.assignment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

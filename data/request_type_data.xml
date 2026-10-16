@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="request_type_employee_trans" model="top.transport.request.type">
+            <field name="name">Employee Transportation</field>
+            <field name="code">EMP_TRANS</field>
+            <field name="sequence">10</field>
+            <field name="description">Routine staff commuting or internal transport.</field>
+        </record>
+
+        <record id="request_type_official_travel" model="top.transport.request.type">
+            <field name="name">Official Travel</field>
+            <field name="code">OFF_TRAVEL</field>
+            <field name="sequence">20</field>
+            <field name="description">Official company business missions and meetings.</field>
+        </record>
+
+        <record id="request_type_client_visit" model="top.transport.request.type">
+            <field name="name">Client Visit</field>
+            <field name="code">CLIENT_VISIT</field>
+            <field name="sequence">30</field>
+            <field name="description">Customer meetings, site visits, or presentations.</field>
+        </record>
+
+        <record id="request_type_field_operation" model="top.transport.request.type">
+            <field name="name">Field Operation</field>
+            <field name="code">FIELD_OP</field>
+            <field name="sequence">40</field>
+            <field name="description">Fieldwork, survey, technical deployments, or inspections.</field>
+        </record>
+
+        <record id="request_type_project_visit" model="top.transport.request.type">
+            <field name="name">Project Visit</field>
+            <field name="code">PROJ_VISIT</field>
+            <field name="sequence">50</field>
+            <field name="description">Site visits for active ongoing projects.</field>
+        </record>
+
+        <record id="request_type_delivery" model="top.transport.request.type">
+            <field name="name">Delivery</field>
+            <field name="code">DELIVERY</field>
+            <field name="sequence">60</field>
+            <field name="description">Outbound materials, goods, or document deliveries.</field>
+        </record>
+
+        <record id="request_type_collection" model="top.transport.request.type">
+            <field name="name">Collection</field>
+            <field name="code">COLLECTION</field>
+            <field name="sequence">70</field>
+            <field name="description">Inbound pickup of equipment, materials, or documents.</field>
+        </record>
+
+        <record id="request_type_cargo_movement" model="top.transport.request.type">
+            <field name="name">Cargo Movement</field>
+            <field name="code">CARGO_MOV</field>
+            <field name="sequence">80</field>
+            <field name="description">Bulk or heavy cargo freight transfer.</field>
+        </record>
+
+        <record id="request_type_airport_transfer" model="top.transport.request.type">
+            <field name="name">Airport Transfer</field>
+            <field name="code">AIRPORT</field>
+            <field name="sequence">90</field>
+            <field name="description">Airport pickup and drop-off for staff or guests.</field>
+        </record>
+
+        <record id="request_type_emergency" model="top.transport.request.type">
+            <field name="name">Emergency</field>
+            <field name="code">EMERGENCY</field>
+            <field name="sequence">100</field>
+            <field name="description">Critical emergency transport requiring immediate allocation.</field>
+        </record>
+
+        <record id="request_type_maintenance_support" model="top.transport.request.type">
+            <field name="name">Maintenance Support</field>
+            <field name="code">MAINT_SUPP</field>
+            <field name="sequence">110</field>
+            <field name="description">Vehicle or equipment towing, recovery, or workshop logistics.</field>
+        </record>
+
+        <record id="request_type_other" model="top.transport.request.type">
+            <field name="name">Other</field>
+            <field name="code">OTHER</field>
+            <field name="sequence">120</field>
+            <field name="description">General or miscellaneous transportation requirements.</field>
+        </record>
+    </data>
+</odoo>

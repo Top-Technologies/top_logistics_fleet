@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_transport_request_reject_wizard_form" model="ir.ui.view">
+        <field name="name">top.transport.request.reject.wizard.form</field>
+        <field name="model">top.transport.request.reject.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reject Transport Request">
+                <sheet>
+                    <group>
+                        <field name="request_id" invisible="1"/>
+                        <field name="rejection_reason" placeholder="Please provide the specific reason for rejecting this transport request..." required="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Confirm Rejection" type="object" name="action_confirm_rejection" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_transport_request_reject_wizard" model="ir.actions.act_window">
+        <field name="name">Reject Transport Request</field>
+        <field name="res_model">top.transport.request.reject.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

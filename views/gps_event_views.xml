@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_gps_event_list" model="ir.ui.view">
+        <field name="name">top.gps.event.list</field>
+        <field name="model">top.gps.event</field>
+        <field name="arch" type="xml">
+            <list string="Automatic GPS Events" decoration-danger="severity == 'danger'" decoration-warning="severity == 'warning'" sample="1">
+                <field name="timestamp"/>
+                <field name="name"/>
+                <field name="event_type" widget="badge"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="trip_id"/>
+                <field name="speed"/>
+                <field name="severity" widget="badge"
+                       decoration-danger="severity == 'danger'"
+                       decoration-warning="severity == 'warning'"
+                       decoration-info="severity == 'info'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_top_gps_event_form" model="ir.ui.view">
+        <field name="name">top.gps.event.form</field>
+        <field name="model">top.gps.event</field>
+        <field name="arch" type="xml">
+            <form string="GPS Event Details">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Event Summary"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Classification (Section 28)">
+                            <field name="event_type"/>
+                            <field name="severity" widget="badge"/>
+                            <field name="timestamp"/>
+                            <field name="duration_minutes"/>
+                        </group>
+                        <group string="Associated Entities">
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                            <field name="trip_id"/>
+                            <field name="geofence_id"/>
+                        </group>
+                    </group>
+                    <group string="Telemetry &amp; Coordinates">
+                        <group>
+                            <field name="speed"/>
+                            <field name="speed_limit"/>
+                        </group>
+                        <group>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Event Notes / Analysis">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_top_gps_event_search" model="ir.ui.view">
+        <field name="name">top.gps.event.search</field>
+        <field name="model">top.gps.event</field>
+        <field name="arch" type="xml">
+            <search string="Search GPS Events">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="trip_id"/>
+                <separator/>
+                <filter string="Critical Violations" name="filter_danger" domain="[('severity', '=', 'danger')]"/>
+                <filter string="Overspeed Events" name="filter_overspeed" domain="[('event_type', '=', 'overspeed')]"/>
+                <filter string="Route Deviations" name="filter_deviation" domain="[('event_type', '=', 'route_deviation')]"/>
+                <filter string="Excessive Stops" name="filter_stops" domain="[('event_type', '=', 'excessive_stop')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Event Type" name="group_type" context="{'group_by': 'event_type'}"/>
+                    <filter string="Vehicle" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Severity" name="group_severity" context="{'group_by': 'severity'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'timestamp:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_top_gps_event" model="ir.actions.act_window">
+        <field name="name">GPS Alerts &amp; Events</field>
+        <field name="res_model">top.gps.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_top_gps_event_search"/>
+    </record>
+</odoo>

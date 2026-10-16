@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_top_logistics_dashboard_form" model="ir.ui.view">
+        <field name="name">top.logistics.dashboard.form</field>
+        <field name="model">top.logistics.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Logistics Management Dashboard" create="false" delete="false">
+                <header>
+                    <button name="action_open_dashboard" type="object" string="Launch Interactive Control Center" class="btn-primary" icon="fa-tachometer"/>
+                </header>
+                <sheet>
+                    <div class="oe_title mb-4 d-flex justify-content-between align-items-center">
+                        <h1 class="text-primary">
+                            <i class="fa fa-tachometer me-2"/> FMS Executive Logistics Dashboard
+                        </h1>
+                        <button name="action_open_dashboard" type="object" string="Open Interactive View" class="btn btn-outline-primary btn-sm"/>
+                    </div>
+
+                    <!-- Row 1: Section 38 & 39 Dispatch Pipeline Metrics -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="text-secondary border-bottom pb-2">
+                                <i class="fa fa-exchange me-1"/> Transport Request &amp; Dispatch Pipeline (Section 38)
+                            </h4>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">REQUESTED</span>
+                                <span class="fs-3 fw-bold text-dark"><field name="total_requests"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">APPROVED</span>
+                                <span class="fs-3 fw-bold text-primary"><field name="approved_requests"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">ASSIGNED</span>
+                                <span class="fs-3 fw-bold text-info"><field name="assigned_requests"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">DISPATCHED</span>
+                                <span class="fs-3 fw-bold text-warning"><field name="dispatched_requests"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">IN TRANSIT</span>
+                                <span class="fs-3 fw-bold text-warning"><field name="in_transit_requests"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">COMPLETED</span>
+                                <span class="fs-3 fw-bold text-success"><field name="completed_requests"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Fleet Status & Vehicle Allocation (Section 38 & 39) -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="text-secondary border-bottom pb-2">
+                                <i class="fa fa-truck me-1"/> Fleet Operational Status (Section 38 &amp; 39)
+                            </h4>
+                        </div>
+                        <div class="col-md-4 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">TOTAL FLEET</span>
+                                <span class="fs-2 fw-bold text-dark"><field name="total_vehicles"/></span>
+                                <span class="d-block small text-muted">Registered Vehicles</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">AVAILABLE FOR ASSIGNMENT</span>
+                                <span class="fs-2 fw-bold text-success"><field name="available_vehicles"/></span>
+                                <span class="d-block small text-success">Compliant &amp; Free</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">IN MAINTENANCE / REPAIR</span>
+                                <span class="fs-2 fw-bold text-danger"><field name="maintenance_vehicles"/></span>
+                                <span class="d-block small text-danger">Service Due or Workshop</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: GPS Telematics & Alerts (Section 39) -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="text-secondary border-bottom pb-2">
+                                <i class="fa fa-satellite-dish me-1"/> GPS Telematics &amp; Safety Events (Section 39)
+                            </h4>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">GPS ONLINE</span>
+                                <span class="fs-3 fw-bold text-success"><field name="gps_online_count"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">GPS OFFLINE</span>
+                                <span class="fs-3 fw-bold text-danger"><field name="gps_offline_count"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">OVERSPEED EVENTS</span>
+                                <span class="fs-3 fw-bold text-danger"><field name="overspeed_events_count"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">ROUTE DEVIATIONS</span>
+                                <span class="fs-3 fw-bold text-warning"><field name="route_deviations_count"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Financial KPIs (Section 39) -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h4 class="text-secondary border-bottom pb-2">
+                                <i class="fa fa-money me-1"/> Operating Costs &amp; Efficiency (Section 39)
+                            </h4>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">TOTAL FUEL EXPENSE</span>
+                                <span class="fs-4 fw-bold text-primary"><field name="total_fuel_cost"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">ACCIDENT / REPAIR COST</span>
+                                <span class="fs-4 fw-bold text-danger"><field name="total_maintenance_cost"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">AVERAGE COST / KM</span>
+                                <span class="fs-4 fw-bold text-dark"><field name="avg_cost_per_km"/></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 text-center p-2">
+                            <div class="border rounded p-3 bg-light shadow-sm">
+                                <span class="text-muted d-block small">AVERAGE COST / TRIP</span>
+                                <span class="fs-4 fw-bold text-dark"><field name="avg_cost_per_trip"/></span>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Interactive OWL Client Action -->
+    <record id="action_top_logistics_dashboard_client" model="ir.actions.client">
+        <field name="name">FMS Logistics Control Center</field>
+        <field name="tag">top_logistics_fleet_dashboard</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Secondary Interactive OWL Client Action: Vehicle Analytics Dashboard -->
+    <record id="action_top_vehicle_dashboard_client" model="ir.actions.client">
+        <field name="name">Vehicle Dashboard</field>
+        <field name="tag">top_vehicle_dashboard</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Action directly calling Python method opening singleton record (backward compatibility) -->
+    <record id="action_top_logistics_dashboard_window" model="ir.actions.server">
+        <field name="name">Management Dashboard</field>
+        <field name="model_id" ref="model_top_logistics_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_dashboard()</field>
+    </record>
+</odoo>

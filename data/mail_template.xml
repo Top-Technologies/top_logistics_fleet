@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- 1. Transport Request Submitted (Section 50) -->
+        <record id="mail_template_transport_request_submitted" model="mail.template">
+            <field name="name">Logistics: Transport Request Submitted</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="subject">Transport Request Submitted: {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.requester_id.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p>Dear <t t-out="object.requester_id.name"/>,</p>
+                    <p>Your transport request <strong><t t-out="object.name"/></strong> has been submitted successfully.</p>
+                    <ul>
+                        <li><strong>Trip Type:</strong> <t t-out="object.trip_type_id.name"/></li>
+                        <li><strong>Origin:</strong> <t t-out="object.origin"/></li>
+                        <li><strong>Destination:</strong> <t t-out="object.destination"/></li>
+                        <li><strong>Required Date:</strong> <t t-out="object.required_date"/></li>
+                        <li><strong>Priority:</strong> <t t-out="object.priority"/></li>
+                    </ul>
+                    <p>You can track the status in your FMS Logistics portal.</p>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 2. Transport Request Awaiting Approval (Section 50) -->
+        <record id="mail_template_request_awaiting_approval" model="mail.template">
+            <field name="name">Logistics: Transport Request Awaiting Approval</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="subject">Transport Request Awaiting Approval: {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.department_id.manager_id.user_id.partner_id.id if object.department_id and object.department_id.manager_id and object.department_id.manager_id.user_id else object.company_id.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p>Dear Approver,</p>
+                    <p>A new transport request <strong><t t-out="object.name"/></strong> submitted by <strong><t t-out="object.requester_id.name"/></strong> is awaiting your review and approval.</p>
+                    <ul>
+                        <li><strong>Department:</strong> <t t-out="object.department_id.name"/></li>
+                        <li><strong>Route:</strong> <t t-out="object.origin"/> ➔ <t t-out="object.destination"/></li>
+                        <li><strong>Required Date:</strong> <t t-out="object.required_date"/> to <t t-out="object.return_date"/></li>
+                        <li><strong>Priority:</strong> <t t-out="object.priority"/></li>
+                        <li><strong>Purpose:</strong> <t t-out="object.purpose"/></li>
+                    </ul>
+                    <p>Please log in to review and approve or reject this request.</p>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 3. Vehicle Assigned Notification (Section 50) -->
+        <record id="mail_template_vehicle_assigned" model="mail.template">
+            <field name="name">Logistics: Vehicle Assigned</field>
+            <field name="model_id" ref="model_top_transport_request"/>
+            <field name="subject">Vehicle Assigned for Request {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.requester_id.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p>Dear <t t-out="object.requester_id.name"/>,</p>
+                    <p>A vehicle and driver have been assigned to your request <strong><t t-out="object.name"/></strong>.</p>
+                    <ul>
+                        <li><strong>Vehicle:</strong> <t t-out="object.assigned_vehicle_id.name"/></li>
+                        <li><strong>Driver:</strong> <t t-out="object.assigned_driver_id.name"/></li>
+                        <li><strong>Planned Departure:</strong> <t t-out="object.required_date"/></li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 4. Trip Dispatched Notification (Section 50) -->
+        <record id="mail_template_trip_dispatched" model="mail.template">
+            <field name="name">Logistics: Trip Dispatched</field>
+            <field name="model_id" ref="model_top_fleet_trip"/>
+            <field name="subject">Trip Dispatched: {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.request_id.requester_id.partner_id.id if object.request_id else object.driver_id.user_id.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p>Trip <strong><t t-out="object.name"/></strong> has been officially inspected and dispatched.</p>
+                    <ul>
+                        <li><strong>Vehicle:</strong> <t t-out="object.vehicle_id.name"/></li>
+                        <li><strong>Driver:</strong> <t t-out="object.driver_id.name"/></li>
+                        <li><strong>Route:</strong> <t t-out="object.origin"/> ➔ <t t-out="object.destination"/></li>
+                        <li><strong>Departure Time:</strong> <t t-out="object.actual_departure"/></li>
+                        <li><strong>Starting Odometer:</strong> <t t-out="object.start_odometer"/> km</li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 5. Vehicle GPS Offline (Section 50 & 53) -->
+        <record id="mail_template_gps_offline" model="mail.template">
+            <field name="name">Logistics: Vehicle GPS Offline</field>
+            <field name="model_id" ref="model_top_gps_device"/>
+            <field name="subject">Vehicle GPS Offline: {{ object.vehicle_id.name or object.name }}</field>
+            <field name="email_from">{{ (user.email_formatted) }}</field>
+            <field name="email_to">{{ object.provider_id.create_uid.email or '' }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p><strong>GPS Device Offline Warning!</strong></p>
+                    <p>GPS device <strong><t t-out="object.name"/></strong> (IMEI: <t t-out="object.imei"/>) assigned to vehicle <strong><t t-out="object.vehicle_id.name or 'Unassigned'"/></strong> has ceased transmitting.</p>
+                    <ul>
+                        <li><strong>Last Communication:</strong> <t t-out="object.last_communication"/></li>
+                        <li><strong>Last Known Location:</strong> <t t-out="object.address or 'Unknown'"/></li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 6. Trip Delay Detected (Section 50) -->
+        <record id="mail_template_trip_delay" model="mail.template">
+            <field name="name">Logistics: Trip Delay Detected</field>
+            <field name="model_id" ref="model_top_fleet_trip"/>
+            <field name="subject">Trip Delay Detected: {{ object.name }} ({{ object.vehicle_id.name }})</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.trip_coordinator_id.partner_id.id if object.trip_coordinator_id else object.request_id.requester_id.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p><strong>Operational Delay Alert:</strong></p>
+                    <p>Trip <strong><t t-out="object.name"/></strong> has exceeded its planned arrival schedule.</p>
+                    <ul>
+                        <li><strong>Vehicle:</strong> <t t-out="object.vehicle_id.name"/></li>
+                        <li><strong>Driver:</strong> <t t-out="object.driver_id.name"/></li>
+                        <li><strong>Planned Arrival:</strong> <t t-out="object.planned_arrival"/></li>
+                        <li><strong>Current Status:</strong> <t t-out="object.state"/></li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 7. Overspeed Event Detected (Section 50 & 53) -->
+        <record id="mail_template_overspeed_detected" model="mail.template">
+            <field name="name">Logistics: Overspeed Event Detected</field>
+            <field name="model_id" ref="model_top_gps_event"/>
+            <field name="subject">Overspeed Event Detected: {{ object.vehicle_id.name }} ({{ object.speed }} km/h)</field>
+            <field name="email_from">{{ (user.email_formatted) }}</field>
+            <field name="email_to">{{ object.vehicle_id.company_id.email or '' }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p><strong>Safety Violation: Overspeed Detected!</strong></p>
+                    <p>Vehicle <strong><t t-out="object.vehicle_id.name"/></strong> recorded a speed violation of <strong><t t-out="object.speed"/> km/h</strong> (Threshold: <t t-out="object.speed_limit"/> km/h).</p>
+                    <ul>
+                        <li><strong>Driver:</strong> <t t-out="object.driver_id.name or 'N/A'"/></li>
+                        <li><strong>Trip:</strong> <t t-out="object.trip_id.name or 'Not on active trip'"/></li>
+                        <li><strong>Timestamp:</strong> <t t-out="object.timestamp"/></li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 8. Vehicle Maintenance Due (Section 33 & 50) -->
+        <record id="mail_template_maintenance_due" model="mail.template">
+            <field name="name">Logistics: Vehicle Maintenance Due</field>
+            <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+            <field name="subject">Vehicle Maintenance Due: {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="email_to">{{ object.company_id.email or '' }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p><strong>Preventive Maintenance Service Due:</strong></p>
+                    <p>Vehicle <strong><t t-out="object.name"/></strong> has reached its scheduled maintenance interval.</p>
+                    <ul>
+                        <li><strong>Current Odometer:</strong> <t t-out="object.odometer"/> km</li>
+                        <li><strong>Service Due Target:</strong> <t t-out="object.next_service_odometer"/> km</li>
+                        <li><strong>Interval:</strong> Every <t t-out="object.service_interval_km"/> km</li>
+                    </ul>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- 9. Driver License Expiring (Section 13 & 50) -->
+        <record id="mail_template_license_expiring" model="mail.template">
+            <field name="name">Logistics: Driver License Expiring</field>
+            <field name="model_id" ref="hr.model_hr_employee"/>
+            <field name="subject">Driver License Expiring Soon: {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+            <field name="email_to">{{ object.work_email or '' }}</field>
+            <field name="body_html" type="html">
+                <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                    <p>Dear <t t-out="object.name"/>,</p>
+                    <p>This is an automated notice that your commercial driving license is nearing its expiration date.</p>
+                    <ul>
+                        <li><strong>License Number:</strong> <t t-out="object.driver_license_number"/></li>
+                        <li><strong>License Category:</strong> <t t-out="object.license_category"/></li>
+                        <li><strong>Expiration Date:</strong> <t t-out="object.license_expiry_date"/></li>
+                    </ul>
+                    <p>Please submit renewed documentation to Fleet Operations before expiry.</p>
+                </div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

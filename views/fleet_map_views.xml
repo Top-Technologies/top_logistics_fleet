@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Live Fleet Vehicle Tracking Kanban (Section 52) -->
+    <record id="view_top_fleet_vehicle_live_map_kanban" model="ir.ui.view">
+        <field name="name">fleet.vehicle.live.map.kanban</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="operational_status" create="false" sample="1">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="driver_id"/>
+                <field name="operational_status"/>
+                <field name="live_speed"/>
+                <field name="live_odometer"/>
+                <field name="live_fuel_level"/>
+                <field name="live_battery"/>
+                <field name="live_ignition"/>
+                <field name="live_last_communication"/>
+                <field name="live_address"/>
+                <field name="live_latitude"/>
+                <field name="live_longitude"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click p-3 border rounded shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong class="fs-5 text-primary">
+                                    <i class="fa fa-truck me-1"/> <field name="name"/>
+                                </strong>
+                                <field name="operational_status" widget="badge"/>
+                            </div>
+                            <div class="mb-1 text-muted small">
+                                <i class="fa fa-user me-1 text-secondary"/> Driver: 
+                                <strong><field name="driver_id"/></strong>
+                            </div>
+                            <div class="mb-1 small">
+                                <i class="fa fa-map-marker text-danger me-1"/> Location: 
+                                <span class="text-dark"><field name="live_address"/></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                <div>
+                                    <span class="badge bg-secondary me-1"><field name="live_speed"/> km/h</span>
+                                    <span class="badge bg-light text-dark border me-1"><field name="live_odometer"/> km</span>
+                                    <span class="badge bg-info text-dark me-1"><i class="fa fa-tint"/> <field name="live_fuel_level"/> L</span>
+                                    <span class="badge bg-warning text-dark me-1"><i class="fa fa-bolt"/> <field name="live_battery"/> V</span>
+                                </div>
+                                <button name="action_view_on_map" string="Open Map" type="object" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-external-link"/> Map
+                                </button>
+                            </div>
+                            <div class="text-end text-muted small mt-1">
+                                <i class="fa fa-clock-o me-1"/> Last Ping: <field name="live_last_communication"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Action for Live Vehicle Tracking -->
+    <record id="action_top_fleet_live_map" model="ir.actions.act_window">
+        <field name="name">Live Fleet Tracking (Section 52)</field>
+        <field name="res_model">fleet.vehicle</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="view_top_fleet_vehicle_live_map_kanban"/>
+        <field name="domain">[('active', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Live Vehicle Tracking Map Interface!
+            </p>
+            <p>
+                Monitor real-time vehicle coordinates, speeds, driver assignments, and live status.
+            </p>
+        </field>
+    </record>
+</odoo>

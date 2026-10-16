@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top Level App Menu -->
+    <menuitem id="menu_top_logistics_root"
+              name="FMS Logistics"
+              sequence="35"
+              web_icon="top_logistics_fleet,static/description/icon.png"
+              groups="top_logistics_fleet.group_transport_request_user"/>
+
+    <!-- 0. Live Management Dashboard (Section 38 & 39) -->
+    <menuitem id="menu_top_logistics_dashboard"
+              name="Dashboard"
+              parent="menu_top_logistics_root"
+              action="action_top_logistics_dashboard_client"
+              sequence="5"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+
+    <!-- 0.1 Secondary Vehicle Analytics Dashboard -->
+    <menuitem id="menu_top_vehicle_dashboard"
+              name="Vehicle Dashboard"
+              parent="menu_top_logistics_root"
+              action="action_top_vehicle_dashboard_client"
+              sequence="6"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+
+    <!-- 1. Transport Requests Menu Header -->
+    <menuitem id="menu_transport_request_parent"
+              name="Transport Requests"
+              parent="menu_top_logistics_root"
+              sequence="10"/>
+
+    <menuitem id="menu_transport_request_all"
+              name="All Requests"
+              parent="menu_transport_request_parent"
+              action="action_top_transport_request_all"
+              sequence="10"/>
+
+    <menuitem id="menu_transport_request_my"
+              name="My Requests"
+              parent="menu_transport_request_parent"
+              action="action_top_transport_request_my"
+              sequence="20"/>
+
+    <menuitem id="menu_transport_request_to_approve"
+              name="To Approve"
+              parent="menu_transport_request_parent"
+              action="action_top_transport_request_to_approve"
+              sequence="30"
+              groups="top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+
+    <menuitem id="menu_transport_request_allocation"
+              name="Vehicle Allocation"
+              parent="menu_transport_request_parent"
+              action="action_top_transport_request_allocation"
+              sequence="40"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+
+    <!-- 2. Trips & Dispatch Header (Sections 14, 17, 34, 37) -->
+    <menuitem id="menu_top_fleet_trip_parent"
+              name="Trips &amp; Dispatch"
+              parent="menu_top_logistics_root"
+              sequence="20"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+
+    <menuitem id="menu_top_fleet_trip_all"
+              name="All Trips"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_fleet_trip_all"
+              sequence="10"/>
+
+    <menuitem id="menu_top_fleet_trip_active"
+              name="Active Trips"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_fleet_trip_active"
+              sequence="20"/>
+
+    <menuitem id="menu_top_vehicle_availability_calendar_menu"
+              name="Availability Calendar"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_vehicle_availability_calendar"
+              sequence="25"/>
+
+    <menuitem id="menu_top_fleet_trip_completed"
+              name="Completed Trips"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_fleet_trip_completed"
+              sequence="30"/>
+
+    <menuitem id="menu_top_fleet_accident"
+              name="Accidents &amp; Incidents"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_fleet_accident"
+              sequence="40"/>
+
+    <!-- 3. Fuel & Costs Header (Sections 30 & 31) -->
+    <menuitem id="menu_top_fleet_fuel_parent"
+              name="Fuel &amp; Costs"
+              parent="menu_top_logistics_root"
+              sequence="25"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_logistics_finance,top_logistics_fleet.group_fleet_manager"/>
+
+    <menuitem id="menu_top_fuel_consumption_report"
+              name="Fuel Consumption &amp; Efficiency Report"
+              parent="menu_top_fleet_fuel_parent"
+              action="action_top_fuel_consumption_report_wizard"
+              sequence="5"/>
+
+    <menuitem id="menu_top_fleet_fuel_analysis"
+              name="Fuel Analytics &amp; Telematics"
+              parent="menu_top_fleet_fuel_parent"
+              action="action_top_fleet_fuel_analysis"
+              sequence="10"/>
+
+    <menuitem id="menu_top_gps_fuel_transaction"
+              name="GPS Fuel Transactions (Refills &amp; Drains)"
+              parent="menu_top_fleet_fuel_parent"
+              action="action_top_gps_fuel_transaction"
+              sequence="15"/>
+
+    <menuitem id="menu_top_fleet_fuel_efficiency"
+              name="Trip Fuel Audit"
+              parent="menu_top_fleet_fuel_parent"
+              action="action_top_fleet_fuel_efficiency"
+              sequence="20"/>
+
+    <menuitem id="menu_top_fleet_fuel_log"
+              name="Manual Fuel Receipts"
+              parent="menu_top_fleet_fuel_parent"
+              action="action_top_fleet_fuel_log"
+              sequence="25"/>
+
+    <!-- 4. Driver Management Header (Section 13) -->
+    <menuitem id="menu_top_fleet_driver_parent"
+              name="Drivers"
+              parent="menu_top_logistics_root"
+              sequence="30"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+
+    <menuitem id="menu_top_fleet_driver_all"
+              name="Driver Directory"
+              parent="menu_top_fleet_driver_parent"
+              action="action_top_fleet_drivers"
+              sequence="10"/>
+
+    <menuitem id="menu_top_fleet_driver_available"
+              name="Available Drivers"
+              parent="menu_top_fleet_driver_parent"
+              action="action_top_fleet_drivers_available"
+              sequence="20"/>
+
+    <!-- 5. GPS & Telemetry Header (Sections 18, 19, 21, 27, 28, 52) -->
+    <menuitem id="menu_top_gps_device_parent"
+              name="GPS Telematics"
+              parent="menu_top_logistics_root"
+              sequence="40"
+              groups="top_logistics_fleet.group_gps_operator,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+
+    <menuitem id="menu_top_fleet_live_map"
+              name="Live Fleet Tracking"
+              parent="menu_top_gps_device_parent"
+              action="action_top_fleet_live_map"
+              sequence="5"/>
+
+    <menuitem id="menu_top_gps_device_all"
+              name="GPS Devices"
+              parent="menu_top_gps_device_parent"
+              action="action_top_gps_device"
+              sequence="10"/>
+
+    <menuitem id="menu_top_gps_geofence"
+              name="Geofences"
+              parent="menu_top_gps_device_parent"
+              action="action_top_gps_geofence"
+              sequence="20"/>
+
+    <menuitem id="menu_top_gps_event"
+              name="Alerts &amp; Events"
+              parent="menu_top_gps_device_parent"
+              action="action_top_gps_event"
+              sequence="30"/>
+
+    <menuitem id="menu_top_gps_position"
+              name="Telemetry History"
+              parent="menu_top_gps_device_parent"
+              action="action_top_gps_position"
+              sequence="40"/>
+
+    <!-- 6. Configuration Menu Header -->
+    <menuitem id="menu_top_logistics_config_parent"
+              name="Configuration"
+              parent="menu_top_logistics_root"
+              sequence="90"
+              groups="top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_admin"/>
+
+    <menuitem id="menu_top_gps_provider"
+              name="GPS API Providers"
+              parent="menu_top_logistics_config_parent"
+              action="action_top_gps_provider"
+              sequence="5"/>
+
+    <menuitem id="menu_top_fleet_alert_config"
+              name="Safety &amp; Alert Parameters"
+              parent="menu_top_logistics_config_parent"
+              action="action_top_fleet_alert_config"
+              sequence="8"/>
+
+    <menuitem id="menu_top_transport_request_type"
+              name="Request Types"
+              parent="menu_top_logistics_config_parent"
+              action="action_top_transport_request_type"
+              sequence="10"/>
+
+    <menuitem id="menu_top_fleet_trip_type"
+              name="Trip Types"
+              parent="menu_top_logistics_config_parent"
+              action="action_top_fleet_trip_type"
+              sequence="20"/>
+
+    <!-- Load Demo Data Server Action & Menu (For Demo / Evaluation) -->
+    <record id="action_load_top_logistics_demo" model="ir.actions.server">
+        <field name="name">Load Demo Scenarios</field>
+        <field name="model_id" ref="model_top_logistics_dashboard"/>
+        <field name="binding_model_id" ref="model_top_logistics_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_load_demo_scenarios()</field>
+        <field name="groups_id" eval="[(4, ref('top_logistics_fleet.group_logistics_admin'))]"/>
+    </record>
+
+    <menuitem id="menu_top_logistics_load_demo"
+              name="Load Demo Scenarios"
+              parent="menu_top_logistics_config_parent"
+              action="action_load_top_logistics_demo"
+              sequence="99"
+              groups="top_logistics_fleet.group_logistics_admin"/>
+</odoo>
