@@ -7,13 +7,20 @@
         <field name="arch" type="xml">
             <list string="Fleet Trips" sample="1">
                 <field name="name" decoration-bf="1"/>
+                <field name="fleet_order_type" widget="badge"
+                       decoration-warning="fleet_order_type == 'heavy'"
+                       decoration-info="fleet_order_type == 'light'"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id" widget="many2one_avatar_user"/>
-                <field name="origin"/>
-                <field name="destination"/>
+                <field name="origin_location_id" optional="show"/>
+                <field name="destination_location_id" optional="show"/>
+                <field name="origin" optional="hide"/>
+                <field name="destination" optional="hide"/>
+                <field name="total_stops_count" string="Stops" optional="show"/>
                 <field name="planned_departure"/>
                 <field name="planned_arrival"/>
                 <field name="actual_distance" sum="Total Actual Distance (km)"/>
+                <field name="actual_duration_display" string="Time Taken" optional="show"/>
                 <field name="start_fuel" optional="hide"/>
                 <field name="end_fuel" optional="hide"/>
                 <field name="total_refueled" optional="hide"/>
@@ -94,19 +101,58 @@
                     <group>
                         <group name="vehicle_driver_group" string="Vehicle &amp; Driver Allocation">
                             <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="vehicle_last_service_date"/>
+                            <field name="vehicle_next_service_date"/>
+                            <field name="vehicle_service_status" widget="badge"
+                                   decoration-danger="vehicle_service_status == 'due'"
+                                   decoration-success="vehicle_service_status == 'ok'"/>
                             <field name="driver_id" readonly="state != 'draft'"/>
+                            <field name="driver_license_expiry_date"/>
+                            <field name="driver_license_compliance" widget="badge"
+                                   decoration-danger="driver_is_license_expired"
+                                   decoration-success="not driver_is_license_expired"/>
                             <field name="backup_driver_id" readonly="state != 'draft'"/>
                             <field name="trip_coordinator_id" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_group" string="Schedule &amp; Classification">
+                            <field name="fleet_order_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
+                            <field name="inspection_id" readonly="state != 'draft'"/>
                             <field name="request_id" readonly="1"/>
+                            <field name="request_ids" widget="many2many_tags" readonly="1" string="Consolidated Orders"/>
                             <field name="planned_departure" readonly="state != 'draft'"/>
                             <field name="planned_arrival" readonly="state != 'draft'"/>
                             <field name="actual_departure" readonly="1"/>
                             <field name="actual_arrival" readonly="1"/>
                         </group>
                     </group>
+
+                    <!-- Summary Metrics Cards -->
+                    <div class="row g-2 my-2">
+                        <div class="col-md-4">
+                            <div class="card p-2 bg-light border text-center shadow-sm">
+                                <div class="text-muted small text-uppercase fw-bold"><i class="fa fa-road text-primary me-1"/> Distance Traveled</div>
+                                <div class="fs-4 fw-bold text-primary"><field name="actual_distance"/> km</div>
+                                <div class="small text-muted">Planned: <field name="planned_distance"/> km</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-2 bg-light border text-center shadow-sm">
+                                <div class="text-muted small text-uppercase fw-bold"><i class="fa fa-clock-o text-info me-1"/> Total Time Taken</div>
+                                <div class="fs-4 fw-bold text-info"><field name="actual_duration_display"/></div>
+                                <div class="small text-muted">Planned: <field name="planned_duration"/> Hours</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-2 bg-light border text-center shadow-sm">
+                                <div class="text-muted small text-uppercase fw-bold"><i class="fa fa-map-marker text-success me-1"/> Stops Visited</div>
+                                <div class="fs-4 fw-bold text-success">
+                                    <field name="completed_stops_count"/> / <field name="total_stops_count"/>
+                                </div>
+                                <div class="small text-muted">Cancelled: <field name="cancelled_stops_count"/> | Pending: <field name="pending_stops_count"/></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- GPS Live Telemetry Banner (Section 14, 18, 25, 26) -->
                     <div class="alert alert-secondary d-flex justify-content-between align-items-center mt-2" role="alert">
@@ -127,25 +173,39 @@
                         <page name="route_page" string="Route &amp; Waypoints (Section 16)">
                             <group>
                                 <group string="Trip Endpoints">
-                                    <field name="origin" readonly="state != 'draft'"/>
-                                    <field name="destination" readonly="state != 'draft'"/>
+                                    <field name="origin_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Origin..." readonly="state != 'draft'"/>
+                                    <field name="origin" placeholder="Specific origin address..." readonly="state != 'draft'"/>
+                                    <field name="destination_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Destination..." readonly="state != 'draft'"/>
+                                    <field name="destination" placeholder="Specific destination address..." readonly="state != 'draft'"/>
                                 </group>
                                 <group string="Distance &amp; Duration">
                                     <field name="planned_distance"/>
                                     <field name="actual_distance"/>
                                     <field name="planned_duration"/>
                                     <field name="actual_duration"/>
+                                    <field name="actual_duration_display"/>
                                 </group>
                             </group>
-                            <separator string="Intermediate Stops / Waypoints"/>
+                            <separator string="Intermediate Stops &amp; Consolidations"/>
                             <field name="waypoint_ids">
-                                <list editable="bottom">
+                                <list editable="bottom" decoration-muted="state == 'pending'" decoration-success="state == 'completed'" decoration-danger="state == 'cancelled'">
                                     <field name="sequence" widget="handle"/>
+                                    <field name="location_id" options="{'no_create_edit': False}" placeholder="Predefined Location..."/>
                                     <field name="location_name"/>
+                                    <field name="stop_type" widget="badge"/>
+                                    <field name="request_id" optional="show"/>
+                                    <field name="cargo_or_passenger_notes" placeholder="Pick/drop details..."/>
                                     <field name="estimated_arrival"/>
                                     <field name="actual_arrival"/>
-                                    <field name="completed" widget="boolean_toggle"/>
-                                    <field name="notes"/>
+                                    <field name="actual_departure"/>
+                                    <field name="time_spent_hours" string="Dwell (h)" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-muted="state == 'pending'"
+                                           decoration-success="state == 'completed'"
+                                           decoration-danger="state == 'cancelled'"/>
+                                    <field name="notes" optional="show"/>
+                                    <button name="action_mark_completed" string="Mark Visited" type="object" icon="fa-check text-success" invisible="state == 'completed'"/>
+                                    <button name="action_cancel_stop" string="Cancel Stop" type="object" icon="fa-times text-danger" invisible="state in ('completed', 'cancelled')"/>
                                 </list>
                             </field>
                         </page>

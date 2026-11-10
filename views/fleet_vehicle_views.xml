@@ -12,12 +12,18 @@
                        statusbar_visible="available,assigned,on_trip,maintenance"/>
             </xpath>
 
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_inspections" type="object" class="oe_stat_button" icon="fa-check-square-o">
+                    <field name="inspection_count" widget="statinfo" string="Inspections"/>
+                </button>
+            </xpath>
+
             <xpath expr="//sheet" position="before">
                 <div class="alert alert-danger" role="alert" invisible="not has_document_expired">
                     <strong>Document Compliance Alert:</strong> <field name="document_compliance_status"/>
                 </div>
                 <div class="alert alert-warning" role="alert" invisible="not is_service_due">
-                    <strong>Maintenance Service Due (Section 33):</strong> Vehicle has reached its scheduled service interval (<field name="odometer"/> km &gt;= <field name="next_service_odometer"/> km).
+                    <strong>Maintenance Service Due:</strong> Vehicle is due for periodic maintenance service (Mileage: <field name="odometer"/> / <field name="next_service_odometer"/> km | Next Due Date: <field name="next_service_date"/>).
                 </div>
             </xpath>
 
@@ -32,6 +38,7 @@
                             <field name="document_compliance_status" readonly="1" class="fw-bold"/>
                         </group>
                         <group string="Operational Capacity &amp; Location (Section 10)">
+                            <field name="fleet_type" widget="badge"/>
                             <field name="current_location"/>
                             <field name="capacity_passengers"/>
                             <field name="capacity_cargo_kg"/>
@@ -67,11 +74,16 @@
                             <field name="utilization_rate" widget="progressbar"/>
                             <field name="assigned_hours"/>
                             <field name="available_hours"/>
-                            <separator string="Service Schedule"/>
+                            <separator string="Service Schedule &amp; Dates"/>
+                            <field name="last_service_date"/>
+                            <field name="next_service_date"/>
+                            <field name="service_interval_days"/>
                             <field name="service_interval_km"/>
                             <field name="last_service_odometer"/>
                             <field name="next_service_odometer"/>
                             <field name="is_service_due" widget="boolean_toggle"/>
+                            <field name="last_inspection_id"/>
+                            <field name="last_inspection_result" widget="badge"/>
                         </group>
                     </group>
                     <field name="fuel_log_ids">
@@ -114,11 +126,17 @@
         <field name="inherit_id" ref="fleet.fleet_vehicle_view_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='state_id']" position="after">
+                <field name="fleet_type" widget="badge" optional="show"/>
                 <field name="operational_status" widget="badge"
                        decoration-success="operational_status == 'available'"
                        decoration-info="operational_status == 'assigned'"
                        decoration-warning="operational_status == 'on_trip'"
                        decoration-danger="operational_status in ('maintenance', 'inactive')"/>
+                <field name="next_service_date" optional="show"/>
+                <field name="last_inspection_result" widget="badge" optional="show"
+                       decoration-success="last_inspection_result == 'passed'"
+                       decoration-warning="last_inspection_result == 'passed_with_notes'"
+                       decoration-danger="last_inspection_result == 'failed'"/>
                 <field name="utilization_rate" string="Utilization (%)"/>
                 <field name="cost_per_km" string="Cost/KM"/>
                 <field name="service_status" widget="badge"

@@ -1,3 +1,4 @@
+from . import logistics_location
 from . import transport_request_type
 from . import gps_device
 from . import gps_provider
@@ -6,6 +7,7 @@ from . import gps_geofence
 from . import gps_event
 from . import fleet_fuel_log
 from . import fleet_accident
+from . import vehicle_inspection
 from . import fleet_vehicle
 from . import hr_employee
 from . import fleet_trip_type

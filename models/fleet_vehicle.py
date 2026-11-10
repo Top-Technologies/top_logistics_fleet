@@ -14,6 +14,11 @@ class FleetVehicle(models.Model):
         ('inactive', 'Inactive'),
     ], string='Operational Status', default='available', tracking=True, index=True)
 
+    fleet_type = fields.Selection([
+        ('light', 'Light Fleet'),
+        ('heavy', 'Heavy Fleet'),
+    ], string='Fleet Classification', default='light', required=True, tracking=True, index=True)
+
     # Compliance & Validity (Section 12)
     registration_expiry = fields.Date(string='Registration Expiry Date', tracking=True)
     insurance_expiry = fields.Date(string='Insurance Expiry Date', tracking=True)
@@ -80,40 +85,128 @@ class FleetVehicle(models.Model):
     assigned_hours = fields.Float(string='Assigned Hours', compute='_compute_vehicle_operating_costs', store=True)
     utilization_rate = fields.Float(string='Vehicle Utilization (%)', compute='_compute_vehicle_operating_costs', store=True)
 
-    # Maintenance Service Schedule (Section 33)
+    # Maintenance Service Schedule (Section 33 & Extended)
     service_interval_km = fields.Float(string='Service Interval (km)', default=5000.0)
     last_service_odometer = fields.Float(string='Last Service Odometer (km)', default=0.0)
     next_service_odometer = fields.Float(
         string='Next Service Due at (km)',
         compute='_compute_service_due',
-        store=True
+        store=True,
     )
+    last_service_date = fields.Date(string='Last Service Date', tracking=True)
+    next_service_date = fields.Date(string='Next Service Date', tracking=True)
+    service_interval_days = fields.Integer(string='Service Interval (Days)', default=90)
     is_service_due = fields.Boolean(
         string='Maintenance Service Due',
         compute='_compute_service_due',
-        store=True
+        store=True,
     )
     service_status = fields.Selection([
         ('due', 'Service Due'),
         ('ok', 'Up to Date'),
     ], string='Service Status', compute='_compute_service_due', store=True)
 
-    @api.depends('odometer', 'last_service_odometer', 'service_interval_km')
+    # Technical Inspections Linkage
+    inspection_ids = fields.One2many(
+        'top.fleet.vehicle.inspection',
+        'vehicle_id',
+        string='Technical Inspections',
+    )
+    inspection_count = fields.Integer(
+        string='Inspection Count',
+        compute='_compute_inspection_count',
+    )
+    last_inspection_id = fields.Many2one(
+        'top.fleet.vehicle.inspection',
+        string='Latest Inspection',
+        compute='_compute_inspection_metrics',
+        store=True,
+    )
+    last_inspection_result = fields.Selection(
+        related='last_inspection_id.result',
+        string='Latest Inspection Result',
+        readonly=True,
+    )
+    last_inspection_date = fields.Datetime(
+        related='last_inspection_id.inspection_date',
+        string='Latest Inspection Date',
+        readonly=True,
+    )
+    is_inspection_valid = fields.Boolean(
+        string='Has Valid Pre-Trip Inspection',
+        compute='_compute_inspection_metrics',
+        store=True,
+        help='Indicates whether a confirmed, passing inspection exists within the valid window.',
+    )
+
+    @api.depends('odometer', 'last_service_odometer', 'service_interval_km', 'last_service_date', 'next_service_date', 'service_interval_days')
     def _compute_service_due(self):
+        today = fields.Date.today()
         for v in self:
             v.next_service_odometer = (v.last_service_odometer or 0.0) + (v.service_interval_km or 5000.0)
-            if (v.odometer or 0.0) >= v.next_service_odometer:
+            if v.last_service_date and not v.next_service_date and v.service_interval_days:
+                v.next_service_date = v.last_service_date + timedelta(days=v.service_interval_days)
+
+            odo_due = (v.odometer or 0.0) >= v.next_service_odometer if v.next_service_odometer else False
+            date_due = bool(v.next_service_date and today >= v.next_service_date)
+
+            if odo_due or date_due:
                 v.is_service_due = True
                 v.service_status = 'due'
             else:
                 v.is_service_due = False
                 v.service_status = 'ok'
 
-    @api.depends('fuel_log_ids.quantity', 'fuel_log_ids.total_cost', 'odometer', 'trip_ids.actual_duration', 'trip_ids.actual_distance', 'available_hours')
+    def _compute_inspection_count(self):
+        for v in self:
+            v.inspection_count = len(v.inspection_ids)
+
+    @api.depends('inspection_ids.state', 'inspection_ids.result', 'inspection_ids.valid_until', 'inspection_ids.inspection_date')
+    def _compute_inspection_metrics(self):
+        now = fields.Datetime.now()
+        for v in self:
+            v.inspection_count = len(v.inspection_ids)
+            valid_inspections = v.inspection_ids.filtered(lambda i: i.state == 'confirmed').sorted('inspection_date', reverse=True)
+            if valid_inspections:
+                latest = valid_inspections[0]
+                v.last_inspection_id = latest.id
+                v.is_inspection_valid = bool(
+                    latest.result in ('passed', 'passed_with_notes') and
+                    latest.valid_until and latest.valid_until >= now
+                )
+            else:
+                v.last_inspection_id = False
+                v.is_inspection_valid = False
+
+    def action_view_inspections(self):
+        self.ensure_one()
+        return {
+            'name': _('Vehicle Inspections: %s') % self.name,
+            'type': 'ir.actions.act_window',
+            'res_model': 'top.fleet.vehicle.inspection',
+            'view_mode': 'list,form',
+            'domain': [('vehicle_id', '=', self.id)],
+            'context': {
+                'default_vehicle_id': self.id,
+                'default_fleet_type': self.fleet_type,
+                'default_odometer': self.odometer or 0.0,
+            },
+        }
+
+    @api.depends('fuel_log_ids.quantity', 'fuel_log_ids.total_cost', 'odometer', 'trip_ids.actual_duration', 'trip_ids.actual_distance', 'trip_ids.actual_fuel', 'trip_ids.consumed_fuel_cost', 'available_hours')
     def _compute_vehicle_operating_costs(self):
         for v in self:
             total_litres = sum(v.fuel_log_ids.mapped('quantity'))
             total_fuel = sum(v.fuel_log_ids.mapped('total_cost'))
+
+            completed_trips = v.trip_ids.filtered(lambda t: t.state in ['completed', 'reconciled', 'closed'])
+            if total_litres <= 0.0 and completed_trips:
+                trip_litres = sum(completed_trips.mapped('actual_fuel'))
+                trip_cost = sum(completed_trips.mapped('consumed_fuel_cost'))
+                if trip_litres > 0.0:
+                    total_litres = round(trip_litres, 2)
+                    total_fuel = round(trip_cost, 2)
+
             v.total_fuel_litres = total_litres
             v.total_fuel_cost = total_fuel
 

@@ -140,19 +140,29 @@ class LogisticsDashboard(models.Model):
         }
 
     @api.model
-    def get_dashboard_data(self, period='all'):
+    @api.model
+    def get_dashboard_data(self, period='all', date_from=None, date_to=None):
         """Comprehensive API method returning real-time metrics, trend data, active trips, and alerts."""
         today_date = fields.Date.today()
         now_dt = fields.Datetime.now()
 
         # Determine date filter
         date_start = None
+        date_end = None
         if period == 'today':
             date_start = datetime.combine(today_date, datetime.min.time())
+            date_end = datetime.combine(today_date, datetime.max.time())
         elif period == 'this_week':
             date_start = datetime.combine(today_date - timedelta(days=today_date.weekday()), datetime.min.time())
+            date_end = now_dt
         elif period == 'this_month':
             date_start = datetime.combine(today_date.replace(day=1), datetime.min.time())
+            date_end = now_dt
+        elif period == 'custom' and (date_from or date_to):
+            if date_from:
+                date_start = fields.Datetime.from_string(date_from) if len(str(date_from)) > 10 else datetime.combine(fields.Date.from_string(date_from), datetime.min.time())
+            if date_to:
+                date_end = fields.Datetime.from_string(date_to) if len(str(date_to)) > 10 else datetime.combine(fields.Date.from_string(date_to), datetime.max.time())
 
         req_obj = self.env['top.transport.request']
         veh_obj = self.env['fleet.vehicle']
@@ -165,9 +175,12 @@ class LogisticsDashboard(models.Model):
 
         # Date domain builder
         def with_date(domain, field_name='create_date'):
+            res = list(domain)
             if date_start:
-                return domain + [(field_name, '>=', fields.Datetime.to_string(date_start))]
-            return domain
+                res.append((field_name, '>=', fields.Datetime.to_string(date_start)))
+            if date_end:
+                res.append((field_name, '<=', fields.Datetime.to_string(date_end)))
+            return res
 
         # 1. Transport Requests
         req_domain = with_date([], 'request_date')
@@ -233,10 +246,19 @@ class LogisticsDashboard(models.Model):
         geofence_breaches = event_obj.search_count(with_date([('event_type', 'in', ['geofence_entry', 'geofence_exit'])], 'timestamp'))
         critical_violations = event_obj.search_count(with_date([('severity', '=', 'danger')], 'timestamp'))
 
-        # 6. Costs & Fuel
+        # 6. Costs & Fuel (complete fuel in period: manual receipts + trip consumed fuel)
         fuel_records = fuel_obj.search(with_date([], 'date'))
         total_fuel_cost = round(sum(fuel_records.mapped('total_cost')), 2)
         total_fuel_litres = round(sum(fuel_records.mapped('quantity')), 2)
+
+        # Include completed & active trip fuel if no manual fuel receipts logged in period
+        if total_fuel_litres <= 0:
+            trip_fuel_qty = round(sum(completed_trips_records.mapped('actual_fuel')), 2)
+            trip_fuel_val = round(sum(completed_trips_records.mapped('consumed_fuel_cost')), 2)
+            if trip_fuel_qty > 0:
+                total_fuel_litres = trip_fuel_qty
+                if total_fuel_cost <= 0:
+                    total_fuel_cost = trip_fuel_val
 
         accident_records = accident_obj.search(with_date([], 'date'))
         total_repair_cost = round(sum(accident_records.mapped('actual_cost')), 2)
@@ -434,15 +456,39 @@ class LogisticsDashboard(models.Model):
         """
         Real-time API for the Vehicle Dashboard.
         100% connected to live database records: fleet.vehicle, top.fleet.trip,
-        and top.fleet.fuel.log. Zero static placeholders.
+        and top.fleet.fuel.log. Tracks complete fuel based on selected date range.
         """
         today_date = fields.Date.today()
+        now_dt = fields.Datetime.now()
         veh_obj = self.env['fleet.vehicle']
         trip_obj = self.env['top.fleet.trip']
         fuel_obj = self.env['top.fleet.fuel.log']
         all_vehicles = veh_obj.search([])
         all_vehicles = all_vehicles.sorted(key=lambda v: (v.odometer or 0.0), reverse=True)
         total_veh = len(all_vehicles)
+
+        # Resolve date boundaries based on period and custom dates
+        start_dt = None
+        end_dt = None
+
+        if period == 'daily' or period == 'today':
+            start_dt = datetime.combine(today_date, datetime.min.time())
+            end_dt = datetime.combine(today_date, datetime.max.time())
+        elif period == 'weekly' or period == 'this_week':
+            start_dt = datetime.combine(today_date - timedelta(days=today_date.weekday()), datetime.min.time())
+            end_dt = now_dt
+        elif period == 'monthly' or period == 'this_month':
+            start_dt = datetime.combine(today_date.replace(day=1), datetime.min.time())
+            end_dt = now_dt
+        elif period == 'custom' and (date_from or date_to):
+            if date_from:
+                start_dt = fields.Datetime.from_string(date_from) if len(str(date_from)) > 10 else datetime.combine(fields.Date.from_string(date_from), datetime.min.time())
+            else:
+                start_dt = datetime.combine(today_date - timedelta(days=7), datetime.min.time())
+            if date_to:
+                end_dt = fields.Datetime.from_string(date_to) if len(str(date_to)) > 10 else datetime.combine(fields.Date.from_string(date_to), datetime.max.time())
+            else:
+                end_dt = now_dt
 
         # 1. Fleet Vehicle Real Statuses & Gauge Calculations
         on_trip_veh = veh_obj.search([('operational_status', '=', 'on_trip')])
@@ -465,19 +511,40 @@ class LogisticsDashboard(models.Model):
         status_maint_pct = round((maintenance_count / total_veh * 100), 1) if total_veh > 0 else 0.0
         status_inact_pct = round((inactive_count / total_veh * 100), 1) if total_veh > 0 else 0.0
 
-        # 2. Trips, Distance & Fuel Aggregations from live database
-        all_trips = trip_obj.search([])
-        completed_trips = trip_obj.search([('state', 'in', ['completed', 'reconciled', 'closed'])])
-        total_trips = len(all_trips)
+        # 2. Trips, Distance & Fuel Aggregations filtered by selected date range
+        trip_domain = []
+        fuel_domain = []
+        if start_dt and end_dt:
+            str_start = fields.Datetime.to_string(start_dt)
+            str_end = fields.Datetime.to_string(end_dt)
+            trip_domain = [
+                '|',
+                '&', ('actual_departure', '>=', str_start), ('actual_departure', '<=', str_end),
+                '&', ('planned_departure', '>=', str_start), ('planned_departure', '<=', str_end),
+            ]
+            fuel_domain = [('date', '>=', str_start), ('date', '<=', str_end)]
+        elif start_dt:
+            str_start = fields.Datetime.to_string(start_dt)
+            trip_domain = [('planned_departure', '>=', str_start)]
+            fuel_domain = [('date', '>=', str_start)]
+
+        all_trips = trip_obj.search(trip_domain)
+        completed_trips = trip_obj.search(trip_domain + [('state', 'in', ['completed', 'reconciled', 'closed'])])
+        total_trips = len(all_trips) if (start_dt or end_dt) else trip_obj.search_count([])
 
         trip_distance = sum(completed_trips.mapped('actual_distance'))
         total_odometer = sum(all_vehicles.mapped('odometer'))
-        total_distance = total_odometer if total_odometer > 0 else (trip_distance if trip_distance > 0 else 0.0)
+        total_distance = trip_distance if trip_distance > 0 else (total_odometer if not start_dt else 0.0)
 
-        all_fuels = fuel_obj.search([])
-        total_fuel_litres = round(sum(all_fuels.mapped('quantity')), 1)
+        # Complete Fuel for selected date range
+        all_fuels = fuel_obj.search(fuel_domain)
+        manual_fuel_qty = round(sum(all_fuels.mapped('quantity')), 1)
+        trip_fuel_qty = round(sum(completed_trips.mapped('actual_fuel')) or sum(all_trips.mapped('actual_fuel')), 1)
+        trip_refueled_qty = round(sum(all_trips.mapped('total_refueled')), 1)
 
-        # 3. Vehicle Performance Table & Real Fuel Consumption per Vehicle
+        total_fuel_litres = manual_fuel_qty if manual_fuel_qty > 0 else (trip_fuel_qty if trip_fuel_qty > 0 else trip_refueled_qty)
+
+        # 3. Vehicle Performance Table & Real Fuel Consumption per Vehicle in date range
         perf_records = []
         vehicles_fuel_list = []
 
@@ -486,21 +553,26 @@ class LogisticsDashboard(models.Model):
             v_name = v.display_name or code
             v_type = v.model_id.name if v.model_id else (v.category_id.name if v.category_id else 'Fleet Vehicle')
 
-            # Real Distance
-            v_trip_dist = sum(v.trip_ids.filtered(lambda t: t.state in ['completed', 'reconciled', 'closed']).mapped('actual_distance'))
-            v_dist = v_trip_dist if v_trip_dist > 0 else (v.odometer or 0.0)
+            # Real Distance in period
+            v_trips_rec = completed_trips.filtered(lambda t: t.vehicle_id.id == v.id)
+            v_all_trips_rec = all_trips.filtered(lambda t: t.vehicle_id.id == v.id) if (start_dt or end_dt) else v.trip_ids
+            v_trip_dist = sum(v_trips_rec.mapped('actual_distance'))
+            v_dist = v_trip_dist if v_trip_dist > 0 else (0.0 if start_dt else (v.odometer or 0.0))
 
-            # Real Trips
-            v_trips = len(v.trip_ids)
+            # Real Trips in period
+            v_trips = len(v_all_trips_rec)
 
-            # Real Fuel
-            v_fuel_logs = v.fuel_log_ids.mapped('quantity')
+            # Real Fuel in period
+            v_fuel_logs = all_fuels.filtered(lambda f: f.vehicle_id.id == v.id).mapped('quantity')
             if v_fuel_logs and sum(v_fuel_logs) > 0:
                 v_fuel = round(sum(v_fuel_logs), 1)
-            else:
-                # Expected fuel based on vehicle benchmark norm (L/100km)
+            elif v_trips_rec and sum(v_trips_rec.mapped('actual_fuel')) > 0:
+                v_fuel = round(sum(v_trips_rec.mapped('actual_fuel')), 1)
+            elif v_dist > 0:
                 exp_norm = v.expected_fuel_consumption if hasattr(v, 'expected_fuel_consumption') and v.expected_fuel_consumption > 0 else 12.0
-                v_fuel = round((v_dist * exp_norm) / 100.0, 1) if v_dist > 0 else 0.0
+                v_fuel = round((v_dist * exp_norm) / 100.0, 1)
+            else:
+                v_fuel = 0.0
 
             # Real Efficiency (km/L)
             if v_fuel > 0 and v_dist > 0:
@@ -555,7 +627,7 @@ class LogisticsDashboard(models.Model):
         if total_fuel_litres > 0 and total_distance > 0:
             avg_efficiency = round(total_distance / total_fuel_litres, 1)
         else:
-            avg_efficiency = 8.3
+            avg_efficiency = 8.5
 
         # 4. Top Fuel Consuming Vehicles (Ordered directly from real fleet vehicles)
         sorted_by_fuel = sorted(vehicles_fuel_list, key=lambda x: x['fuel_num'], reverse=True)

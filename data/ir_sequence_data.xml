@@ -36,5 +36,14 @@
             <field name="padding">5</field>
             <field name="company_id" eval="False"/>
         </record>
+
+        <!-- Vehicle Inspection Sequence -->
+        <record id="seq_top_fleet_vehicle_inspection" model="ir.sequence">
+            <field name="name">Vehicle Inspection Record</field>
+            <field name="code">top.fleet.vehicle.inspection</field>
+            <field name="prefix">INSP/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
     </data>
 </odoo>

@@ -23,6 +23,24 @@ class FleetTrip(models.Model):
         tracking=True,
         index=True,
     )
+    request_ids = fields.Many2many(
+        'top.transport.request',
+        'top_trip_request_rel',
+        'trip_id',
+        'request_id',
+        string='Consolidated Transport Requests',
+        help='Multiple transport requests served together in this consolidated transport order.',
+    )
+    fleet_order_type = fields.Selection([
+        ('light', 'Light Fleet'),
+        ('heavy', 'Heavy Fleet'),
+    ], string='Fleet Order Type', default='light', tracking=True)
+    inspection_id = fields.Many2one(
+        'top.fleet.vehicle.inspection',
+        string='Pre-Trip Vehicle Inspection',
+        tracking=True,
+        help='Technical condition inspection record conducted prior to dispatch.',
+    )
     trip_type_id = fields.Many2one(
         'top.fleet.trip.type',
         string='Trip Type',
@@ -35,6 +53,21 @@ class FleetTrip(models.Model):
         tracking=True,
         index=True,
     )
+    vehicle_last_service_date = fields.Date(
+        related='vehicle_id.last_service_date',
+        string='Vehicle Last Service Date',
+        readonly=True,
+    )
+    vehicle_next_service_date = fields.Date(
+        related='vehicle_id.next_service_date',
+        string='Vehicle Next Service Due',
+        readonly=True,
+    )
+    vehicle_service_status = fields.Selection(
+        related='vehicle_id.service_status',
+        string='Vehicle Service Status',
+        readonly=True,
+    )
     driver_id = fields.Many2one(
         'hr.employee',
         string='Assigned Driver',
@@ -42,6 +75,21 @@ class FleetTrip(models.Model):
         domain="[('is_driver', '=', True)]",
         tracking=True,
         index=True,
+    )
+    driver_license_expiry_date = fields.Date(
+        related='driver_id.license_expiry_date',
+        string='Driver License Expiration',
+        readonly=True,
+    )
+    driver_is_license_expired = fields.Boolean(
+        related='driver_id.is_license_expired',
+        string='Driver License Expired',
+        readonly=True,
+    )
+    driver_license_compliance = fields.Char(
+        related='driver_id.license_compliance_status',
+        string='Driver License Status',
+        readonly=True,
     )
     backup_driver_id = fields.Many2one(
         'hr.employee',
@@ -61,12 +109,42 @@ class FleetTrip(models.Model):
     )
 
     # Route & Schedule (Sections 14 & 16)
+    origin_location_id = fields.Many2one(
+        'top.logistics.location',
+        string='Origin Location',
+        tracking=True,
+    )
+    destination_location_id = fields.Many2one(
+        'top.logistics.location',
+        string='Destination Location',
+        tracking=True,
+    )
     origin = fields.Char(string='Origin', required=True)
     destination = fields.Char(string='Destination', required=True)
     waypoint_ids = fields.One2many(
         'top.fleet.trip.waypoint',
         'trip_id',
         string='Waypoints / Stops',
+    )
+    total_stops_count = fields.Integer(
+        string='Total Stops Planned',
+        compute='_compute_stop_metrics',
+        store=True,
+    )
+    completed_stops_count = fields.Integer(
+        string='Stops Completed',
+        compute='_compute_stop_metrics',
+        store=True,
+    )
+    cancelled_stops_count = fields.Integer(
+        string='Stops Cancelled',
+        compute='_compute_stop_metrics',
+        store=True,
+    )
+    pending_stops_count = fields.Integer(
+        string='Stops Pending',
+        compute='_compute_stop_metrics',
+        store=True,
     )
     planned_departure = fields.Datetime(string='Planned Departure', required=True, tracking=True)
     planned_arrival = fields.Datetime(string='Planned Arrival', required=True, tracking=True)
@@ -77,12 +155,13 @@ class FleetTrip(models.Model):
 
     # Distance & Duration Metrics
     planned_distance = fields.Float(string='Planned Distance (km)')
-    actual_distance = fields.Float(string='Actual Distance (km)', tracking=True)
+    actual_distance = fields.Float(string='Actual Distance (km)', compute='_compute_actual_distance', store=True, readonly=False, tracking=True)
     planned_duration = fields.Float(string='Planned Duration (Hours)')
     actual_duration = fields.Float(string='Actual Duration (Hours)', compute='_compute_actual_duration', store=True)
+    actual_duration_display = fields.Char(string='Time Taken Display', compute='_compute_actual_duration_display')
 
     # Fuel & Operating Costs (Sections 30, 31, 32)
-    expected_fuel = fields.Float(string='Planned Fuel (L)', help='Estimated fuel required for planned distance.')
+    expected_fuel = fields.Float(string='Planned Fuel (L)', compute='_compute_expected_fuel', store=True, readonly=False, help='Estimated fuel required for planned distance.')
     fuel_log_ids = fields.One2many('top.fleet.fuel.log', 'trip_id', string='Fuel Logs')
     total_refueled = fields.Float(string='Total Refueled (L)', compute='_compute_fuel_metrics', store=True, help='Total litres purchased and added to tank during this trip from fuel logs.')
     fuel_consumed_gps = fields.Float(string='GPS Fuel Consumed (L)', compute='_compute_fuel_metrics', store=True, help='Fuel consumed measured by GPS tank drop plus refuels: (Start Fuel + Refueled) - End/Current Fuel.')
@@ -197,10 +276,57 @@ class FleetTrip(models.Model):
         ('cancelled', 'Cancelled'),
     ], string='Trip Status', default='draft', readonly=True, tracking=True, index=True, copy=False)
 
+    @api.onchange('origin_location_id')
+    def _onchange_origin_location_id(self):
+        if self.origin_location_id:
+            self.origin = self.origin_location_id.display_name or self.origin_location_id.name
+
+    @api.onchange('destination_location_id')
+    def _onchange_destination_location_id(self):
+        if self.destination_location_id:
+            self.destination = self.destination_location_id.display_name or self.destination_location_id.name
+
+    @api.depends('waypoint_ids.state', 'waypoint_ids.completed')
+    def _compute_stop_metrics(self):
+        for trip in self:
+            trip.total_stops_count = len(trip.waypoint_ids)
+            trip.completed_stops_count = len(trip.waypoint_ids.filtered(lambda w: w.state == 'completed' or w.completed))
+            trip.cancelled_stops_count = len(trip.waypoint_ids.filtered(lambda w: w.state == 'cancelled'))
+            trip.pending_stops_count = len(trip.waypoint_ids.filtered(lambda w: w.state == 'pending' and not w.completed))
+
+    @api.depends('actual_duration')
+    def _compute_actual_duration_display(self):
+        for trip in self:
+            if trip.actual_duration:
+                total_hours = trip.actual_duration
+                hrs = int(total_hours)
+                mins = int(round((total_hours - hrs) * 60))
+                trip.actual_duration_display = f"{hrs}h {mins}m"
+            else:
+                trip.actual_duration_display = _("0h 0m")
+
+    @api.depends('start_odometer', 'end_odometer')
+    def _compute_actual_distance(self):
+        for trip in self:
+            if trip.end_odometer and trip.start_odometer and trip.end_odometer >= trip.start_odometer:
+                trip.actual_distance = round(trip.end_odometer - trip.start_odometer, 2)
+            elif not trip.actual_distance:
+                trip.actual_distance = 0.0
+
+    @api.depends('planned_distance', 'vehicle_id.expected_fuel_consumption')
+    def _compute_expected_fuel(self):
+        for trip in self:
+            rate = trip.vehicle_id.expected_fuel_consumption or 12.0
+            if trip.planned_distance:
+                trip.expected_fuel = round((trip.planned_distance * rate) / 100.0, 2)
+            elif not trip.expected_fuel:
+                trip.expected_fuel = 0.0
+
     @api.depends(
         'fuel_log_ids.quantity', 'fuel_log_ids.total_cost',
         'start_fuel', 'end_fuel', 'vehicle_id.live_fuel_level',
-        'actual_distance', 'state', 'vehicle_id.expected_fuel_consumption'
+        'actual_distance', 'state', 'vehicle_id.expected_fuel_consumption',
+        'start_odometer', 'end_odometer', 'planned_distance'
     )
     def _compute_fuel_metrics(self):
         recent_log = self.env['top.fleet.fuel.log'].search([], order='date desc, id desc', limit=1)
@@ -212,17 +338,24 @@ class FleetTrip(models.Model):
             trip.total_refueled = round(refueled, 2)
             trip.total_fuel_cost = round(refuel_cost, 2)
 
+            # Determine distance (actual or odo diff or planned)
+            dist = trip.actual_distance or (trip.end_odometer - trip.start_odometer if (trip.end_odometer and trip.start_odometer and trip.end_odometer > trip.start_odometer) else 0.0) or trip.planned_distance or 0.0
+
+            # Determine start fuel
+            start_f = trip.start_fuel or 0.0
+            if start_f <= 0.0 and trip.vehicle_id.live_fuel_level:
+                start_f = trip.vehicle_id.live_fuel_level
+
             # Determine current/terminal fuel level in tank
             if trip.state in ['completed', 'reconciled', 'closed']:
                 terminal_fuel = trip.end_fuel if (trip.end_fuel and trip.end_fuel > 0.0) else (trip.vehicle_id.live_fuel_level or 0.0)
             elif trip.state in ['dispatched', 'in_transit']:
-                terminal_fuel = trip.vehicle_id.live_fuel_level or 0.0
+                terminal_fuel = trip.vehicle_id.live_fuel_level or (trip.gps_device_id.fuel_level if trip.gps_device_id else 0.0) or 0.0
             else:
-                terminal_fuel = trip.start_fuel or 0.0
+                terminal_fuel = start_f
 
             # 1. GPS Consumption: (start_fuel + refueled) - terminal_fuel
-            start_f = trip.start_fuel or 0.0
-            if start_f > 0.0 and terminal_fuel > 0.0:
+            if start_f > 0.0 and terminal_fuel > 0.0 and (start_f + refueled) >= terminal_fuel:
                 gps_consumed = max(0.0, (start_f + refueled) - terminal_fuel)
             else:
                 gps_consumed = 0.0
@@ -230,7 +363,6 @@ class FleetTrip(models.Model):
 
             # 2. Benchmark Norm Consumption: (actual_distance * expected_rate) / 100
             rate = trip.vehicle_id.expected_fuel_consumption or 12.0
-            dist = trip.actual_distance or 0.0
             norm_consumed = round((dist * rate) / 100.0, 2) if dist > 0.0 else 0.0
             trip.fuel_consumed_norm = norm_consumed
 
@@ -259,13 +391,14 @@ class FleetTrip(models.Model):
             else:
                 trip.fuel_theft_suspected = False
 
-    @api.depends('total_fuel_cost', 'consumed_fuel_cost', 'actual_distance', 'actual_fuel')
+    @api.depends('total_fuel_cost', 'consumed_fuel_cost', 'actual_distance', 'actual_fuel', 'planned_distance', 'start_odometer', 'end_odometer')
     def _compute_trip_costs(self):
         for trip in self:
-            trip.total_trip_cost = trip.total_fuel_cost if trip.total_fuel_cost > 0.0 else trip.consumed_fuel_cost
-            if trip.actual_distance and trip.actual_distance > 0.0:
-                trip.cost_per_km = round(trip.total_trip_cost / trip.actual_distance, 2)
-                trip.fuel_consumption_rate = round((trip.actual_fuel / trip.actual_distance) * 100.0, 2)
+            trip.total_trip_cost = trip.consumed_fuel_cost if trip.consumed_fuel_cost > 0.0 else trip.total_fuel_cost
+            dist = trip.actual_distance or (trip.end_odometer - trip.start_odometer if (trip.end_odometer and trip.start_odometer and trip.end_odometer > trip.start_odometer) else 0.0) or trip.planned_distance or 0.0
+            if dist > 0.0:
+                trip.cost_per_km = round(trip.total_trip_cost / dist, 2)
+                trip.fuel_consumption_rate = round((trip.actual_fuel / dist) * 100.0, 2)
             else:
                 trip.cost_per_km = 0.0
                 trip.fuel_consumption_rate = 0.0
@@ -277,11 +410,12 @@ class FleetTrip(models.Model):
             if not self.expected_fuel or self.expected_fuel == 0.0:
                 self.expected_fuel = round((self.planned_distance * rate) / 100.0, 2)
 
-    @api.depends('actual_distance', 'planned_distance', 'actual_duration', 'planned_duration', 'actual_fuel', 'expected_fuel')
+    @api.depends('actual_distance', 'planned_distance', 'actual_duration', 'planned_duration', 'actual_fuel', 'expected_fuel', 'start_odometer', 'end_odometer')
     def _compute_variances(self):
         for trip in self:
             # Section 29 Reconciliation Formulas
-            trip.variance_distance = round((trip.actual_distance or 0.0) - (trip.planned_distance or 0.0), 2)
+            dist = trip.actual_distance or (trip.end_odometer - trip.start_odometer if (trip.end_odometer and trip.start_odometer and trip.end_odometer > trip.start_odometer) else 0.0) or (trip.planned_distance or 0.0)
+            trip.variance_distance = round(dist - (trip.planned_distance or 0.0), 2)
             trip.variance_duration = round((trip.actual_duration or 0.0) - (trip.planned_duration or 0.0), 2)
             trip.variance_fuel = round((trip.actual_fuel or 0.0) - (trip.expected_fuel or 0.0), 2)
 
@@ -397,7 +531,70 @@ class FleetTrip(models.Model):
             trip.write({'state': 'in_transit'})
             if trip.request_id and trip.request_id.state != 'in_transit':
                 trip.request_id.write({'state': 'in_transit'})
+            for req in trip.request_ids:
+                if req.state != 'in_transit':
+                    req.write({'state': 'in_transit'})
             trip.message_post(body=_("Vehicle is actively in transit."))
+
+    def action_attach_transport_request(self, request_id):
+        """Attaches an additional transport request to this trip, creating corresponding stops."""
+        self.ensure_one()
+        req = self.env['top.transport.request'].browse(request_id)
+        if not req.exists():
+            raise UserError(_("Transport request not found."))
+        
+        self.request_ids = [(4, req.id)]
+        req.write({
+            'trip_id': self.id,
+            'assigned_vehicle_id': self.vehicle_id.id,
+            'assigned_driver_id': self.driver_id.id,
+            'state': 'assigned' if self.state in ['draft', 'ready'] else 'in_transit',
+        })
+        
+        # Add stops for the request's origin and destination or its intermediate stops
+        seq = (max(self.waypoint_ids.mapped('sequence')) + 10) if self.waypoint_ids else 10
+        if req.stop_ids:
+            for st in req.stop_ids:
+                self.env['top.fleet.trip.waypoint'].create({
+                    'trip_id': self.id,
+                    'sequence': seq,
+                    'location_id': st.location_id.id if st.location_id else False,
+                    'location_name': st.location_name,
+                    'stop_type': st.stop_type,
+                    'request_id': req.id,
+                    'cargo_or_passenger_notes': st.cargo_or_passenger_notes,
+                    'notes': st.notes,
+                    'state': 'pending',
+                })
+                seq += 10
+        else:
+            self.env['top.fleet.trip.waypoint'].create({
+                'trip_id': self.id,
+                'sequence': seq,
+                'location_id': req.origin_location_id.id if req.origin_location_id else False,
+                'location_name': req.origin,
+                'stop_type': 'pickup',
+                'request_id': req.id,
+                'cargo_or_passenger_notes': req.cargo_description or (_("%s Passengers") % req.passenger_count),
+                'state': 'pending',
+            })
+            self.env['top.fleet.trip.waypoint'].create({
+                'trip_id': self.id,
+                'sequence': seq + 10,
+                'location_id': req.destination_location_id.id if req.destination_location_id else False,
+                'location_name': req.destination,
+                'stop_type': 'delivery',
+                'request_id': req.id,
+                'cargo_or_passenger_notes': req.cargo_description or (_("%s Passengers") % req.passenger_count),
+                'state': 'pending',
+            })
+        
+        self.message_post(
+            body=_("Consolidated additional Transport Request <strong>%s</strong> into this trip. Pickup & delivery waypoints appended.") % req.name
+        )
+        req.message_post(
+            body=_("Attached to consolidated Trip <a href='#' data-oe-model='top.fleet.trip' data-oe-id='%s'>%s</a>.") % (self.id, self.name)
+        )
 
     def action_reconcile(self):
         for trip in self:

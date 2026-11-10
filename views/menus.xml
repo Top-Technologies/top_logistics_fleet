@@ -46,21 +46,21 @@
               parent="menu_transport_request_parent"
               action="action_top_transport_request_to_approve"
               sequence="30"
-              groups="top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+              groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
 
     <menuitem id="menu_transport_request_allocation"
               name="Vehicle Allocation"
               parent="menu_transport_request_parent"
               action="action_top_transport_request_allocation"
               sequence="40"
-              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+              groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
     <!-- 2. Trips & Dispatch Header (Sections 14, 17, 34, 37) -->
     <menuitem id="menu_top_fleet_trip_parent"
               name="Trips &amp; Dispatch"
               parent="menu_top_logistics_root"
               sequence="20"
-              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+              groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
 
     <menuitem id="menu_top_fleet_trip_all"
               name="All Trips"
@@ -79,6 +79,12 @@
               parent="menu_top_fleet_trip_parent"
               action="action_top_vehicle_availability_calendar"
               sequence="25"/>
+
+    <menuitem id="menu_top_fleet_vehicle_inspection"
+              name="Vehicle Inspections"
+              parent="menu_top_fleet_trip_parent"
+              action="action_top_fleet_vehicle_inspection"
+              sequence="28"/>
 
     <menuitem id="menu_top_fleet_trip_completed"
               name="Completed Trips"
@@ -215,6 +221,12 @@
               parent="menu_top_logistics_config_parent"
               action="action_top_fleet_trip_type"
               sequence="20"/>
+
+    <menuitem id="menu_top_logistics_location"
+              name="Predefined Locations"
+              parent="menu_top_logistics_config_parent"
+              action="action_top_logistics_location"
+              sequence="30"/>
 
     <!-- Load Demo Data Server Action & Menu (For Demo / Evaluation) -->
     <record id="action_load_top_logistics_demo" model="ir.actions.server">

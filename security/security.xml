@@ -33,11 +33,19 @@
             <field name="comment">Can assign vehicles, drivers, dispatch, and manage trips.</field>
         </record>
 
+        <!-- 3.1 Fleet Supervisor -->
+        <record id="group_fleet_supervisor" model="res.groups">
+            <field name="name">Fleet Supervisor</field>
+            <field name="category_id" ref="module_category_logistics"/>
+            <field name="implied_ids" eval="[(4, ref('group_fleet_officer')), (4, ref('group_department_approver'))]"/>
+            <field name="comment">Supervises fleet operations, reviews and approves transport orders, and monitors fleet assignments.</field>
+        </record>
+
         <!-- 4. Fleet Manager -->
         <record id="group_fleet_manager" model="res.groups">
             <field name="name">Fleet Manager</field>
             <field name="category_id" ref="module_category_logistics"/>
-            <field name="implied_ids" eval="[(4, ref('group_fleet_officer')), (4, ref('group_department_approver')), (4, ref('fleet.fleet_group_manager'))]"/>
+            <field name="implied_ids" eval="[(4, ref('group_fleet_supervisor')), (4, ref('fleet.fleet_group_manager'))]"/>
             <field name="comment">Full fleet operations, emergency overrides, and report access.</field>
         </record>
 

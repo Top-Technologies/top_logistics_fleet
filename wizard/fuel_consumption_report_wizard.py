@@ -134,17 +134,26 @@ class FuelConsumptionReportWizard(models.TransientModel):
         """Helper called by the QWeb report template to get aggregated metrics and rows."""
         self.ensure_one()
         vehicles = self._get_target_vehicles()
-        analyses = self.env['top.fleet.fuel.analysis'].search([
-            ('vehicle_id', 'in', vehicles.ids),
-            ('date_from', '=', self.date_from),
-            ('date_to', '=', self.date_to),
-        ], order='distance_km desc, vehicle_id')
+        analyses = self.env['top.fleet.fuel.analysis'].compute_telematics_data(
+            self.date_from,
+            self.date_to,
+            vehicles,
+            self.report_type
+        )
+        if not analyses:
+            analyses = self.env['top.fleet.fuel.analysis'].search([
+                ('vehicle_id', 'in', vehicles.ids),
+                ('date_from', '=', self.date_from),
+                ('date_to', '=', self.date_to),
+            ], order='distance_km desc, vehicle_id')
 
         # Overall summary cards
-        total_distance = sum(analyses.mapped('distance_km'))
-        total_fuel_consumed = sum(analyses.mapped('fuel_consumed'))
-        total_refueled = sum(analyses.mapped('total_refueled'))
-        total_drained = sum(analyses.mapped('total_drained'))
+        total_distance = round(sum(analyses.mapped('distance_km')), 1)
+        total_fuel_consumed = round(sum(analyses.mapped('fuel_consumed')), 1)
+        total_refueled = round(sum(analyses.mapped('total_refueled')), 1)
+        total_drained = round(sum(analyses.mapped('total_drained')), 1)
+        if total_fuel_consumed <= 0.0 and total_refueled > 0.0:
+            total_fuel_consumed = total_refueled
         avg_rate = round((total_fuel_consumed / total_distance * 100.0), 2) if total_distance > 0 else 0.0
         
         # GPS Transactions in period
@@ -153,6 +162,9 @@ class FuelConsumptionReportWizard(models.TransientModel):
             ('timestamp', '>=', self.date_from),
             ('timestamp', '<=', self.date_to),
         ], order='timestamp desc')
+
+        gps_refuel_count = len(transactions.filtered(lambda t: t.transaction_type == 'refuel'))
+        total_refuel_count = gps_refuel_count if gps_refuel_count > 0 else sum(analyses.mapped('refuel_count'))
 
         return {
             'wizard': self,
@@ -164,6 +176,6 @@ class FuelConsumptionReportWizard(models.TransientModel):
             'total_refueled': total_refueled,
             'total_drained': total_drained,
             'avg_rate': avg_rate,
-            'refuel_count': len(transactions.filtered(lambda t: t.transaction_type == 'refuel')),
+            'refuel_count': total_refuel_count,
             'drain_count': len(transactions.filtered(lambda t: t.transaction_type == 'drain')),
         }

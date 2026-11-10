@@ -56,6 +56,8 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
         'views/trip_return_wizard_views.xml',
 
         # Operational Views
+        'views/logistics_location_views.xml',
+        'views/vehicle_inspection_views.xml',
         'views/transport_request_views.xml',
         'views/transport_request_type_views.xml',
         'views/fleet_trip_views.xml',

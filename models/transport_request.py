@@ -69,6 +69,20 @@ class TransportRequest(models.Model):
         required=True,
         tracking=True,
     )
+    fleet_order_type = fields.Selection([
+        ('light', 'Light Fleet'),
+        ('heavy', 'Heavy Fleet'),
+    ], string='Fleet Order Type', default='light', required=True, tracking=True)
+    origin_location_id = fields.Many2one(
+        'top.logistics.location',
+        string='Origin Location',
+        tracking=True,
+    )
+    destination_location_id = fields.Many2one(
+        'top.logistics.location',
+        string='Destination Location',
+        tracking=True,
+    )
     origin = fields.Char(
         string='Origin',
         required=True,
@@ -76,6 +90,26 @@ class TransportRequest(models.Model):
     destination = fields.Char(
         string='Destination',
         required=True,
+    )
+    stop_ids = fields.One2many(
+        'top.transport.request.stop',
+        'request_id',
+        string='Stops / Waypoints',
+    )
+    total_stops_count = fields.Integer(
+        string='Total Stops Planned',
+        compute='_compute_stops_summary',
+        store=True,
+    )
+    completed_stops_count = fields.Integer(
+        string='Stops Completed',
+        compute='_compute_stops_summary',
+        store=True,
+    )
+    cancelled_stops_count = fields.Integer(
+        string='Stops Cancelled',
+        compute='_compute_stops_summary',
+        store=True,
     )
     passenger_count = fields.Integer(
         string='Passenger Count',
@@ -187,6 +221,83 @@ class TransportRequest(models.Model):
         string='Trip Count',
         compute='_compute_trip_count',
     )
+    vehicle_last_service_date = fields.Date(
+        related='assigned_vehicle_id.last_service_date',
+        string='Vehicle Last Service Date',
+        readonly=True,
+    )
+    vehicle_next_service_date = fields.Date(
+        related='assigned_vehicle_id.next_service_date',
+        string='Vehicle Next Service Due',
+        readonly=True,
+    )
+    vehicle_service_status = fields.Selection(
+        related='assigned_vehicle_id.service_status',
+        string='Vehicle Service Status',
+        readonly=True,
+    )
+    vehicle_is_service_due = fields.Boolean(
+        related='assigned_vehicle_id.is_service_due',
+        string='Maintenance Service Due Alert',
+        readonly=True,
+    )
+    driver_license_expiry_date = fields.Date(
+        related='assigned_driver_id.license_expiry_date',
+        string='Driver License Expiration',
+        readonly=True,
+    )
+    driver_is_license_expired = fields.Boolean(
+        related='assigned_driver_id.is_license_expired',
+        string='Driver License Expired',
+        readonly=True,
+    )
+    driver_license_compliance = fields.Char(
+        related='assigned_driver_id.license_compliance_status',
+        string='Driver License Status',
+        readonly=True,
+    )
+    trip_actual_distance = fields.Float(
+        related='trip_id.actual_distance',
+        string='Actual Distance (km)',
+        readonly=True,
+    )
+    trip_actual_duration = fields.Float(
+        related='trip_id.actual_duration',
+        string='Actual Duration (Hours)',
+        readonly=True,
+    )
+    trip_duration_display = fields.Char(
+        string='Trip Duration Taken',
+        compute='_compute_trip_duration_display',
+    )
+
+    @api.onchange('origin_location_id')
+    def _onchange_origin_location_id(self):
+        if self.origin_location_id:
+            self.origin = self.origin_location_id.display_name or self.origin_location_id.name
+
+    @api.onchange('destination_location_id')
+    def _onchange_destination_location_id(self):
+        if self.destination_location_id:
+            self.destination = self.destination_location_id.display_name or self.destination_location_id.name
+
+    @api.depends('stop_ids.state')
+    def _compute_stops_summary(self):
+        for record in self:
+            record.total_stops_count = len(record.stop_ids)
+            record.completed_stops_count = len(record.stop_ids.filtered(lambda s: s.state == 'completed'))
+            record.cancelled_stops_count = len(record.stop_ids.filtered(lambda s: s.state == 'cancelled'))
+
+    @api.depends('trip_id.actual_duration')
+    def _compute_trip_duration_display(self):
+        for record in self:
+            if record.trip_id and record.trip_id.actual_duration:
+                total_hours = record.trip_id.actual_duration
+                hrs = int(total_hours)
+                mins = int(round((total_hours - hrs) * 60))
+                record.trip_duration_display = f"{hrs}h {mins}m"
+            else:
+                record.trip_duration_display = _("Not Recorded")
 
     @api.depends('trip_id')
     def _compute_trip_count(self):
@@ -277,6 +388,18 @@ class TransportRequest(models.Model):
             if template_awaiting:
                 template_awaiting.send_mail(record.id, force_send=False)
 
+            # Also notify Fleet Supervisor
+            supervisor_group = self.env.ref('top_logistics_fleet.group_fleet_supervisor', raise_if_not_found=False)
+            supervisor_user = supervisor_group.users[0] if supervisor_group and supervisor_group.users else False
+            if supervisor_user:
+                activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
+                if activity_type:
+                    record.activity_schedule(
+                        'top_logistics_fleet.mail_act_request_awaiting_approval',
+                        summary=_("Transport Order Awaiting Fleet Supervisor Review: %s") % record.name,
+                        user_id=supervisor_user.id,
+                    )
+
     def action_review(self):
         for record in self:
             if record.state != 'submitted':
@@ -353,3 +476,80 @@ class TransportRequest(models.Model):
                 'rejection_reason': False,
             })
             record.message_post(body=_("Request reset to draft."))
+
+
+class TransportRequestStop(models.Model):
+    _name = 'top.transport.request.stop'
+    _description = 'Transport Request Intermediate Stop / Waypoint'
+    _order = 'request_id, sequence, id'
+
+    request_id = fields.Many2one(
+        'top.transport.request',
+        string='Transport Request',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+    sequence = fields.Integer(string='Sequence', default=10)
+    location_id = fields.Many2one(
+        'top.logistics.location',
+        string='Predefined Location',
+    )
+    location_name = fields.Char(string='Location / Stop Name', required=True)
+    stop_type = fields.Selection([
+        ('pickup', 'Passenger / Cargo Pickup'),
+        ('delivery', 'Dropoff / Delivery'),
+        ('waypoint', 'Intermediate Transit Stop'),
+        ('rest', 'Rest / Fuel Stop'),
+    ], string='Stop Purpose', default='waypoint', required=True)
+    estimated_arrival = fields.Datetime(string='Estimated Arrival')
+    actual_arrival = fields.Datetime(string='Actual Arrival')
+    actual_departure = fields.Datetime(string='Actual Departure')
+    cargo_or_passenger_notes = fields.Char(string='Passengers / Cargo Details')
+    state = fields.Selection([
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled / Skipped'),
+    ], string='Stop Status', default='pending')
+    completed = fields.Boolean(
+        string='Stop Visited',
+        compute='_compute_completed',
+        store=True,
+        readonly=False,
+    )
+    notes = fields.Char(string='Notes / Instructions')
+
+    @api.onchange('location_id')
+    def _onchange_location_id(self):
+        if self.location_id and not self.location_name:
+            self.location_name = self.location_id.display_name or self.location_id.name
+
+    @api.depends('state')
+    def _compute_completed(self):
+        for rec in self:
+            rec.completed = (rec.state == 'completed')
+
+    @api.onchange('completed')
+    def _onchange_completed(self):
+        for rec in self:
+            if rec.completed and rec.state != 'completed':
+                rec.state = 'completed'
+                if not rec.actual_arrival:
+                    rec.actual_arrival = fields.Datetime.now()
+            elif not rec.completed and rec.state == 'completed':
+                rec.state = 'pending'
+
+    def action_mark_completed(self):
+        now = fields.Datetime.now()
+        for rec in self:
+            vals = {'state': 'completed', 'completed': True}
+            if not rec.actual_arrival:
+                vals['actual_arrival'] = now
+            if not rec.actual_departure:
+                vals['actual_departure'] = now
+            rec.write(vals)
+
+    def action_cancel_stop(self):
+        for rec in self:
+            rec.write({'state': 'cancelled', 'completed': False})
+

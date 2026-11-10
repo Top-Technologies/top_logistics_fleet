@@ -50,6 +50,87 @@
             <field name="active" eval="True"/>
         </record>
 
+        <!-- 3. Predefined Logistics Locations -->
+        <record id="location_head_office" model="top.logistics.location">
+            <field name="name">Head Office</field>
+            <field name="code">HQ-ADD</field>
+            <field name="location_type">branch</field>
+            <field name="city">Addis Ababa</field>
+            <field name="street">Bole Medhanialem Road</field>
+            <field name="latitude">9.012345</field>
+            <field name="longitude">38.789123</field>
+            <field name="geofence_id" ref="geofence_head_office"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_main_depot" model="top.logistics.location">
+            <field name="name">Central Logistics Depot &amp; Workshop</field>
+            <field name="code">DEP-ADD</field>
+            <field name="location_type">depot</field>
+            <field name="city">Addis Ababa</field>
+            <field name="street">Kality Industrial Zone</field>
+            <field name="latitude">9.005401</field>
+            <field name="longitude">38.763611</field>
+            <field name="geofence_id" ref="geofence_main_depot"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_airport_cargo" model="top.logistics.location">
+            <field name="name">Bole International Cargo Terminal</field>
+            <field name="code">AIR-BOL</field>
+            <field name="location_type">warehouse</field>
+            <field name="city">Addis Ababa</field>
+            <field name="street">Bole Cargo Road</field>
+            <field name="latitude">8.977889</field>
+            <field name="longitude">38.799306</field>
+            <field name="geofence_id" ref="geofence_airport_cargo"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_adama_hub" model="top.logistics.location">
+            <field name="name">Adama Transit &amp; Logistics Hub</field>
+            <field name="code">HUB-ADA</field>
+            <field name="location_type">transit</field>
+            <field name="city">Adama</field>
+            <field name="street">Expressway Terminal</field>
+            <field name="latitude">8.540000</field>
+            <field name="longitude">39.270000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_hawassa_branch" model="top.logistics.location">
+            <field name="name">Hawassa Regional Depot</field>
+            <field name="code">DEP-HAW</field>
+            <field name="location_type">branch</field>
+            <field name="city">Hawassa</field>
+            <field name="street">Industrial Park Area</field>
+            <field name="latitude">7.050000</field>
+            <field name="longitude">38.470000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_jimma_hub" model="top.logistics.location">
+            <field name="name">Jimma Regional Hub &amp; Office</field>
+            <field name="code">HUB-JIM</field>
+            <field name="location_type">branch</field>
+            <field name="city">Jimma</field>
+            <field name="street">Central Market Road</field>
+            <field name="latitude">7.670000</field>
+            <field name="longitude">36.830000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="location_bonga_farm" model="top.logistics.location">
+            <field name="name">Bonga Highlands Coffee Estate</field>
+            <field name="code">EST-BON</field>
+            <field name="location_type">farm</field>
+            <field name="city">Bonga</field>
+            <field name="street">Kaffa Zone Highlands</field>
+            <field name="latitude">7.280000</field>
+            <field name="longitude">36.230000</field>
+            <field name="active" eval="True"/>
+        </record>
+
         <record id="geofence_fuel_station" model="top.gps.geofence">
             <field name="name">Approved Fleet Fuel Station</field>
             <field name="category">fuel_station</field>

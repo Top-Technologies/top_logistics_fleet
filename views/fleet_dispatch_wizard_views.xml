@@ -6,12 +6,17 @@
         <field name="arch" type="xml">
             <form string="Pre-Dispatch Inspection Checklist (Section 17 &amp; 35)">
                 <sheet>
+                    <div class="alert alert-success mb-2" role="alert" invisible="not has_valid_inspection">
+                        <field name="inspection_summary" class="fw-bold"/>
+                    </div>
                     <div class="alert alert-warning" role="alert">
-                        <strong>Mandatory Safety Verification:</strong> Verify the 11-point vehicle condition checklist and operational readiness prior to dispatching vehicle.
+                        <strong>Safety Verification:</strong> Vehicle condition checklist can be auto-verified from a decoupled pre-trip technical inspection or confirmed directly below prior to vehicle dispatch.
                     </div>
                     <group>
-                        <group string="Trip Info">
+                        <group string="Trip &amp; Decoupled Inspection">
                             <field name="trip_id" invisible="1"/>
+                            <field name="has_valid_inspection" invisible="1"/>
+                            <field name="inspection_id" options="{'no_create': False}" placeholder="Select decoupled inspection record..."/>
                             <field name="vehicle_id" readonly="1"/>
                             <field name="driver_id" readonly="1"/>
                         </group>

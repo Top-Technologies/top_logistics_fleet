@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inspection List View -->
+    <record id="view_top_fleet_vehicle_inspection_list" model="ir.ui.view">
+        <field name="name">top.fleet.vehicle.inspection.list</field>
+        <field name="model">top.fleet.vehicle.inspection</field>
+        <field name="arch" type="xml">
+            <list string="Vehicle Technical Inspections" sample="1">
+                <field name="name" decoration-bf="1"/>
+                <field name="vehicle_id"/>
+                <field name="fleet_type" widget="badge"/>
+                <field name="inspection_type"/>
+                <field name="inspection_date"/>
+                <field name="inspector_id" widget="many2one_avatar_user"/>
+                <field name="odometer" string="Odometer (km)"/>
+                <field name="fuel_gauge" optional="show"/>
+                <field name="result" widget="badge"
+                       decoration-success="result == 'passed'"
+                       decoration-warning="result == 'passed_with_notes'"
+                       decoration-danger="result == 'failed'"/>
+                <field name="valid_until" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-muted="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Inspection Form View -->
+    <record id="view_top_fleet_vehicle_inspection_form" model="ir.ui.view">
+        <field name="name">top.fleet.vehicle.inspection.form</field>
+        <field name="model">top.fleet.vehicle.inspection</field>
+        <field name="arch" type="xml">
+            <form string="Vehicle Technical Inspection">
+                <header>
+                    <button name="action_confirm" string="Confirm Inspection" type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object" class="btn-secondary"
+                            invisible="state not in ('confirmed', 'cancelled')"/>
+                    <button name="action_cancel" string="Cancel Inspection" type="object" class="btn-secondary"
+                            invisible="state == 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="PASSED" bg_color="text-bg-success" invisible="state != 'confirmed' or result != 'passed'"/>
+                    <widget name="web_ribbon" title="FAILED" bg_color="text-bg-danger" invisible="state != 'confirmed' or result != 'failed'"/>
+                    <widget name="web_ribbon" title="PASSED W/ NOTES" bg_color="text-bg-warning" invisible="state != 'confirmed' or result != 'passed_with_notes'"/>
+                    
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" string="Inspection Number"/>
+                        <h1>
+                            <field name="name" class="text-primary"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Vehicle &amp; Fleet Information">
+                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="license_plate"/>
+                            <field name="fleet_type" widget="radio" options="{'horizontal': true}"/>
+                            <field name="inspection_type" readonly="state != 'draft'"/>
+                            <field name="trip_id" readonly="state != 'draft'" optional="show"/>
+                        </group>
+                        <group string="Audit Schedule &amp; Readings">
+                            <field name="inspector_id" widget="many2one_avatar_user" readonly="state != 'draft'"/>
+                            <field name="inspection_date" readonly="state != 'draft'"/>
+                            <field name="valid_until"/>
+                            <field name="odometer" readonly="state != 'draft'"/>
+                            <field name="fuel_level" readonly="state != 'draft'"/>
+                            <field name="fuel_gauge" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <!-- Overall Decision Box -->
+                    <div class="card p-3 my-3 bg-light border">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <label for="result" class="fw-bold fs-6 mb-1"/>
+                                <field name="result" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                            </div>
+                            <div class="col-md-6" invisible="result != 'failed'">
+                                <div class="alert alert-danger mb-0 p-2" role="alert">
+                                    <i class="fa fa-exclamation-triangle me-1"/> 
+                                    <strong>Vehicle Grounding Notice:</strong> Confirming a failed inspection automatically sets the vehicle operational status to <em>Under Maintenance</em>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <notebook>
+                        <page name="mechanical_fluids" string="1. Mechanical &amp; Fluids">
+                            <group>
+                                <group string="Powertrain &amp; Fluids">
+                                    <field name="chk_engine" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_oil" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_coolant" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="Running Gear &amp; Brakes">
+                                    <field name="chk_tires" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_brakes" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_lights" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page name="safety_tools" string="2. Safety, Body &amp; Documents">
+                            <group>
+                                <group string="Emergency Tools &amp; Kit">
+                                    <field name="chk_spare_tire" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_tools" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_fire_extinguisher" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_first_aid" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_warning_triangles" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_seatbelts" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="Body, Glass &amp; Telematics">
+                                    <field name="chk_body_condition" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_windshield_wipers" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_mirrors" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_gps_online" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_documents_valid" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page name="heavy_fleet" string="3. Heavy Fleet Specifics" invisible="fleet_type != 'heavy'">
+                            <group string="Heavy Vehicle Couplings &amp; Air Systems">
+                                <group>
+                                    <field name="chk_air_brake_pressure" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="chk_fifth_wheel_coupling" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                                <group>
+                                    <field name="chk_cargo_tie_downs" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page name="defects_actions" string="Observations &amp; Corrective Actions">
+                            <group>
+                                <field name="defects_observed" placeholder="Describe any leaks, worn belts, body scratches, tire wear..." readonly="state != 'draft'"/>
+                                <field name="corrective_action" placeholder="Recommended maintenance steps, parts replacement..." readonly="state != 'draft'"/>
+                                <field name="notes" placeholder="General inspector debrief notes..." readonly="state != 'draft'"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Inspection Search View -->
+    <record id="view_top_fleet_vehicle_inspection_search" model="ir.ui.view">
+        <field name="name">top.fleet.vehicle.inspection.search</field>
+        <field name="model">top.fleet.vehicle.inspection</field>
+        <field name="arch" type="xml">
+            <search string="Search Vehicle Inspections">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="inspector_id"/>
+                <separator/>
+                <filter string="Passed" name="filter_passed" domain="[('result', 'in', ('passed', 'passed_with_notes'))]"/>
+                <filter string="Failed / Grounded" name="filter_failed" domain="[('result', '=', 'failed')]"/>
+                <separator/>
+                <filter string="Pre-Trip" name="filter_pre_trip" domain="[('inspection_type', '=', 'pre_trip')]"/>
+                <filter string="Heavy Fleet" name="filter_heavy" domain="[('fleet_type', '=', 'heavy')]"/>
+                <filter string="Light Fleet" name="filter_light" domain="[('fleet_type', '=', 'light')]"/>
+                <separator/>
+                <filter string="Today" name="filter_today" domain="[('inspection_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Vehicle" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Inspection Result" name="group_result" context="{'group_by': 'result'}"/>
+                    <filter string="Fleet Type" name="group_fleet_type" context="{'group_by': 'fleet_type'}"/>
+                    <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'inspection_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_top_fleet_vehicle_inspection" model="ir.actions.act_window">
+        <field name="name">Vehicle Technical Inspections</field>
+        <field name="res_model">top.fleet.vehicle.inspection</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_top_fleet_vehicle_inspection_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Perform pre-trip, daily, or periodic technical vehicle inspections beforehand to fast-track trip dispatch.
+            </p>
+        </field>
+    </record>
+</odoo>
+

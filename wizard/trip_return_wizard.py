@@ -131,11 +131,12 @@ class TripReturnWizard(models.TransientModel):
             trip.vehicle_id.trigger_service_maintenance_request()
 
         # 5. Advance Request Status
-        if trip.request_id:
-            trip.request_id.write({'state': 'completed'})
-            trip.request_id.message_post(
-                body=_("Vehicle returned from trip. Completed distance: <strong>%s km</strong>.") % dist
-            )
+        for req in (trip.request_ids | trip.request_id):
+            if req.state != 'completed':
+                req.write({'state': 'completed'})
+                req.message_post(
+                    body=_("Vehicle returned from trip. Completed distance: <strong>%s km</strong>.") % dist
+                )
 
         trip.message_post(
             body=_("Return inspection completed. Odometer: <strong>%s km</strong> (Travelled: %s km). Damage flagged: <strong>%s</strong>") % (

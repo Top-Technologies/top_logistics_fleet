@@ -7,11 +7,17 @@
         <field name="arch" type="xml">
             <list string="Transport Requests" decoration-danger="priority == 'emergency'" decoration-muted="state in ('draft', 'cancelled')" sample="1">
                 <field name="name" decoration-bf="1"/>
+                <field name="fleet_order_type" widget="badge"
+                       decoration-warning="fleet_order_type == 'heavy'"
+                       decoration-info="fleet_order_type == 'light'"/>
                 <field name="requester_id" widget="many2one_avatar_user"/>
                 <field name="department_id"/>
                 <field name="trip_type_id"/>
-                <field name="origin"/>
-                <field name="destination"/>
+                <field name="origin_location_id" optional="show"/>
+                <field name="destination_location_id" optional="show"/>
+                <field name="origin" optional="hide"/>
+                <field name="destination" optional="hide"/>
+                <field name="total_stops_count" string="Stops" optional="show"/>
                 <field name="required_date"/>
                 <field name="return_date"/>
                 <field name="assigned_vehicle_id"/>
@@ -46,24 +52,24 @@
                     
                     <button name="action_review" string="Review" type="object" class="btn-secondary"
                             invisible="state != 'submitted'"
-                            groups="top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="action_approve" string="Approve" type="object" class="btn-primary"
                             invisible="state not in ('submitted', 'under_review')"
-                            groups="top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="%(action_transport_request_reject_wizard)d" string="Reject" type="action" class="btn-danger"
                             invisible="state not in ('submitted', 'under_review')"
-                            groups="top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="action_vehicle_search" string="Search Vehicle" type="object" class="btn-secondary"
                             invisible="state != 'approved'"
-                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
                     <!-- Vehicle Assignment Wizard Trigger (Sections 10, 11, 12) -->
                     <button name="action_open_assignment_wizard" string="Assign Vehicle &amp; Driver" type="object" class="btn-primary"
                             invisible="state not in ('approved', 'vehicle_search') and (priority != 'emergency' or state in ('assigned', 'dispatched', 'in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled'))"
-                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="action_cancel" string="Cancel" type="object" class="btn-secondary"
                             invisible="state in ('in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled')"/>
@@ -104,7 +110,8 @@
                             <field name="department_id" readonly="state != 'draft'"/>
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
-                        <group name="schedule_details" string="Schedule &amp; Priority">
+                        <group name="schedule_details" string="Schedule &amp; Classification">
+                            <field name="fleet_order_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="priority" widget="priority" readonly="state != 'draft'"/>
                             <field name="request_date"/>
@@ -114,10 +121,12 @@
                     </group>
 
                     <notebook>
-                        <page name="route_cargo" string="Route &amp; Requirements">
+                        <page name="route_cargo" string="Route &amp; Endpoints">
                             <group>
-                                <group name="route_info" string="Route Details">
+                                <group name="route_info" string="Predefined Locations &amp; Endpoints">
+                                    <field name="origin_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Origin..." readonly="state != 'draft'"/>
                                     <field name="origin" placeholder="e.g. Head Office / Addis Ababa" readonly="state != 'draft'"/>
+                                    <field name="destination_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Destination..." readonly="state != 'draft'"/>
                                     <field name="destination" placeholder="e.g. Project Site / Adama" readonly="state != 'draft'"/>
                                     <field name="passenger_count" readonly="state != 'draft'"/>
                                 </group>
@@ -130,16 +139,68 @@
                             </group>
                         </page>
 
+                        <page name="stops_page" string="Stops &amp; Multi-Drop Waypoints">
+                            <div class="alert alert-info py-2 mb-2 d-flex justify-content-between align-items-center" role="status">
+                                <div>
+                                    <i class="fa fa-map-signs me-1"/> 
+                                    <strong>Multi-Stop Flexibility:</strong> Add intermediate pickups, dropoffs, or waypoints. Stops can be cancelled or marked visited individually.
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge text-bg-primary me-1"><field name="total_stops_count"/> Planned</span>
+                                    <span class="badge text-bg-success me-1"><field name="completed_stops_count"/> Visited</span>
+                                    <span class="badge text-bg-danger"><field name="cancelled_stops_count"/> Cancelled</span>
+                                </div>
+                            </div>
+                            <field name="stop_ids" readonly="state in ('completed', 'reconciled', 'closed', 'cancelled')">
+                                <list editable="bottom" decoration-muted="state == 'pending'" decoration-success="state == 'completed'" decoration-danger="state == 'cancelled'">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="location_id" options="{'no_create_edit': False}" placeholder="Predefined Location..."/>
+                                    <field name="location_name" placeholder="Stop / Destination Name"/>
+                                    <field name="stop_type" widget="badge"/>
+                                    <field name="cargo_or_passenger_notes" placeholder="Pick up / drop off details..."/>
+                                    <field name="estimated_arrival"/>
+                                    <field name="actual_arrival"/>
+                                    <field name="state" widget="badge"
+                                           decoration-muted="state == 'pending'"
+                                           decoration-success="state == 'completed'"
+                                           decoration-danger="state == 'cancelled'"/>
+                                    <field name="notes" optional="show"/>
+                                    <button name="action_mark_completed" string="Mark Visited" type="object" icon="fa-check text-success" invisible="state == 'completed'"/>
+                                    <button name="action_cancel_stop" string="Cancel Stop" type="object" icon="fa-times text-danger" invisible="state in ('completed', 'cancelled')"/>
+                                </list>
+                            </field>
+                        </page>
+
                         <page name="purpose_page" string="Purpose &amp; Description">
                             <field name="purpose" placeholder="Provide a detailed explanation of the travel or transport purpose..." readonly="state != 'draft'"/>
                         </page>
 
-                        <page name="allocation_page" string="Allocation &amp; Assignment" invisible="state in ('draft', 'submitted', 'under_review')">
+                        <page name="allocation_page" string="Allocation &amp; Fleet Audit" invisible="state in ('draft', 'submitted', 'under_review')">
                             <group>
-                                <group string="Assigned Resources (Section 11)">
+                                <group string="Assigned Vehicle &amp; Maintenance Status">
                                     <field name="assigned_vehicle_id"/>
+                                    <field name="vehicle_last_service_date"/>
+                                    <field name="vehicle_next_service_date"/>
+                                    <field name="vehicle_service_status" widget="badge"
+                                           decoration-danger="vehicle_service_status == 'due'"
+                                           decoration-success="vehicle_service_status == 'ok'"/>
+                                    <field name="vehicle_is_service_due" widget="boolean_toggle" invisible="not vehicle_is_service_due"/>
+                                </group>
+                                <group string="Assigned Driver &amp; License Compliance">
                                     <field name="assigned_driver_id"/>
+                                    <field name="driver_license_expiry_date"/>
+                                    <field name="driver_license_compliance" widget="badge"
+                                           decoration-danger="driver_is_license_expired"
+                                           decoration-success="not driver_is_license_expired"/>
+                                </group>
+                            </group>
+                            <group string="Execution Metrics &amp; Approval Audit">
+                                <group string="Trip Performance">
                                     <field name="trip_id"/>
+                                    <field name="trip_actual_distance" string="Actual Distance (km)"/>
+                                    <field name="trip_duration_display" string="Total Time Taken"/>
+                                    <field name="total_stops_count" string="Stops Total"/>
+                                    <field name="completed_stops_count" string="Stops Visited"/>
                                 </group>
                                 <group string="Approval Audit (Section 9)">
                                     <field name="reviewed_by_id"/>
@@ -241,11 +302,14 @@
                 <filter string="Completed &amp; Closed" name="filter_closed" domain="[('state', 'in', ['completed', 'reconciled', 'closed'])]"/>
                 
                 <separator/>
+                <filter string="Light Fleet Orders" name="filter_light_fleet" domain="[('fleet_order_type', '=', 'light')]"/>
+                <filter string="Heavy Fleet Orders" name="filter_heavy_fleet" domain="[('fleet_order_type', '=', 'heavy')]"/>
                 <filter string="Emergency Priority" name="filter_emergency" domain="[('priority', '=', 'emergency')]"/>
                 <filter string="High Priority" name="filter_high" domain="[('priority', 'in', ['high', 'emergency'])]"/>
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>
                     <filter string="Requester" name="group_by_requester" context="{'group_by': 'requester_id'}"/>
                     <filter string="Trip Type" name="group_by_trip_type" context="{'group_by': 'trip_type_id'}"/>

@@ -6,9 +6,14 @@
         <field name="arch" type="xml">
             <form string="Assign Vehicle &amp; Driver">
                 <sheet>
-                    <div class="alert alert-info" role="alert">
-                        <strong>Request:</strong> <field name="origin" class="fw-bold"/> ➔ <field name="destination" class="fw-bold"/>
-                        (<field name="required_date"/> to <field name="return_date"/>)
+                    <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                        <div>
+                            <strong>Request:</strong> <field name="origin" class="fw-bold"/> ➔ <field name="destination" class="fw-bold"/>
+                            (<field name="required_date"/> to <field name="return_date"/>)
+                        </div>
+                        <div>
+                            <field name="fleet_order_type" widget="badge" decoration-warning="fleet_order_type == 'heavy'" decoration-info="fleet_order_type == 'light'"/>
+                        </div>
                     </div>
                     <group>
                         <group string="Vehicle Selection (Section 10 &amp; 11)">
@@ -17,12 +22,14 @@
                                    domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False)]"
                                    options="{'no_create': True}"/>
                             <field name="vehicle_status_info" class="text-muted fw-bold" readonly="1"/>
+                            <field name="vehicle_service_info" class="text-info" readonly="1"/>
                         </group>
                         <group string="Driver Selection (Section 11 &amp; 13)">
                             <field name="driver_id" placeholder="Select primary driver..."
                                    domain="[('is_driver', '=', True), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]"
                                    options="{'no_create': True}"/>
                             <field name="driver_status_info" class="text-muted fw-bold" readonly="1"/>
+                            <field name="driver_license_info" class="text-info" readonly="1"/>
                             <field name="backup_driver_id" placeholder="Optional backup driver..."
                                    domain="[('is_driver', '=', True), ('id', '!=', driver_id)]"
                                    options="{'no_create': True}"/>

@@ -18,12 +18,18 @@ class VehicleAssignmentWizard(models.TransientModel):
     return_date = fields.Datetime(related='request_id.return_date', string='Return Date', readonly=True)
     vehicle_type_id = fields.Many2one(related='request_id.vehicle_type_id', string='Requested Vehicle Type', readonly=True)
 
+    fleet_order_type = fields.Selection(
+        related='request_id.fleet_order_type',
+        string='Fleet Order Type',
+        readonly=True,
+    )
     vehicle_id = fields.Many2one(
         'fleet.vehicle',
         string='Vehicle to Assign',
         required=True,
     )
     vehicle_status_info = fields.Char(string='Vehicle Status', readonly=True)
+    vehicle_service_info = fields.Char(string='Maintenance & Service', readonly=True)
 
     driver_id = fields.Many2one(
         'hr.employee',
@@ -32,6 +38,7 @@ class VehicleAssignmentWizard(models.TransientModel):
         domain="[('is_driver', '=', True)]",
     )
     driver_status_info = fields.Char(string='Driver Status', readonly=True)
+    driver_license_info = fields.Char(string='License & Compliance', readonly=True)
 
     backup_driver_id = fields.Many2one(
         'hr.employee',
@@ -58,6 +65,14 @@ class VehicleAssignmentWizard(models.TransientModel):
                 self.request_id.required_date, self.request_id.return_date
             )
             self.vehicle_status_info = _("Available") if ok else msg
+            service_parts = []
+            if self.vehicle_id.last_service_date:
+                service_parts.append(_("Last Service: %s") % self.vehicle_id.last_service_date)
+            if self.vehicle_id.next_service_date:
+                service_parts.append(_("Next Due: %s") % self.vehicle_id.next_service_date)
+            if self.vehicle_id.is_service_due:
+                service_parts.append(_("⚠️ SERVICE OVERDUE"))
+            self.vehicle_service_info = " | ".join(service_parts) or _("Service records up to date")
 
     @api.onchange('driver_id')
     def _onchange_driver_id(self):
@@ -66,6 +81,11 @@ class VehicleAssignmentWizard(models.TransientModel):
                 self.request_id.required_date, self.request_id.return_date
             )
             self.driver_status_info = _("Available") if ok else msg
+            if self.driver_id.license_expiry_date:
+                expired = self.driver_id.is_license_expired
+                self.driver_license_info = (_("⚠️ Expired on %s") if expired else _("Valid until %s")) % self.driver_id.license_expiry_date
+            else:
+                self.driver_license_info = _("No Expiry Date Recorded")
 
     def action_confirm_assignment(self):
         self.ensure_one()
@@ -97,11 +117,15 @@ class VehicleAssignmentWizard(models.TransientModel):
         # Create Trip record (Section 14)
         trip_vals = {
             'request_id': req.id,
+            'request_ids': [(4, req.id)],
+            'fleet_order_type': req.fleet_order_type or 'light',
             'vehicle_id': self.vehicle_id.id,
             'driver_id': self.driver_id.id,
             'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,
             'trip_coordinator_id': self.trip_coordinator_id.id if self.trip_coordinator_id else self.env.user.id,
             'trip_type_id': self.trip_type_id.id if self.trip_type_id else False,
+            'origin_location_id': req.origin_location_id.id if req.origin_location_id else False,
+            'destination_location_id': req.destination_location_id.id if req.destination_location_id else False,
             'origin': req.origin,
             'destination': req.destination,
             'planned_departure': req.required_date,
@@ -113,6 +137,23 @@ class VehicleAssignmentWizard(models.TransientModel):
             'state': 'ready',
         }
         trip = self.env['top.fleet.trip'].create(trip_vals)
+
+        # Copy multi-stop waypoints from request to trip
+        seq = 10
+        if req.stop_ids:
+            for st in req.stop_ids:
+                self.env['top.fleet.trip.waypoint'].create({
+                    'trip_id': trip.id,
+                    'sequence': seq,
+                    'location_id': st.location_id.id if st.location_id else False,
+                    'location_name': st.location_name,
+                    'stop_type': st.stop_type,
+                    'request_id': req.id,
+                    'cargo_or_passenger_notes': st.cargo_or_passenger_notes,
+                    'notes': st.notes,
+                    'state': 'pending',
+                })
+                seq += 10
 
         # Update Request status and metadata
         req_vals = {

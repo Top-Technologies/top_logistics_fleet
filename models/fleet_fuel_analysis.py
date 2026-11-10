@@ -90,104 +90,168 @@ class FleetFuelAnalysis(models.Model):
                 ('timestamp', '<=', date_to),
             ], order='timestamp ASC, id ASC')
 
-            if not positions:
-                # Fallback check by device_id if vehicle_id was unset on some old position records
-                if device:
-                    positions = Position.search([
-                        ('device_id', '=', device.id),
-                        ('timestamp', '>=', date_from),
-                        ('timestamp', '<=', date_to),
-                    ], order='timestamp ASC, id ASC')
+            if not positions and device:
+                positions = Position.search([
+                    ('device_id', '=', device.id),
+                    ('timestamp', '>=', date_from),
+                    ('timestamp', '<=', date_to),
+                ], order='timestamp ASC, id ASC')
 
-            if not positions:
-                continue
+            # Search manual & station fuel receipts for this vehicle in the date range
+            fuel_logs = self.env['top.fleet.fuel.log'].search([
+                ('vehicle_id', '=', vehicle.id),
+                ('date', '>=', date_from),
+                ('date', '<=', date_to),
+            ], order='date ASC')
+            manual_refueled = sum(fuel_logs.mapped('quantity'))
+            manual_refuel_count = len(fuel_logs)
 
-            first_pos = positions[0]
-            last_pos = positions[-1]
+            # Search trips for this vehicle in the date range
+            trips = self.env['top.fleet.trip'].search([
+                ('vehicle_id', '=', vehicle.id),
+                ('state', 'in', ['in_transit', 'completed', 'reconciled', 'closed']),
+                '|',
+                '&', ('actual_departure', '>=', date_from), ('actual_departure', '<=', date_to),
+                '&', ('planned_departure', '>=', date_from), ('planned_departure', '<=', date_to),
+            ], order='planned_departure ASC, id ASC')
 
-            start_odo = first_pos.odometer or 0.0
-            end_odo = last_pos.odometer or 0.0
-            distance = max(0.0, round(end_odo - start_odo, 2))
+            trip_distance = sum(trips.mapped('actual_distance')) or sum(trips.mapped('planned_distance'))
+            trip_fuel_consumed = sum(trips.mapped('actual_fuel'))
+            trip_refueled = sum(trips.mapped('total_refueled'))
 
-            start_fuel = float(first_pos.fuel_level or 0.0)
-            end_fuel = float(last_pos.fuel_level or 0.0)
-
-            total_refueled = 0.0
-            refuel_count = 0
+            gps_refueled = 0.0
+            gps_refuel_count = 0
             total_drained = 0.0
             drain_count = 0
+            start_odo = 0.0
+            end_odo = 0.0
+            start_fuel = 0.0
+            end_fuel = 0.0
 
-            prev_fuel = start_fuel
+            if positions:
+                first_pos = positions[0]
+                last_pos = positions[-1]
+                start_odo = first_pos.odometer or 0.0
+                end_odo = last_pos.odometer or 0.0
+                start_fuel = float(first_pos.fuel_level or 0.0)
+                end_fuel = float(last_pos.fuel_level or 0.0)
 
-            for pos in positions[1:]:
-                curr_fuel = float(pos.fuel_level or 0.0)
-                diff = curr_fuel - prev_fuel
+                prev_fuel = start_fuel
+                for pos in positions[1:]:
+                    curr_fuel = float(pos.fuel_level or 0.0)
+                    diff = curr_fuel - prev_fuel
 
-                # Refuel detection threshold: >= 10.0 Litres increase
-                if diff >= 10.0:
-                    total_refueled += diff
-                    refuel_count += 1
-                    # Check if transaction already logged
-                    existing = Transaction.search([
-                        ('vehicle_id', '=', vehicle.id),
-                        ('transaction_type', '=', 'refuel'),
-                        ('timestamp', '=', pos.timestamp),
-                    ], limit=1)
-                    if not existing:
-                        Transaction.create({
-                            'transaction_type': 'refuel',
-                            'timestamp': pos.timestamp,
-                            'vehicle_id': vehicle.id,
-                            'device_id': device.id if device else False,
-                            'driver_id': vehicle.driver_id.id if vehicle.driver_id else False,
-                            'initial_fuel': round(prev_fuel, 2),
-                            'final_fuel': round(curr_fuel, 2),
-                            'volume': round(diff, 2),
-                            'odometer': pos.odometer,
-                            'speed': pos.speed,
-                            'latitude': pos.latitude,
-                            'longitude': pos.longitude,
-                            'address': pos.address,
-                            'state': 'detected',
-                        })
+                    # Refuel detection threshold: >= 10.0 Litres increase
+                    if diff >= 10.0:
+                        gps_refueled += diff
+                        gps_refuel_count += 1
+                        # Check if transaction already logged
+                        existing = Transaction.search([
+                            ('vehicle_id', '=', vehicle.id),
+                            ('transaction_type', '=', 'refuel'),
+                            ('timestamp', '=', pos.timestamp),
+                        ], limit=1)
+                        if not existing:
+                            Transaction.create({
+                                'transaction_type': 'refuel',
+                                'timestamp': pos.timestamp,
+                                'vehicle_id': vehicle.id,
+                                'device_id': device.id if device else False,
+                                'driver_id': vehicle.driver_id.id if vehicle.driver_id else False,
+                                'initial_fuel': round(prev_fuel, 2),
+                                'final_fuel': round(curr_fuel, 2),
+                                'volume': round(diff, 2),
+                                'odometer': pos.odometer,
+                                'speed': pos.speed,
+                                'latitude': pos.latitude,
+                                'longitude': pos.longitude,
+                                'address': pos.address,
+                                'state': 'detected',
+                            })
 
-                # Sudden drain / theft detection threshold: >= 10.0 Litres drop while speed <= 10 km/h
-                elif diff <= -10.0 and (pos.speed or 0.0) <= 10.0:
-                    loss = abs(diff)
-                    total_drained += loss
-                    drain_count += 1
-                    existing = Transaction.search([
-                        ('vehicle_id', '=', vehicle.id),
-                        ('transaction_type', '=', 'drain'),
-                        ('timestamp', '=', pos.timestamp),
-                    ], limit=1)
-                    if not existing:
-                        Transaction.create({
-                            'transaction_type': 'drain',
-                            'timestamp': pos.timestamp,
-                            'vehicle_id': vehicle.id,
-                            'device_id': device.id if device else False,
-                            'driver_id': vehicle.driver_id.id if vehicle.driver_id else False,
-                            'initial_fuel': round(prev_fuel, 2),
-                            'final_fuel': round(curr_fuel, 2),
-                            'volume': round(loss, 2),
-                            'odometer': pos.odometer,
-                            'speed': pos.speed,
-                            'latitude': pos.latitude,
-                            'longitude': pos.longitude,
-                            'address': pos.address,
-                            'state': 'flagged',
-                        })
+                    # Sudden drain / theft detection threshold: >= 10.0 Litres drop while speed <= 10 km/h
+                    elif diff <= -10.0 and (pos.speed or 0.0) <= 10.0:
+                        loss = abs(diff)
+                        total_drained += loss
+                        drain_count += 1
+                        existing = Transaction.search([
+                            ('vehicle_id', '=', vehicle.id),
+                            ('transaction_type', '=', 'drain'),
+                            ('timestamp', '=', pos.timestamp),
+                        ], limit=1)
+                        if not existing:
+                            Transaction.create({
+                                'transaction_type': 'drain',
+                                'timestamp': pos.timestamp,
+                                'vehicle_id': vehicle.id,
+                                'device_id': device.id if device else False,
+                                'driver_id': vehicle.driver_id.id if vehicle.driver_id else False,
+                                'initial_fuel': round(prev_fuel, 2),
+                                'final_fuel': round(curr_fuel, 2),
+                                'volume': round(loss, 2),
+                                'odometer': pos.odometer,
+                                'speed': pos.speed,
+                                'latitude': pos.latitude,
+                                'longitude': pos.longitude,
+                                'address': pos.address,
+                                'state': 'flagged',
+                            })
 
-                prev_fuel = curr_fuel
+                    prev_fuel = curr_fuel
+            else:
+                # Fallback to Trips and Vehicle Odometer / Fuel
+                if trips:
+                    start_odo = trips[0].start_odometer or (vehicle.odometer - trip_distance if vehicle.odometer else 0.0)
+                    end_odo = trips[-1].end_odometer or (vehicle.odometer or (start_odo + trip_distance))
+                    start_fuel = trips[0].start_fuel or (vehicle.live_fuel_level or 100.0)
+                    end_fuel = trips[-1].end_fuel or (vehicle.live_fuel_level or start_fuel)
+                elif fuel_logs:
+                    start_odo = min(fuel_logs.mapped('odometer')) if fuel_logs else (vehicle.odometer or 0.0)
+                    end_odo = max(fuel_logs.mapped('odometer')) if fuel_logs else start_odo
+                    start_fuel = vehicle.live_fuel_level or 100.0
+                    end_fuel = vehicle.live_fuel_level or 100.0
+                else:
+                    start_odo = vehicle.odometer or 0.0
+                    end_odo = vehicle.odometer or 0.0
+                    start_fuel = vehicle.live_fuel_level or 100.0
+                    end_fuel = vehicle.live_fuel_level or 100.0
 
-            # Consumed fuel = (Start Fuel + Refueled) - End Fuel
-            consumed = max(0.0, round((start_fuel + total_refueled) - end_fuel, 2))
-            
-            # Rate L/100km
+            # Distance calculation
+            if positions and (end_odo - start_odo) > 0.0:
+                distance = round(end_odo - start_odo, 2)
+            elif trip_distance > 0.0:
+                distance = round(trip_distance, 2)
+            elif (end_odo - start_odo) > 0.0:
+                distance = round(end_odo - start_odo, 2)
+            else:
+                distance = 0.0
+
+            # Total Refueled calculation
+            total_refueled = round(max(gps_refueled, manual_refueled, trip_refueled), 2)
+            refuel_count = max(gps_refuel_count, manual_refuel_count, len(trips.mapped('fuel_log_ids')))
+
+            # Fuel Consumed calculation
+            gps_consumed = max(0.0, round((start_fuel + total_refueled) - end_fuel, 2)) if (start_fuel > 0 and end_fuel > 0 and (start_fuel + total_refueled) >= end_fuel) else 0.0
+
+            benchmark = vehicle.expected_fuel_consumption or 12.0
+            norm_consumed = round((distance * benchmark) / 100.0, 2) if distance > 0 else 0.0
+
+            if gps_consumed > 0.0 and positions:
+                consumed = gps_consumed
+            elif trip_fuel_consumed > 0.0:
+                consumed = round(trip_fuel_consumed, 2)
+            elif total_refueled > 0.0 and distance <= 0:
+                consumed = total_refueled
+            elif norm_consumed > 0.0:
+                consumed = norm_consumed
+            elif total_refueled > 0.0:
+                consumed = total_refueled
+            else:
+                consumed = 0.0
+
+            # Rate L/100km & Economy km/L
             rate = round((consumed / distance * 100.0), 2) if distance > 0.0 else 0.0
             economy = round(distance / consumed, 2) if consumed > 0.0 else 0.0
-            benchmark = vehicle.expected_fuel_consumption or 45.0
 
             variance = round(((rate - benchmark) / benchmark * 100.0), 1) if (benchmark > 0.0 and rate > 0.0) else 0.0
 

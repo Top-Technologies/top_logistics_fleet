@@ -16,6 +16,15 @@ class FleetDispatchWizard(models.TransientModel):
     origin = fields.Char(related='trip_id.origin', string='Origin', readonly=True)
     destination = fields.Char(related='trip_id.destination', string='Destination', readonly=True)
 
+    # Pre-Trip Decoupled Inspection Reference (Save Dispatch Time)
+    inspection_id = fields.Many2one(
+        'top.fleet.vehicle.inspection',
+        string='Pre-Trip Technical Inspection',
+        help='Select or link a technical inspection record completed earlier to fast-track dispatch.',
+    )
+    has_valid_inspection = fields.Boolean(string='Has Pre-Existing Valid Inspection', readonly=True)
+    inspection_summary = fields.Char(string='Inspection Status Summary', readonly=True)
+
     # Specific Vehicle Condition Checklist from Section 35
     chk_tires = fields.Boolean(string='1. Tires (Condition & Pressure OK)', default=True)
     chk_engine = fields.Boolean(string='2. Engine (Normal Sound & Operation)', default=True)
@@ -44,6 +53,39 @@ class FleetDispatchWizard(models.TransientModel):
         ('full', 'Full Tank'),
     ], string='Starting Fuel Gauge', default='full', required=True)
     dispatch_notes = fields.Text(string='Dispatch Notes / Observations')
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        trip_id = res.get('trip_id') or self.env.context.get('default_trip_id') or self.env.context.get('active_id')
+        if trip_id:
+            res['trip_id'] = trip_id
+        if trip_id:
+            trip = self.env['top.fleet.trip'].browse(trip_id)
+            if trip and trip.vehicle_id:
+                now = fields.Datetime.now()
+                valid_insp = self.env['top.fleet.vehicle.inspection'].search([
+                    ('vehicle_id', '=', trip.vehicle_id.id),
+                    ('state', '=', 'confirmed'),
+                    ('result', 'in', ['passed', 'passed_with_notes']),
+                    ('valid_until', '>=', now),
+                ], order='inspection_date desc', limit=1)
+                if valid_insp:
+                    res['inspection_id'] = valid_insp.id
+                    res['has_valid_inspection'] = True
+                    res['inspection_summary'] = _("✅ Valid Pre-Trip Inspection #%s passed on %s by %s. Checklist auto-verified.") % (
+                        valid_insp.name, valid_insp.inspection_date.strftime('%Y-%m-%d %H:%M'), valid_insp.inspector_id.name
+                    )
+                    res['start_odometer'] = valid_insp.odometer or res.get('start_odometer', 0.0)
+                    if valid_insp.fuel_level:
+                        res['start_fuel'] = valid_insp.fuel_level
+                    if valid_insp.fuel_gauge:
+                        res['start_fuel_level'] = valid_insp.fuel_gauge
+                    for f in ('chk_tires', 'chk_engine', 'chk_oil', 'chk_coolant', 'chk_brakes', 'chk_lights',
+                              'chk_spare_tire', 'chk_tools', 'chk_fire_extinguisher', 'chk_first_aid',
+                              'chk_body_condition', 'chk_gps_online', 'chk_documents_valid'):
+                        res[f] = getattr(valid_insp, f, True)
+        return res
 
     def action_confirm_dispatch(self):
         self.ensure_one()
@@ -77,6 +119,7 @@ class FleetDispatchWizard(models.TransientModel):
             'actual_departure': now,
             'dispatch_date': now,
             'dispatched_by_id': self.env.user.id,
+            'inspection_id': self.inspection_id.id if self.inspection_id else False,
             'chk_tires': self.chk_tires,
             'chk_engine': self.chk_engine,
             'chk_oil': self.chk_oil,
@@ -102,13 +145,14 @@ class FleetDispatchWizard(models.TransientModel):
         if trip.backup_driver_id:
             trip.backup_driver_id.write({'driver_status': 'on_trip'})
 
-        if trip.request_id:
-            trip.request_id.write({'state': 'in_transit'})
-            trip.request_id.message_post(
-                body=_("Vehicle <strong>%s</strong> dispatched into transit by <strong>%s</strong>.<br/>Start Odometer: %s km | Fuel: %s") % (
-                    trip.vehicle_id.name, self.env.user.name, self.start_odometer, self.start_fuel_level
+        for req in (trip.request_ids | trip.request_id):
+            if req.state != 'in_transit':
+                req.write({'state': 'in_transit'})
+                req.message_post(
+                    body=_("Vehicle <strong>%s</strong> dispatched into transit by <strong>%s</strong>.<br/>Start Odometer: %s km | Fuel: %s") % (
+                        trip.vehicle_id.name, self.env.user.name, self.start_odometer, self.start_fuel_level
+                    )
                 )
-            )
 
         trip.message_post(
             body=_("Pre-dispatch condition checklist passed (Section 35). Vehicle dispatched by %s.") % self.env.user.name
