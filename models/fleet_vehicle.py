@@ -166,13 +166,15 @@ class FleetVehicle(models.Model):
         now = fields.Datetime.now()
         for v in self:
             v.inspection_count = len(v.inspection_ids)
-            valid_inspections = v.inspection_ids.filtered(lambda i: i.state == 'confirmed').sorted('inspection_date', reverse=True)
+            valid_inspections = v.inspection_ids.filtered(
+                lambda i: i.state in ('confirmed', 'approved')
+            ).sorted('inspection_date', reverse=True)
             if valid_inspections:
                 latest = valid_inspections[0]
                 v.last_inspection_id = latest.id
                 v.is_inspection_valid = bool(
                     latest.result in ('passed', 'passed_with_notes') and
-                    latest.valid_until and latest.valid_until >= now
+                    (not latest.valid_until or latest.valid_until >= now)
                 )
             else:
                 v.last_inspection_id = False
@@ -333,6 +335,9 @@ class FleetVehicle(models.Model):
 
         if not self.active or self.operational_status in ['maintenance', 'inactive']:
             return False, _("Vehicle %s is currently inactive or under maintenance.") % self.name
+
+        if not self.is_inspection_valid:
+            return False, _("Vehicle %s does not have an approved and valid technical inspection in advance.") % self.name
 
         if self.registration_expiry and self.registration_expiry < today:
             return False, _("Vehicle %s registration expired on %s.") % (self.name, self.registration_expiry)

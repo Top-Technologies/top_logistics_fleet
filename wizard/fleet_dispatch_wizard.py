@@ -62,14 +62,18 @@ class FleetDispatchWizard(models.TransientModel):
             res['trip_id'] = trip_id
         if trip_id:
             trip = self.env['top.fleet.trip'].browse(trip_id)
-            if trip and trip.vehicle_id:
+            if trip:
+                valid_insp = False
                 now = fields.Datetime.now()
-                valid_insp = self.env['top.fleet.vehicle.inspection'].search([
-                    ('vehicle_id', '=', trip.vehicle_id.id),
-                    ('state', '=', 'confirmed'),
-                    ('result', 'in', ['passed', 'passed_with_notes']),
-                    ('valid_until', '>=', now),
-                ], order='inspection_date desc', limit=1)
+                if trip.inspection_id and trip.inspection_id.state in ['confirmed', 'approved'] and trip.inspection_id.result in ['passed', 'passed_with_notes']:
+                    valid_insp = trip.inspection_id
+                elif trip.vehicle_id:
+                    valid_insp = self.env['top.fleet.vehicle.inspection'].search([
+                        ('vehicle_id', '=', trip.vehicle_id.id),
+                        ('state', 'in', ['confirmed', 'approved']),
+                        ('result', 'in', ['passed', 'passed_with_notes']),
+                        ('valid_until', '>=', now),
+                    ], order='inspection_date desc', limit=1)
                 if valid_insp:
                     res['inspection_id'] = valid_insp.id
                     res['has_valid_inspection'] = True

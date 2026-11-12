@@ -8,12 +8,12 @@
             <list string="Vehicle Technical Inspections" sample="1">
                 <field name="name" decoration-bf="1"/>
                 <field name="vehicle_id"/>
-                <field name="fleet_type" widget="badge"/>
+                <field name="license_plate"/>
+                <field name="driver_id" widget="many2one_avatar_user"/>
                 <field name="inspection_type"/>
                 <field name="inspection_date"/>
                 <field name="inspector_id" widget="many2one_avatar_user"/>
                 <field name="odometer" string="Odometer (km)"/>
-                <field name="fuel_gauge" optional="show"/>
                 <field name="result" widget="badge"
                        decoration-success="result == 'passed'"
                        decoration-warning="result == 'passed_with_notes'"
@@ -21,8 +21,8 @@
                 <field name="valid_until" optional="show"/>
                 <field name="state" widget="badge"
                        decoration-muted="state == 'draft'"
-                       decoration-success="state == 'confirmed'"
-                       decoration-danger="state == 'cancelled'"/>
+                       decoration-success="state in ('approved', 'confirmed')"
+                       decoration-danger="state == 'rejected'"/>
             </list>
         </field>
     </record>
@@ -34,18 +34,19 @@
         <field name="arch" type="xml">
             <form string="Vehicle Technical Inspection">
                 <header>
-                    <button name="action_confirm" string="Confirm Inspection" type="object" class="btn-primary"
+                    <button name="action_approve" string="Approve Inspection" type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_reject" string="Reject / Ground Vehicle" type="object" class="btn-danger"
                             invisible="state != 'draft'"/>
                     <button name="action_reset_draft" string="Reset to Draft" type="object" class="btn-secondary"
-                            invisible="state not in ('confirmed', 'cancelled')"/>
+                            invisible="state not in ('approved', 'confirmed', 'rejected', 'cancelled')"/>
                     <button name="action_cancel" string="Cancel Inspection" type="object" class="btn-secondary"
-                            invisible="state == 'cancelled'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                            invisible="state in ('cancelled', 'approved')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved"/>
                 </header>
                 <sheet>
-                    <widget name="web_ribbon" title="PASSED" bg_color="text-bg-success" invisible="state != 'confirmed' or result != 'passed'"/>
-                    <widget name="web_ribbon" title="FAILED" bg_color="text-bg-danger" invisible="state != 'confirmed' or result != 'failed'"/>
-                    <widget name="web_ribbon" title="PASSED W/ NOTES" bg_color="text-bg-warning" invisible="state != 'confirmed' or result != 'passed_with_notes'"/>
+                    <widget name="web_ribbon" title="APPROVED / PASSED" bg_color="text-bg-success" invisible="state not in ('approved', 'confirmed') or result not in ('passed', 'passed_with_notes')"/>
+                    <widget name="web_ribbon" title="FAILED / GROUNDED" bg_color="text-bg-danger" invisible="state not in ('approved', 'confirmed', 'rejected') or result != 'failed'"/>
                     
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" string="Inspection Number"/>
@@ -55,20 +56,42 @@
                     </div>
 
                     <group>
-                        <group string="Vehicle &amp; Fleet Information">
-                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                        <group string="🚗 Vehicle Information">
+                            <field name="vehicle_id" placeholder="Select Vehicle to Inspect..." readonly="state != 'draft'"/>
+                            <field name="vehicle_model_id"/>
                             <field name="license_plate"/>
-                            <field name="fleet_type" widget="radio" options="{'horizontal': true}"/>
-                            <field name="inspection_type" readonly="state != 'draft'"/>
-                            <field name="trip_id" readonly="state != 'draft'" optional="show"/>
+                            <field name="vin_sn"/>
+                            <field name="operational_status" widget="badge"/>
+                            <field name="service_status" widget="badge" decoration-danger="service_status == 'due'" decoration-success="service_status == 'ok'"/>
+                            <field name="document_compliance_status" widget="badge"/>
+                            <field name="last_service_date"/>
+                            <field name="next_service_date"/>
+                            <field name="capacity_cargo_kg"/>
                         </group>
-                        <group string="Audit Schedule &amp; Readings">
+                        <group string="👤 Driver Details (Employee Module)">
+                            <field name="driver_id" placeholder="Select Assigned Driver..." widget="many2one_avatar_user" readonly="state != 'draft'"/>
+                            <field name="driver_license_number"/>
+                            <field name="license_category"/>
+                            <field name="driver_license_expiry"/>
+                            <field name="driver_license_compliance" widget="badge" decoration-danger="driver_license_compliance != 'Valid License'" decoration-success="driver_license_compliance == 'Valid License'"/>
+                            <field name="driver_phone"/>
+                            <field name="driver_department_id"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="📋 Audit Schedule &amp; Validity">
+                            <field name="inspection_type" readonly="state != 'draft'"/>
                             <field name="inspector_id" widget="many2one_avatar_user" readonly="state != 'draft'"/>
                             <field name="inspection_date" readonly="state != 'draft'"/>
+                            <field name="validity_duration" readonly="state != 'draft'"/>
                             <field name="valid_until"/>
+                        </group>
+                        <group string="⛽ Meter &amp; Fuel Readings">
                             <field name="odometer" readonly="state != 'draft'"/>
+                            <field name="fuel_gauge" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
                             <field name="fuel_level" readonly="state != 'draft'"/>
-                            <field name="fuel_gauge" readonly="state != 'draft'"/>
+                            <field name="trip_id" readonly="state != 'draft'" optional="show"/>
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                     </group>
@@ -83,7 +106,7 @@
                             <div class="col-md-6" invisible="result != 'failed'">
                                 <div class="alert alert-danger mb-0 p-2" role="alert">
                                     <i class="fa fa-exclamation-triangle me-1"/> 
-                                    <strong>Vehicle Grounding Notice:</strong> Confirming a failed inspection automatically sets the vehicle operational status to <em>Under Maintenance</em>.
+                                    <strong>Vehicle Grounding Notice:</strong> Marking this technical inspection as Failed automatically grounds the vehicle and sets operational status to <em>Under Maintenance</em>.
                                 </div>
                             </div>
                         </div>
@@ -125,18 +148,6 @@
                             </group>
                         </page>
 
-                        <page name="heavy_fleet" string="3. Heavy Fleet Specifics" invisible="fleet_type != 'heavy'">
-                            <group string="Heavy Vehicle Couplings &amp; Air Systems">
-                                <group>
-                                    <field name="chk_air_brake_pressure" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                    <field name="chk_fifth_wheel_coupling" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                </group>
-                                <group>
-                                    <field name="chk_cargo_tie_downs" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                </group>
-                            </group>
-                        </page>
-
                         <page name="defects_actions" string="Observations &amp; Corrective Actions">
                             <group>
                                 <field name="defects_observed" placeholder="Describe any leaks, worn belts, body scratches, tire wear..." readonly="state != 'draft'"/>
@@ -157,22 +168,23 @@
         <field name="model">top.fleet.vehicle.inspection</field>
         <field name="arch" type="xml">
             <search string="Search Vehicle Inspections">
-                <field name="name"/>
+                <field name="name" string="Inspection / Vehicle / Driver"
+                       filter_domain="['|', '|', ('name', 'ilike', self), ('vehicle_id', 'ilike', self), ('driver_id', 'ilike', self)]"/>
                 <field name="vehicle_id"/>
+                <field name="driver_id"/>
                 <field name="inspector_id"/>
                 <separator/>
-                <filter string="Passed" name="filter_passed" domain="[('result', 'in', ('passed', 'passed_with_notes'))]"/>
+                <filter string="Draft / Pending" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Approved / Passed" name="filter_passed" domain="[('state', 'in', ('approved', 'confirmed')), ('result', 'in', ('passed', 'passed_with_notes'))]"/>
                 <filter string="Failed / Grounded" name="filter_failed" domain="[('result', '=', 'failed')]"/>
                 <separator/>
-                <filter string="Pre-Trip" name="filter_pre_trip" domain="[('inspection_type', '=', 'pre_trip')]"/>
-                <filter string="Heavy Fleet" name="filter_heavy" domain="[('fleet_type', '=', 'heavy')]"/>
-                <filter string="Light Fleet" name="filter_light" domain="[('fleet_type', '=', 'light')]"/>
-                <separator/>
+                <filter string="Pre-Trip Staging" name="filter_pre_trip" domain="[('inspection_type', '=', 'pre_trip')]"/>
                 <filter string="Today" name="filter_today" domain="[('inspection_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
                 <group expand="0" string="Group By">
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Vehicle" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Driver" name="group_driver" context="{'group_by': 'driver_id'}"/>
                     <filter string="Inspection Result" name="group_result" context="{'group_by': 'result'}"/>
-                    <filter string="Fleet Type" name="group_fleet_type" context="{'group_by': 'fleet_type'}"/>
                     <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
                     <filter string="Date" name="group_date" context="{'group_by': 'inspection_date:day'}"/>
                 </group>
@@ -180,7 +192,7 @@
         </field>
     </record>
 
-    <!-- Action -->
+    <!-- Actions -->
     <record id="action_top_fleet_vehicle_inspection" model="ir.actions.act_window">
         <field name="name">Vehicle Technical Inspections</field>
         <field name="res_model">top.fleet.vehicle.inspection</field>
@@ -188,9 +200,33 @@
         <field name="search_view_id" ref="view_top_fleet_vehicle_inspection_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Perform pre-trip, daily, or periodic technical vehicle inspections beforehand to fast-track trip dispatch.
+                Perform technical vehicle inspections in advance to authorize vehicles for trip assignment and dispatch!
+            </p>
+            <p>
+                Vehicles must have an approved, passed inspection in advance before they can be selected in vehicle assignment.
             </p>
         </field>
     </record>
-</odoo>
 
+    <record id="action_top_fleet_vehicle_inspection_draft" model="ir.actions.act_window">
+        <field name="name">Pending Technical Inspections</field>
+        <field name="res_model">top.fleet.vehicle.inspection</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'draft')]</field>
+        <field name="context">{'default_state': 'draft'}</field>
+    </record>
+
+    <record id="action_top_fleet_vehicle_inspection_approved" model="ir.actions.act_window">
+        <field name="name">Approved Technical Inspections</field>
+        <field name="res_model">top.fleet.vehicle.inspection</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ['approved', 'confirmed']), ('result', 'in', ['passed', 'passed_with_notes'])]</field>
+    </record>
+
+    <record id="action_top_fleet_vehicle_inspection_failed" model="ir.actions.act_window">
+        <field name="name">Failed / Grounded Inspections</field>
+        <field name="res_model">top.fleet.vehicle.inspection</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('result', '=', 'failed')]</field>
+    </record>
+</odoo>

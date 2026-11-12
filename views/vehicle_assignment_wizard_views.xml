@@ -19,7 +19,7 @@
                         <group string="Vehicle Selection (Section 10 &amp; 11)">
                             <field name="request_id" invisible="1"/>
                             <field name="vehicle_id" placeholder="Select vehicle..."
-                                   domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False)]"
+                                   domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False), ('is_inspection_valid', '=', True)]"
                                    options="{'no_create': True}"/>
                             <field name="vehicle_status_info" class="text-muted fw-bold" readonly="1"/>
                             <field name="vehicle_service_info" class="text-info" readonly="1"/>

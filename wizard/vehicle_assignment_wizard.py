@@ -140,6 +140,7 @@ class VehicleAssignmentWizard(models.TransientModel):
             'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,
             'trip_coordinator_id': self.trip_coordinator_id.id if self.trip_coordinator_id else self.env.user.id,
             'trip_type_id': self.trip_type_id.id if self.trip_type_id else (req.trip_type_id.id if req.trip_type_id else False),
+            'inspection_id': self.vehicle_id.last_inspection_id.id if self.vehicle_id.last_inspection_id else False,
             'origin_location_id': req.origin_location_id.id if req.origin_location_id else False,
             'destination_location_id': req.destination_location_id.id if req.destination_location_id else False,
             'origin': req.origin,
