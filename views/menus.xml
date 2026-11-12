@@ -86,6 +86,18 @@
               action="action_top_fleet_vehicle_inspection_failed"
               sequence="40"/>
 
+    <menuitem id="menu_top_fleet_driver_all"
+              name="Driver Directory"
+              parent="menu_top_fleet_inspection_parent"
+              action="action_top_fleet_drivers"
+              sequence="50"/>
+
+    <menuitem id="menu_top_fleet_driver_available"
+              name="Available Drivers"
+              parent="menu_top_fleet_inspection_parent"
+              action="action_top_fleet_drivers_available"
+              sequence="60"/>
+
     <!-- 2. Trips & Dispatch Header (Sections 14, 17, 34, 37) -->
     <menuitem id="menu_top_fleet_trip_parent"
               name="Trips &amp; Dispatch"
@@ -160,24 +172,7 @@
               action="action_top_fleet_fuel_log"
               sequence="25"/>
 
-    <!-- 4. Driver Management Header (Section 13) -->
-    <menuitem id="menu_top_fleet_driver_parent"
-              name="Drivers"
-              parent="menu_top_logistics_root"
-              sequence="30"
-              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
-    <menuitem id="menu_top_fleet_driver_all"
-              name="Driver Directory"
-              parent="menu_top_fleet_driver_parent"
-              action="action_top_fleet_drivers"
-              sequence="10"/>
-
-    <menuitem id="menu_top_fleet_driver_available"
-              name="Available Drivers"
-              parent="menu_top_fleet_driver_parent"
-              action="action_top_fleet_drivers_available"
-              sequence="20"/>
 
     <!-- 5. GPS & Telemetry Header (Sections 18, 19, 21, 27, 28, 52) -->
     <menuitem id="menu_top_gps_device_parent"
