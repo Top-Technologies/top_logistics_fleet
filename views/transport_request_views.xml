@@ -7,7 +7,9 @@
         <field name="arch" type="xml">
             <list string="Transport Requests" decoration-danger="priority == 'emergency'" decoration-muted="state in ('draft', 'cancelled')" sample="1">
                 <field name="name" decoration-bf="1"/>
-                <field name="fleet_order_type_id" optional="show"/>
+                <field name="fleet_order_type" widget="badge"
+                       decoration-warning="fleet_order_type == 'heavy'"
+                       decoration-info="fleet_order_type == 'light'"/>
                 <field name="requester_id" widget="many2one_avatar_user"/>
                 <field name="department_id"/>
                 <field name="trip_type_id"/>
@@ -87,13 +89,6 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button name="action_view_approval_request" type="object" class="oe_stat_button" icon="fa-check-square-o"
-                                invisible="not approval_request_id">
-                            <div class="o_stat_info">
-                                <span class="o_stat_text">Approval</span>
-                                <span class="o_stat_text">Request</span>
-                            </div>
-                        </button>
                         <button name="action_view_trip" type="object" class="oe_stat_button" icon="fa-truck"
                                 invisible="trip_count == 0">
                             <field name="trip_count" widget="statinfo" string="Trip"/>
@@ -122,8 +117,7 @@
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_details" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Fleet Order Type (Approval Category)..." readonly="state != 'draft'"/>
-                            <field name="approval_request_id" readonly="1" invisible="not approval_request_id"/>
+                            <field name="fleet_order_type" placeholder="Select Fleet Order Type..." readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="priority" widget="priority" readonly="state != 'draft'"/>
                             <field name="request_date"/>
@@ -146,38 +140,6 @@
                                     <field name="vehicle_type_id" placeholder="e.g. Pickup, Sedan, Truck" readonly="state != 'draft'"/>
                                     <field name="driver_required" widget="boolean_toggle" readonly="state != 'draft'"/>
                                     <field name="cargo_required" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                </group>
-                            </group>
-
-                            <!-- Cargo & Freight Specifications (Disappears when Cargo Required toggle is OFF; Appears when ON) -->
-                            <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications" invisible="not cargo_required">
-                                <group string="Loading Type, Product &amp; Location">
-                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
-                                    <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state != 'draft'"/>
-                                    <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Spare Parts..." readonly="state != 'draft'"/>
-                                    <field name="cargo_approver_id" options="{'no_create': True}" placeholder="Select Cargo Approver..." readonly="state != 'draft'"/>
-                                    <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state != 'draft'"/>
-                                </group>
-                                <group string="Capacity, Quantity &amp; Tariff">
-                                    <label for="cargo_amount_qty" string="Amount In UoM"/>
-                                    <div class="o_row">
-                                        <field name="cargo_amount_qty" readonly="state != 'draft'"/>
-                                        <field name="cargo_uom_id" options="{'no_create': True}" placeholder="Amount UoM..." readonly="state != 'draft'"/>
-                                    </div>
-                                    <label for="cargo_load_capacity" string="Load Capacity"/>
-                                    <div class="o_row">
-                                        <field name="cargo_load_capacity" readonly="state != 'draft'"/>
-                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}" placeholder="Capacity UoM..." readonly="state != 'draft'"/>
-                                    </div>
-                                    <label for="cargo_tariff_unit_price" string="Tariff (Unit Price) / UoM"/>
-                                    <div class="o_row">
-                                        <field name="cargo_tariff_unit_price" readonly="state != 'draft'"/>
-                                        <span class="text-muted ms-1 me-1"> per </span>
-                                        <field name="cargo_uom_id" readonly="1" class="oe_inline"/>
-                                    </div>
-                                    <field name="cargo_currency_id" invisible="1"/>
-                                    <field name="cargo_total_tariff" widget="monetary" readonly="1"/>
-                                    <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state != 'draft'"/>
                                 </group>
                             </group>
                         </page>
@@ -218,44 +180,37 @@
                             <field name="purpose" placeholder="Provide a detailed explanation of the travel or transport purpose..." readonly="state != 'draft'"/>
                         </page>
 
-                        <page name="allocation_page" string="Allocation &amp; Fleet Audit" invisible="state in ('draft', 'submitted', 'under_review')">
-                            <group>
-                                <group string="Assigned Vehicle &amp; Maintenance Status">
-                                    <field name="assigned_vehicle_id"/>
-                                    <field name="vehicle_last_service_date"/>
-                                    <field name="vehicle_next_service_date"/>
-                                    <field name="vehicle_service_status" widget="badge"
-                                           decoration-danger="vehicle_service_status == 'due'"
-                                           decoration-success="vehicle_service_status == 'ok'"/>
-                                    <field name="vehicle_is_service_due" widget="boolean_toggle" invisible="not vehicle_is_service_due"/>
+                        <page name="cargo_page" string="Cargo" invisible="not cargo_required">
+                            <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications">
+                                <group string="Loading Type, Product &amp; Approver">
+                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                                    <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state != 'draft'"/>
+                                    <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Grain..." readonly="state != 'draft'"/>
+                                    <field name="cargo_approver_id" options="{'no_create': True}" placeholder="Select Cargo Approver..." readonly="state != 'draft'"/>
+                                    <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state != 'draft'"/>
                                 </group>
-                                <group string="Assigned Driver &amp; License Compliance">
-                                    <field name="assigned_driver_id"/>
-                                    <field name="driver_license_expiry_date"/>
-                                    <field name="driver_license_compliance" widget="badge"
-                                           decoration-danger="driver_is_license_expired"
-                                           decoration-success="not driver_is_license_expired"/>
-                                </group>
-                            </group>
-                            <group string="Execution Metrics &amp; Approval Audit">
-                                <group string="Trip Performance">
-                                    <field name="trip_id"/>
-                                    <field name="trip_actual_distance" string="Actual Distance (km)"/>
-                                    <field name="trip_duration_display" string="Total Time Taken"/>
-                                    <field name="total_stops_count" string="Stops Total"/>
-                                    <field name="completed_stops_count" string="Stops Visited"/>
-                                </group>
-                                <group string="Approval Audit (Section 9)">
-                                    <field name="reviewed_by_id"/>
-                                    <field name="approved_by_id"/>
-                                    <field name="approval_date"/>
-                                    <field name="post_trip_review_required" widget="boolean_toggle"/>
+                                <group string="Capacity, Quantity &amp; Tariff">
+                                    <label for="cargo_amount_qty" string="Amount In Quintal"/>
+                                    <div class="o_row">
+                                        <field name="cargo_amount_qty" readonly="state != 'draft'"/>
+                                        <field name="cargo_uom_id" options="{'no_create': True}" placeholder="UoM..." readonly="state != 'draft'"/>
+                                    </div>
+                                    <label for="cargo_tariff_unit_price" string="Tariff (Unit Price) / Quintal"/>
+                                    <div class="o_row">
+                                        <field name="cargo_tariff_unit_price" readonly="state != 'draft'"/>
+                                        <span class="text-muted ms-1 me-1"> per Quintal </span>
+                                        <field name="cargo_uom_id" readonly="1" class="oe_inline"/>
+                                    </div>
+                                    <field name="cargo_currency_id" invisible="1"/>
+                                    <field name="cargo_total_tariff" widget="monetary" readonly="1"/>
+                                    <label for="cargo_load_capacity" string="Load Capacity"/>
+                                    <div class="o_row">
+                                        <field name="cargo_load_capacity" readonly="state != 'draft'"/>
+                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}" placeholder="Capacity UoM..." readonly="state != 'draft'"/>
+                                    </div>
+                                    <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state != 'draft'"/>
                                 </group>
                             </group>
-                            <div class="alert alert-danger mt-3" role="alert" invisible="state != 'rejected'">
-                                <strong>Rejection Reason:</strong>
-                                <p><field name="rejection_reason" readonly="1"/></p>
-                            </div>
                         </page>
                     </notebook>
                 </sheet>
@@ -345,6 +300,8 @@
                 <filter string="Completed &amp; Closed" name="filter_closed" domain="[('state', 'in', ['completed', 'reconciled', 'closed'])]"/>
                 
                 <separator/>
+                <filter string="Light Fleet Orders" name="filter_light_fleet" domain="[('fleet_order_type', '=', 'light')]"/>
+                <filter string="Heavy Fleet Orders" name="filter_heavy_fleet" domain="[('fleet_order_type', '=', 'heavy')]"/>
                 <filter string="Cargo Requests" name="filter_cargo" domain="[('cargo_required', '=', True)]"/>
                 <filter string="Full Load" name="filter_full_load" domain="[('cargo_load_type', '=', 'full'), ('cargo_required', '=', True)]"/>
                 <filter string="Empty Load" name="filter_empty_load" domain="[('cargo_load_type', '=', 'empty'), ('cargo_required', '=', True)]"/>
@@ -353,7 +310,7 @@
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type_id'}"/>
+                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type'}"/>
                     <filter string="Cargo Load Type" name="group_cargo_load_type" context="{'group_by': 'cargo_load_type'}"/>
                     <filter string="Cargo Product" name="group_cargo_product" context="{'group_by': 'cargo_product_id'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>

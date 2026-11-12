@@ -31,11 +31,14 @@ class FleetTrip(models.Model):
         string='Consolidated Transport Requests',
         help='Multiple transport requests served together in this consolidated transport order.',
     )
-    fleet_order_type_id = fields.Many2one(
-        'approval.category',
+    fleet_order_type = fields.Selection(
+        [
+            ('light', 'Light Fleet (ቀላል ተሽከርካሪ)'),
+            ('heavy', 'Heavy Fleet (ከባድ ተሽከርካሪ)'),
+        ],
         string='Fleet Order Type',
+        default='light',
         tracking=True,
-        help="Approval Category / Order Type from the Approvals module.",
     )
     inspection_id = fields.Many2one(
         'top.fleet.vehicle.inspection',
@@ -176,9 +179,9 @@ class FleetTrip(models.Model):
     cargo_loading_type_desc = fields.Char(string='Product / Commodity Description', tracking=True)
     cargo_location_description = fields.Text(string='Location Description', tracking=True)
     cargo_approver_id = fields.Many2one('res.users', string='Cargo Approver', tracking=True)
-    cargo_amount_qty = fields.Float(string='Cargo Amount (Qty)', digits='Product Unit of Measure', default=0.0, tracking=True)
+    cargo_amount_qty = fields.Float(string='Amount In Quintal', digits='Product Unit of Measure', default=0.0, tracking=True)
     cargo_uom_id = fields.Many2one('uom.uom', string='Amount Unit of Measure', tracking=True)
-    cargo_tariff_unit_price = fields.Float(string='Tariff (Unit Price) / UoM', digits='Product Price', default=0.0, tracking=True)
+    cargo_tariff_unit_price = fields.Float(string='Tariff (Unit Price) / Quintal', digits='Product Price', default=0.0, tracking=True)
     cargo_currency_id = fields.Many2one('res.currency', string='Tariff Currency', default=lambda self: self.env.company.currency_id)
     cargo_total_tariff = fields.Monetary(string='Total Tariff Amount', currency_field='cargo_currency_id', compute='_compute_cargo_total_tariff', store=True)
     cargo_load_capacity = fields.Float(string='Load Capacity', digits='Product Unit of Measure', default=0.0, tracking=True)

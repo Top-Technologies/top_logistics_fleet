@@ -69,19 +69,16 @@ class TransportRequest(models.Model):
         required=True,
         tracking=True,
     )
-    fleet_order_type_id = fields.Many2one(
-        'approval.category',
+    fleet_order_type = fields.Selection(
+        [
+            ('light', 'Light Fleet (ቀላል ተሽከርካሪ)'),
+            ('heavy', 'Heavy Fleet (ከባድ ተሽከርካሪ)'),
+        ],
         string='Fleet Order Type',
+        default='light',
+        required=True,
         tracking=True,
-        help="Approval Category / Order Type from the Approvals module.",
-    )
-    approval_request_id = fields.Many2one(
-        'approval.request',
-        string='Approval Request',
-        readonly=True,
-        copy=False,
-        tracking=True,
-        help="Linked Approval Request record in the Approvals module.",
+        help="Select whether this transport order is for Light Fleet or Heavy Fleet.",
     )
     origin_location_id = fields.Many2one(
         'top.logistics.location',
@@ -163,24 +160,25 @@ class TransportRequest(models.Model):
         help="Supervisor or manager responsible for approving this cargo shipment.",
     )
     cargo_amount_qty = fields.Float(
-        string='Cargo Amount (Qty)',
+        string='Amount In Quintal',
         digits='Product Unit of Measure',
         default=0.0,
         tracking=True,
-        help="Amount or quantity of the cargo in the specified unit of measurement.",
+        help="Amount or quantity of the cargo in Quintals (ኩንታል - 100 kg).",
     )
     cargo_uom_id = fields.Many2one(
         'uom.uom',
-        string='Amount Unit of Measure',
+        string='Unit of Measure',
+        default=lambda self: self.env.ref('top_logistics_fleet.uom_quintal', raise_if_not_found=False),
         tracking=True,
-        help="Unit of measurement for the cargo amount (e.g. Kg, Quintal, Liters, Bags, Ton).",
+        help="Unit of measurement for the cargo amount (defaults to Quintal).",
     )
     cargo_tariff_unit_price = fields.Float(
-        string='Tariff (Unit Price) / UoM',
+        string='Tariff (Unit Price) / Quintal',
         digits='Product Price',
         default=0.0,
         tracking=True,
-        help="Tariff or unit price per unit of measurement.",
+        help="Tariff or unit price per Quintal.",
     )
     cargo_currency_id = fields.Many2one(
         'res.currency',
@@ -380,8 +378,12 @@ class TransportRequest(models.Model):
         if self.cargo_product_id:
             if not self.cargo_loading_type_desc:
                 self.cargo_loading_type_desc = self.cargo_product_id.display_name
-            if self.cargo_product_id.uom_id and not self.cargo_uom_id:
+            if self.cargo_product_id.uom_id:
                 self.cargo_uom_id = self.cargo_product_id.uom_id
+            elif not self.cargo_uom_id:
+                quintal = self.env.ref('top_logistics_fleet.uom_quintal', raise_if_not_found=False)
+                if quintal:
+                    self.cargo_uom_id = quintal
 
     @api.onchange('assigned_vehicle_id')
     def _onchange_assigned_vehicle_capacity(self):
@@ -472,10 +474,6 @@ class TransportRequest(models.Model):
                     message_type='notification',
                 )
 
-            # Create matching approval request in Approvals module if fleet_order_type_id is selected
-            if record.fleet_order_type_id and not record.approval_request_id:
-                record._create_approval_request_record()
-
             # Section 50: Send "Transport Request Submitted" notification
             template_submitted = self.env.ref('top_logistics_fleet.mail_template_transport_request_submitted', raise_if_not_found=False)
             if template_submitted:
@@ -515,39 +513,6 @@ class TransportRequest(models.Model):
                         user_id=supervisor_user.id,
                     )
 
-    def _create_approval_request_record(self):
-        self.ensure_one()
-        if not self.fleet_order_type_id:
-            return
-        ApprovalRequest = self.env['approval.request'].sudo()
-        owner_user = self.requester_id or self.env.user
-        category = self.fleet_order_type_id
-        req_vals = {
-            'name': f"{self.name} - {self.purpose or self.name} ({category.name})",
-            'category_id': category.id,
-            'request_owner_id': owner_user.id,
-            'reference': self.name,
-            'date': fields.Datetime.now(),
-        }
-        if hasattr(ApprovalRequest, 'location'):
-            req_vals['location'] = f"{self.origin or ''} -> {self.destination or ''}"
-        if hasattr(ApprovalRequest, 'date_start') and self.required_date:
-            req_vals['date_start'] = self.required_date
-        if hasattr(ApprovalRequest, 'date_end') and self.return_date:
-            req_vals['date_end'] = self.return_date
-        
-        try:
-            app_req = ApprovalRequest.create(req_vals)
-            self.approval_request_id = app_req.id
-            app_req.action_confirm()
-            self.message_post(
-                body=_("Created matching Approval Request <a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> in Approvals module.") % (
-                    app_req.id, app_req.name
-                )
-            )
-        except Exception as e:
-            _logger.warning("Could not automatically create/confirm approval request for %s: %s", self.name, e)
-
     def action_review(self):
         for record in self:
             if record.state != 'submitted':
@@ -568,13 +533,6 @@ class TransportRequest(models.Model):
                 'approval_date': fields.Datetime.now(),
             })
             record.message_post(body=_("Transport request approved by %s.") % self.env.user.name)
-
-            # Sync linked approval request
-            if record.approval_request_id and record.approval_request_id.request_status == 'pending':
-                try:
-                    record.approval_request_id.sudo().action_approve()
-                except Exception as e:
-                    _logger.warning("Could not sync approval request approval: %s", e)
 
     def action_vehicle_search(self):
         for record in self:
@@ -613,20 +571,6 @@ class TransportRequest(models.Model):
             'target': 'current',
         }
 
-    def action_view_approval_request(self):
-        """Smart button action to view the linked approval request in Approvals app."""
-        self.ensure_one()
-        if not self.approval_request_id:
-            raise UserError(_("No linked approval request found."))
-        return {
-            'name': _('Approval Request'),
-            'type': 'ir.actions.act_window',
-            'res_model': 'approval.request',
-            'res_id': self.approval_request_id.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
-
     def action_cancel(self):
         for record in self:
             if record.state in ['in_transit', 'completed', 'reconciled', 'closed']:
@@ -635,13 +579,6 @@ class TransportRequest(models.Model):
                 record.trip_id.action_cancel()
             record.write({'state': 'cancelled'})
             record.message_post(body=_("Transport request cancelled."))
-
-            # Sync linked approval request
-            if record.approval_request_id and record.approval_request_id.request_status not in ['approved', 'cancel']:
-                try:
-                    record.approval_request_id.sudo().action_cancel()
-                except Exception as e:
-                    _logger.warning("Could not sync approval request cancellation: %s", e)
 
     def action_reset_draft(self):
         for record in self:

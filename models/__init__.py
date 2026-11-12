@@ -13,7 +13,6 @@ from . import hr_employee
 from . import fleet_trip_type
 from . import fleet_trip_waypoint
 from . import fleet_trip
-from . import approval_request
 from . import transport_request
 from . import logistics_dashboard
 from . import fleet_alert_config

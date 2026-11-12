@@ -35,7 +35,8 @@
                                 <h2 class="mb-0 text-primary">Trip Execution Sheet &amp; Waybill</h2>
                                 <h4 class="text-muted">
                                     <span t-field="doc.name"/>
-                                    <span t-if="doc.fleet_order_type_id" class="badge text-bg-primary ms-2"><t t-esc="doc.fleet_order_type_id.name"/></span>
+                                    <span t-if="doc.fleet_order_type == 'heavy'" class="badge text-bg-warning ms-2">HEAVY FLEET</span>
+                                    <span t-elif="doc.fleet_order_type == 'light'" class="badge text-bg-info ms-2">LIGHT FLEET</span>
                                 </h4>
                             </div>
                             <div class="text-end">
@@ -206,7 +207,8 @@
                                 <h2 class="mb-0 text-primary">Transport Order &amp; Dispatch Waybill</h2>
                                 <h4 class="text-muted">
                                     <span t-field="doc.name"/>
-                                    <span t-if="doc.fleet_order_type_id" class="badge text-bg-primary ms-2"><t t-esc="doc.fleet_order_type_id.name"/></span>
+                                    <span t-if="doc.fleet_order_type == 'heavy'" class="badge text-bg-warning ms-2">HEAVY FLEET</span>
+                                    <span t-elif="doc.fleet_order_type == 'light'" class="badge text-bg-info ms-2">LIGHT FLEET</span>
                                 </h4>
                             </div>
                             <div class="text-end">

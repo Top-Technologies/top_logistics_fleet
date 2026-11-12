@@ -179,5 +179,14 @@
         <record id="vehicle_category_truck" model="fleet.vehicle.model.category">
             <field name="name">Heavy Duty Freight Truck (10+ Ton)</field>
         </record>
+
+        <!-- 5. Master Unit of Measure: Quintal (ኩንታል - 100 kg) -->
+        <record id="uom_quintal" model="uom.uom">
+            <field name="name">Quintal (ኩንታል)</field>
+            <field name="category_id" ref="uom.product_uom_categ_kgm"/>
+            <field name="uom_type">bigger</field>
+            <field name="factor_inv">100.0</field>
+            <field name="rounding">0.01</field>
+        </record>
     </data>
 </odoo>

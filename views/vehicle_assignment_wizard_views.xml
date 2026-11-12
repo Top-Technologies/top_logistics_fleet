@@ -12,7 +12,7 @@
                             (<field name="required_date"/> to <field name="return_date"/>)
                         </div>
                         <div>
-                            <field name="fleet_order_type_id" class="badge text-bg-light border fs-6"/>
+                            <field name="fleet_order_type" widget="badge" decoration-warning="fleet_order_type == 'heavy'" decoration-info="fleet_order_type == 'light'"/>
                         </div>
                     </div>
                     <group>
