@@ -7,9 +7,7 @@
         <field name="arch" type="xml">
             <list string="Transport Requests" decoration-danger="priority == 'emergency'" decoration-muted="state in ('draft', 'cancelled')" sample="1">
                 <field name="name" decoration-bf="1"/>
-                <field name="fleet_order_type" widget="badge"
-                       decoration-warning="fleet_order_type == 'heavy'"
-                       decoration-info="fleet_order_type == 'light'"/>
+                <field name="fleet_order_type_id"/>
                 <field name="requester_id" widget="many2one_avatar_user"/>
                 <field name="department_id"/>
                 <field name="trip_type_id"/>
@@ -117,7 +115,7 @@
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_details" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type" placeholder="Select Fleet Order Type..." readonly="state != 'draft'"/>
+                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Approval Type..." readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="priority" widget="priority" readonly="state != 'draft'"/>
                             <field name="request_date"/>
@@ -182,11 +180,10 @@
 
                         <page name="cargo_page" string="Cargo" invisible="not cargo_required">
                             <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications">
-                                <group string="Loading Type, Product &amp; Approver">
+                                <group string="Loading Type &amp; Product">
                                     <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
                                     <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state != 'draft'"/>
                                     <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Grain..." readonly="state != 'draft'"/>
-                                    <field name="cargo_approver_id" options="{'no_create': True}" placeholder="Select Cargo Approver..." readonly="state != 'draft'"/>
                                     <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state != 'draft'"/>
                                 </group>
                                 <group string="Capacity, Quantity &amp; Tariff">
@@ -211,6 +208,34 @@
                                     <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state != 'draft'"/>
                                 </group>
                             </group>
+                        </page>
+
+                        <page name="approver_page" string="Approver">
+                            <div class="alert alert-info py-2 mb-2 d-flex justify-content-between align-items-center" role="status">
+                                <div>
+                                    <i class="fa fa-users me-1"/>
+                                    <strong>Multi-Level Approval Workflow:</strong> Add as many approvers as needed for this transport request. Approvers can review and approve or reject individually.
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge text-bg-primary me-1"><field name="approvers_count"/> Total Approvers</span>
+                                    <span class="badge text-bg-warning"><field name="pending_approvers_count"/> Pending</span>
+                                </div>
+                            </div>
+                            <field name="approver_ids" readonly="state in ('completed', 'reconciled', 'closed', 'cancelled')">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="user_id" options="{'no_create': True}"/>
+                                    <field name="role" placeholder="e.g. Department Manager, Fleet Supervisor, Cargo Manager..."/>
+                                    <field name="status" widget="badge"
+                                           decoration-info="status == 'pending'"
+                                           decoration-success="status == 'approved'"
+                                           decoration-danger="status == 'rejected'"/>
+                                    <field name="action_date" readonly="1"/>
+                                    <field name="comments" placeholder="Comments or approval/rejection remarks..."/>
+                                    <button name="action_approve" type="object" string="Approve" icon="fa-check text-success" invisible="status == 'approved'"/>
+                                    <button name="action_reject" type="object" string="Reject" icon="fa-times text-danger" invisible="status == 'rejected'"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
@@ -300,8 +325,6 @@
                 <filter string="Completed &amp; Closed" name="filter_closed" domain="[('state', 'in', ['completed', 'reconciled', 'closed'])]"/>
                 
                 <separator/>
-                <filter string="Light Fleet Orders" name="filter_light_fleet" domain="[('fleet_order_type', '=', 'light')]"/>
-                <filter string="Heavy Fleet Orders" name="filter_heavy_fleet" domain="[('fleet_order_type', '=', 'heavy')]"/>
                 <filter string="Cargo Requests" name="filter_cargo" domain="[('cargo_required', '=', True)]"/>
                 <filter string="Full Load" name="filter_full_load" domain="[('cargo_load_type', '=', 'full'), ('cargo_required', '=', True)]"/>
                 <filter string="Empty Load" name="filter_empty_load" domain="[('cargo_load_type', '=', 'empty'), ('cargo_required', '=', True)]"/>
@@ -310,7 +333,7 @@
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type'}"/>
+                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type_id'}"/>
                     <filter string="Cargo Load Type" name="group_cargo_load_type" context="{'group_by': 'cargo_load_type'}"/>
                     <filter string="Cargo Product" name="group_cargo_product" context="{'group_by': 'cargo_product_id'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>

@@ -31,14 +31,11 @@ class FleetTrip(models.Model):
         string='Consolidated Transport Requests',
         help='Multiple transport requests served together in this consolidated transport order.',
     )
-    fleet_order_type = fields.Selection(
-        [
-            ('light', 'Light Fleet (ቀላል ተሽከርካሪ)'),
-            ('heavy', 'Heavy Fleet (ከባድ ተሽከርካሪ)'),
-        ],
+    fleet_order_type_id = fields.Many2one(
+        'approval.category',
         string='Fleet Order Type',
-        default='light',
         tracking=True,
+        help="Approval category from the Approvals module representing this fleet order type.",
     )
     inspection_id = fields.Many2one(
         'top.fleet.vehicle.inspection',

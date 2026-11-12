@@ -18,8 +18,9 @@ class VehicleAssignmentWizard(models.TransientModel):
     return_date = fields.Datetime(related='request_id.return_date', string='Return Date', readonly=True)
     vehicle_type_id = fields.Many2one(related='request_id.vehicle_type_id', string='Requested Vehicle Type', readonly=True)
 
-    fleet_order_type = fields.Selection(
-        related='request_id.fleet_order_type',
+    fleet_order_type_id = fields.Many2one(
+        'approval.category',
+        related='request_id.fleet_order_type_id',
         string='Fleet Order Type',
         readonly=True,
     )
@@ -118,7 +119,7 @@ class VehicleAssignmentWizard(models.TransientModel):
         trip_vals = {
             'request_id': req.id,
             'request_ids': [(4, req.id)],
-            'fleet_order_type': req.fleet_order_type or 'light',
+            'fleet_order_type_id': req.fleet_order_type_id.id if req.fleet_order_type_id else False,
             'vehicle_id': self.vehicle_id.id,
             'driver_id': self.driver_id.id,
             'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,

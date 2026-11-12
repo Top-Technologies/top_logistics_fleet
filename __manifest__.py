@@ -36,6 +36,7 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
         'web',
         'product',
         'uom',
+        'approvals',
     ],
     'data': [
         # Security

@@ -69,16 +69,27 @@ class TransportRequest(models.Model):
         required=True,
         tracking=True,
     )
-    fleet_order_type = fields.Selection(
-        [
-            ('light', 'Light Fleet (ቀላል ተሽከርካሪ)'),
-            ('heavy', 'Heavy Fleet (ከባድ ተሽከርካሪ)'),
-        ],
+    fleet_order_type_id = fields.Many2one(
+        'approval.category',
         string='Fleet Order Type',
-        default='light',
-        required=True,
         tracking=True,
-        help="Select whether this transport order is for Light Fleet or Heavy Fleet.",
+        help="Approval category from the Approvals module representing this fleet order type.",
+    )
+    approver_ids = fields.One2many(
+        'top.transport.request.approver',
+        'request_id',
+        string='Approvers',
+        copy=True,
+    )
+    approvers_count = fields.Integer(
+        string='Approvers Count',
+        compute='_compute_approvers_summary',
+        store=True,
+    )
+    pending_approvers_count = fields.Integer(
+        string='Pending Approvals',
+        compute='_compute_approvers_summary',
+        store=True,
     )
     origin_location_id = fields.Many2one(
         'top.logistics.location',
@@ -358,6 +369,29 @@ class TransportRequest(models.Model):
         compute='_compute_trip_duration_display',
     )
 
+    @api.depends('approver_ids.status')
+    def _compute_approvers_summary(self):
+        for record in self:
+            record.approvers_count = len(record.approver_ids)
+            record.pending_approvers_count = len(record.approver_ids.filtered(lambda a: a.status == 'pending'))
+
+    @api.onchange('fleet_order_type_id')
+    def _onchange_fleet_order_type_id(self):
+        if self.fleet_order_type_id and not self.approver_ids:
+            if hasattr(self.fleet_order_type_id, 'approver_ids'):
+                lines = []
+                seq = 10
+                for cat_app in self.fleet_order_type_id.approver_ids:
+                    lines.append((0, 0, {
+                        'user_id': cat_app.user_id.id,
+                        'role': getattr(cat_app.user_id.partner_id, 'function', False) or _('Approver'),
+                        'sequence': seq,
+                        'status': 'pending',
+                    }))
+                    seq += 10
+                if lines:
+                    self.approver_ids = lines
+
     @api.onchange('origin_location_id')
     def _onchange_origin_location_id(self):
         if self.origin_location_id:
@@ -513,6 +547,16 @@ class TransportRequest(models.Model):
                         user_id=supervisor_user.id,
                     )
 
+            # Notify all assigned individual approvers
+            activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
+            for approver in record.approver_ids.filtered(lambda a: a.status == 'pending'):
+                if activity_type and approver.user_id:
+                    record.activity_schedule(
+                        'top_logistics_fleet.mail_act_request_awaiting_approval',
+                        summary=_("Transport Request Awaiting Your Approval: %s") % record.name,
+                        user_id=approver.user_id.id,
+                    )
+
     def action_review(self):
         for record in self:
             if record.state != 'submitted':
@@ -527,6 +571,15 @@ class TransportRequest(models.Model):
         for record in self:
             if record.state not in ['submitted', 'under_review']:
                 raise UserError(_("Request cannot be approved in its current state."))
+            # Mark current user's approver line as approved if present
+            my_approver_lines = record.approver_ids.filtered(
+                lambda a: a.user_id.id == self.env.user.id and a.status == 'pending'
+            )
+            if my_approver_lines:
+                my_approver_lines.write({
+                    'status': 'approved',
+                    'action_date': fields.Datetime.now(),
+                })
             record.write({
                 'state': 'approved',
                 'approved_by_id': self.env.user.id,
@@ -665,4 +718,88 @@ class TransportRequestStop(models.Model):
     def action_cancel_stop(self):
         for rec in self:
             rec.write({'state': 'cancelled', 'completed': False})
+
+
+class TransportRequestApprover(models.Model):
+    _name = 'top.transport.request.approver'
+    _description = 'Transport Request Approver'
+    _order = 'sequence, id'
+
+    sequence = fields.Integer(string='Sequence', default=10)
+    request_id = fields.Many2one(
+        'top.transport.request',
+        string='Transport Request',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+    user_id = fields.Many2one(
+        'res.users',
+        string='Approver',
+        required=True,
+        index=True,
+    )
+    role = fields.Char(
+        string='Role / Designation',
+        help="e.g. Department Manager, Fleet Supervisor, Cargo Manager, Operations Director",
+    )
+    status = fields.Selection(
+        [
+            ('pending', 'To Approve'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        string='Status',
+        default='pending',
+        required=True,
+    )
+    action_date = fields.Datetime(
+        string='Action Date',
+        readonly=True,
+    )
+    comments = fields.Char(
+        string='Comments / Reason',
+    )
+
+    def action_approve(self):
+        for rec in self:
+            rec.write({
+                'status': 'approved',
+                'action_date': fields.Datetime.now(),
+            })
+            rec.request_id.message_post(
+                body=_("Approver <strong>%s</strong> (%s) approved the request.") % (
+                    rec.user_id.name, rec.role or _("Approver")
+                )
+            )
+            # If all approvers have approved, automatically advance request to approved
+            all_approved = all(app.status == 'approved' for app in rec.request_id.approver_ids)
+            if all_approved and rec.request_id.state in ['submitted', 'under_review']:
+                rec.request_id.write({
+                    'state': 'approved',
+                    'approved_by_id': rec.user_id.id,
+                    'approval_date': fields.Datetime.now(),
+                })
+                rec.request_id.message_post(
+                    body=_("All required approvers have approved. Request status moved to <strong>Approved</strong>.")
+                )
+
+    def action_reject(self):
+        for rec in self:
+            rec.write({
+                'status': 'rejected',
+                'action_date': fields.Datetime.now(),
+            })
+            reason = rec.comments or _("Rejected by %s") % rec.user_id.name
+            rec.request_id.message_post(
+                body=_("Approver <strong>%s</strong> (%s) rejected the request. Reason: %s") % (
+                    rec.user_id.name, rec.role or _("Approver"), reason
+                )
+            )
+            if rec.request_id.state in ['submitted', 'under_review']:
+                rec.request_id.write({
+                    'state': 'rejected',
+                    'rejection_reason': reason,
+                })
+
 
