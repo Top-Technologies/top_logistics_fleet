@@ -66,7 +66,6 @@ class TransportRequest(models.Model):
     trip_type_id = fields.Many2one(
         'top.transport.request.type',
         string='Trip Type',
-        required=True,
         tracking=True,
     )
     fleet_order_type_id = fields.Many2one(
@@ -103,11 +102,9 @@ class TransportRequest(models.Model):
     )
     origin = fields.Char(
         string='Origin',
-        required=True,
     )
     destination = fields.Char(
         string='Destination',
-        required=True,
     )
     stop_ids = fields.One2many(
         'top.transport.request.stop',
@@ -298,16 +295,26 @@ class TransportRequest(models.Model):
     assigned_vehicle_id = fields.Many2one(
         'fleet.vehicle',
         string='Assigned Vehicle',
-        readonly=True,
+        readonly=False,
         tracking=True,
         copy=False,
+        domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False), ('is_inspection_valid', '=', True)]",
     )
     assigned_driver_id = fields.Many2one(
         'hr.employee',
         string='Assigned Driver',
-        readonly=True,
+        readonly=False,
         tracking=True,
         copy=False,
+        domain="[('is_driver', '=', True), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]",
+    )
+    backup_driver_id = fields.Many2one(
+        'hr.employee',
+        string='Backup Driver',
+        readonly=False,
+        tracking=True,
+        copy=False,
+        domain="[('is_driver', '=', True)]",
     )
     trip_id = fields.Many2one(
         'top.fleet.trip',
@@ -498,6 +505,17 @@ class TransportRequest(models.Model):
                 vals['name'] = self.env['ir.sequence'].next_by_code('top.transport.request') or _('New')
         return super().create(vals_list)
 
+    def write(self, vals):
+        if not (self.env.user.has_group('top_logistics_fleet.group_fleet_officer') or 
+                self.env.user.has_group('top_logistics_fleet.group_fleet_manager') or 
+                self.env.su):
+            allowed_keys = {'message_follower_ids', 'state'}
+            for record in self:
+                if record.state != 'draft':
+                    if not set(vals.keys()).issubset(allowed_keys) or (vals.get('state') and vals.get('state') not in ['submitted', 'cancelled']):
+                        raise UserError(_("You cannot modify a transport request once it has been submitted. Please contact a Fleet Officer."))
+        return super().write(vals)
+
     # -------------------------------------------------------------------------
     # WORKFLOW ACTIONS
     # -------------------------------------------------------------------------
@@ -513,7 +531,7 @@ class TransportRequest(models.Model):
                 )
             else:
                 record.message_post(
-                    body=_("Transport request submitted for approval."),
+                    body=_("Transport request submitted for Fleet Officer review."),
                     message_type='notification',
                 )
 
@@ -522,64 +540,109 @@ class TransportRequest(models.Model):
             if template_submitted:
                 template_submitted.send_mail(record.id, force_send=False)
 
-            # Section 50: Send "Transport Request Awaiting Approval" notification & schedule activity
-            approver_user = False
-            if record.department_id and record.department_id.manager_id and record.department_id.manager_id.user_id:
-                approver_user = record.department_id.manager_id.user_id
-            else:
-                approver_group = self.env.ref('top_logistics_fleet.group_department_approver', raise_if_not_found=False)
-                if approver_group and approver_group.users:
-                    approver_user = approver_group.users[0]
-
-            if approver_user:
+            # Notify Fleet Officer
+            officer_group = self.env.ref('top_logistics_fleet.group_fleet_officer', raise_if_not_found=False)
+            if officer_group and officer_group.users:
                 activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
-                if activity_type:
-                    record.activity_schedule(
-                        'top_logistics_fleet.mail_act_request_awaiting_approval',
-                        summary=_("Transport Request Awaiting Approval: %s") % record.name,
-                        user_id=approver_user.id,
-                    )
-            
-            template_awaiting = self.env.ref('top_logistics_fleet.mail_template_request_awaiting_approval', raise_if_not_found=False)
-            if template_awaiting:
-                template_awaiting.send_mail(record.id, force_send=False)
+                for off in officer_group.users:
+                    if activity_type:
+                        record.activity_schedule(
+                            'top_logistics_fleet.mail_act_request_awaiting_approval',
+                            summary=_("New Transport Request for Allocation & Review: %s") % record.name,
+                            user_id=off.id,
+                        )
 
-            # Also notify Fleet Supervisor
-            supervisor_group = self.env.ref('top_logistics_fleet.group_fleet_supervisor', raise_if_not_found=False)
-            supervisor_user = supervisor_group.users[0] if supervisor_group and supervisor_group.users else False
-            if supervisor_user:
-                activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
-                if activity_type:
-                    record.activity_schedule(
-                        'top_logistics_fleet.mail_act_request_awaiting_approval',
-                        summary=_("Transport Order Awaiting Fleet Supervisor Review: %s") % record.name,
-                        user_id=supervisor_user.id,
-                    )
-
-            # Notify all assigned individual approvers
-            activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
-            for approver in record.approver_ids.filtered(lambda a: a.status == 'pending'):
-                if activity_type and approver.user_id:
-                    record.activity_schedule(
-                        'top_logistics_fleet.mail_act_request_awaiting_approval',
-                        summary=_("Transport Request Awaiting Your Approval: %s") % record.name,
-                        user_id=approver.user_id.id,
-                    )
-
-    def action_review(self):
+    def action_submit_to_manager(self):
+        """Fleet Officer accepts/validates request, ensures route & allocation details, and submits to Fleet Manager."""
         for record in self:
             if record.state != 'submitted':
-                raise UserError(_("Only submitted requests can be put under review."))
+                raise UserError(_("Only submitted requests can be forwarded for manager approval."))
+
+            # Auto-populate origin/destination from location if text is missing
+            if not record.origin and record.origin_location_id:
+                record.origin = record.origin_location_id.display_name or record.origin_location_id.name
+            if not record.destination and record.destination_location_id:
+                record.destination = record.destination_location_id.display_name or record.destination_location_id.name
+
+            # Validations required before submitting to Manager
+            errors = []
+            if not record.origin:
+                errors.append(_("• Origin location or address must be specified."))
+            if not record.destination:
+                errors.append(_("• Destination location or address must be specified."))
+            if not record.assigned_vehicle_id:
+                errors.append(_("• An approved vehicle must be allocated."))
+            if not record.assigned_driver_id:
+                errors.append(_("• An eligible driver must be allocated."))
+            
+            if errors:
+                raise ValidationError(_("Please complete the following details before submitting for Manager approval:\n%s") % "\n".join(errors))
+
+            # Validate Vehicle Availability & Inspection
+            v_ok, v_msg = record.assigned_vehicle_id.check_availability(record.required_date, record.return_date)
+            if not v_ok:
+                raise ValidationError(_("Vehicle Allocation Error: %s") % v_msg)
+
+            # Validate Driver Availability
+            d_ok, d_msg = record.assigned_driver_id.check_availability(record.required_date, record.return_date)
+            if not d_ok:
+                raise ValidationError(_("Driver Allocation Error: %s") % d_msg)
+
+            # Validate Backup Driver if present
+            if record.backup_driver_id:
+                if record.backup_driver_id.id == record.assigned_driver_id.id:
+                    raise ValidationError(_("Primary driver and backup driver cannot be the same person."))
+                b_ok, b_msg = record.backup_driver_id.check_availability(record.required_date, record.return_date)
+                if not b_ok:
+                    raise ValidationError(_("Backup Driver Allocation Error: %s") % b_msg)
+
+            # Ensure Trip Type
+            if not record.trip_type_id:
+                default_type = self.env['top.transport.request.type'].search([], limit=1)
+                if default_type:
+                    record.trip_type_id = default_type.id
+
             record.write({
                 'state': 'under_review',
                 'reviewed_by_id': self.env.user.id,
             })
-            record.message_post(body=_("Request reviewed by %s.") % self.env.user.name)
+            record.message_post(
+                body=_("Request verified and route/fleet details enriched by %s. Forwarded for Fleet Manager approval.") % self.env.user.name
+            )
+
+            # Notify Fleet Manager
+            manager_group = self.env.ref('top_logistics_fleet.group_fleet_manager', raise_if_not_found=False)
+            if manager_group and manager_group.users:
+                activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
+                for mgr in manager_group.users:
+                    if activity_type:
+                        record.activity_schedule(
+                            'top_logistics_fleet.mail_act_request_awaiting_approval',
+                            summary=_("Transport Request Ready for Final Approval: %s") % record.name,
+                            user_id=mgr.id,
+                        )
+
+    def action_review(self):
+        """Allows Officer/Manager to mark as under review."""
+        return self.action_submit_to_manager()
 
     def action_approve(self):
+        """Fleet Manager gives final approval and generates the trip in ready state."""
         for record in self:
             if record.state not in ['submitted', 'under_review']:
                 raise UserError(_("Request cannot be approved in its current state."))
+
+            # Auto-populate origin/destination from location if text is missing
+            if not record.origin and record.origin_location_id:
+                record.origin = record.origin_location_id.display_name or record.origin_location_id.name
+            if not record.destination and record.destination_location_id:
+                record.destination = record.destination_location_id.display_name or record.destination_location_id.name
+
+            if not record.assigned_vehicle_id or not record.assigned_driver_id:
+                raise ValidationError(_("Please allocate an approved Vehicle and Driver before approving the request."))
+            if not record.origin or not record.destination:
+                raise ValidationError(_("Please specify Origin and Destination before approving the request."))
+
             # Mark current user's approver line as approved if present
             my_approver_lines = record.approver_ids.filtered(
                 lambda a: a.user_id.id == self.env.user.id and a.status == 'pending'
@@ -594,7 +657,89 @@ class TransportRequest(models.Model):
                 'approved_by_id': self.env.user.id,
                 'approval_date': fields.Datetime.now(),
             })
-            record.message_post(body=_("Transport request approved by %s.") % self.env.user.name)
+            record.message_post(body=_("Transport request approved by Fleet Manager %s.") % self.env.user.name)
+
+            # Auto-generate Trip record in 'ready' state
+            record._create_trip_from_request()
+
+    def _create_trip_from_request(self):
+        self.ensure_one()
+        if self.trip_id:
+            return self.trip_id
+
+        trip_type = self.trip_type_id
+        if not trip_type:
+            trip_type = self.env['top.transport.request.type'].search([], limit=1)
+
+        trip_vals = {
+            'request_id': self.id,
+            'request_ids': [(4, self.id)],
+            'fleet_order_type_id': self.fleet_order_type_id.id if self.fleet_order_type_id else False,
+            'vehicle_id': self.assigned_vehicle_id.id,
+            'driver_id': self.assigned_driver_id.id,
+            'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,
+            'trip_coordinator_id': self.env.user.id,
+            'trip_type_id': trip_type.id if trip_type else False,
+            'inspection_id': self.assigned_vehicle_id.last_inspection_id.id if self.assigned_vehicle_id.last_inspection_id else False,
+            'origin_location_id': self.origin_location_id.id if self.origin_location_id else False,
+            'destination_location_id': self.destination_location_id.id if self.destination_location_id else False,
+            'origin': self.origin or (self.origin_location_id.display_name if self.origin_location_id else ''),
+            'destination': self.destination or (self.destination_location_id.display_name if self.destination_location_id else ''),
+            'planned_departure': self.required_date,
+            'planned_arrival': self.return_date,
+            'purpose': self.purpose,
+            'cargo_required': self.cargo_required,
+            'cargo_load_type': self.cargo_load_type,
+            'cargo_product_id': self.cargo_product_id.id if self.cargo_product_id else False,
+            'cargo_loading_type_desc': self.cargo_loading_type_desc,
+            'cargo_location_description': self.cargo_location_description,
+            'cargo_approver_id': self.cargo_approver_id.id if self.cargo_approver_id else False,
+            'cargo_amount_qty': self.cargo_amount_qty,
+            'cargo_uom_id': self.cargo_uom_id.id if self.cargo_uom_id else False,
+            'cargo_tariff_unit_price': self.cargo_tariff_unit_price,
+            'cargo_load_capacity': self.cargo_load_capacity,
+            'cargo_capacity_uom_id': self.cargo_capacity_uom_id.id if self.cargo_capacity_uom_id else False,
+            'cargo_description': self.cargo_description,
+            'state': 'ready',
+        }
+        trip = self.env['top.fleet.trip'].create(trip_vals)
+
+        # Copy multi-stop waypoints from request to trip
+        seq = 10
+        for st in self.stop_ids:
+            self.env['top.fleet.trip.waypoint'].create({
+                'trip_id': trip.id,
+                'sequence': seq,
+                'location_id': st.location_id.id if st.location_id else False,
+                'location_name': st.location_name,
+                'stop_type': st.stop_type,
+                'request_id': self.id,
+                'cargo_or_passenger_notes': st.cargo_or_passenger_notes,
+                'notes': st.notes,
+                'state': 'pending',
+            })
+            seq += 10
+
+        self.write({
+            'trip_id': trip.id,
+            'state': 'assigned',
+        })
+        self.assigned_vehicle_id.write({'operational_status': 'assigned'})
+        self.assigned_driver_id.write({'driver_status': 'assigned'})
+        if self.backup_driver_id:
+            self.backup_driver_id.write({'driver_status': 'assigned'})
+
+        self.message_post(
+            body=_("Trip <a href='#' data-oe-model='top.fleet.trip' data-oe-id='%s'>%s</a> generated in <strong>Ready / Assigned</strong> status for dispatch.") % (
+                trip.id, trip.name
+            )
+        )
+
+        template_assigned = self.env.ref('top_logistics_fleet.mail_template_vehicle_assigned', raise_if_not_found=False)
+        if template_assigned:
+            template_assigned.send_mail(self.id, force_send=False)
+
+        return trip
 
     def action_vehicle_search(self):
         for record in self:

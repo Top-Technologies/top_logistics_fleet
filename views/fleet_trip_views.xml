@@ -19,7 +19,7 @@
                 <field name="planned_arrival"/>
                 <field name="planned_distance" optional="hide"/>
                 <field name="actual_distance" sum="Total Actual Distance (km)"/>
-                <field name="variance_distance" string="Dist Diff" optional="show" decoration-danger="variance_distance &gt; 20"/>
+                <field name="variance_distance" string="Dist Diff" optional="hide" decoration-danger="variance_distance &gt; 20"/>
                 <field name="actual_duration_display" string="Time Taken" optional="show"/>
                 <field name="time_status" widget="badge" optional="show"
                        decoration-success="time_status == 'on_time'"
@@ -30,7 +30,7 @@
                 <field name="total_refueled" optional="hide"/>
                 <field name="expected_fuel" optional="hide"/>
                 <field name="actual_fuel" sum="Total Fuel Consumed (L)"/>
-                <field name="variance_fuel" string="Fuel Diff" optional="show" decoration-danger="variance_fuel &gt; 5"/>
+                <field name="variance_fuel" string="Fuel Diff" optional="hide" decoration-danger="variance_fuel &gt; 5"/>
                 <field name="fuel_consumption_rate" string="Rate (L/100km)"/>
                 <field name="fuel_utilization_status" widget="badge" optional="show"
                        decoration-success="fuel_utilization_status == 'efficient'"
@@ -150,14 +150,12 @@
                             <div class="card p-2 bg-light border text-center shadow-sm">
                                 <div class="text-muted small text-uppercase fw-bold"><i class="fa fa-road text-primary me-1"/> Distance Traveled</div>
                                 <div class="fs-4 fw-bold text-primary"><field name="actual_distance"/> km</div>
-                                <div class="small text-muted">Planned: <field name="planned_distance"/> km</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="card p-2 bg-light border text-center shadow-sm">
                                 <div class="text-muted small text-uppercase fw-bold"><i class="fa fa-clock-o text-info me-1"/> Total Time Taken</div>
                                 <div class="fs-4 fw-bold text-info"><field name="actual_duration_display"/></div>
-                                <div class="small text-muted">Planned: <field name="planned_duration"/> Hours</div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -196,10 +194,7 @@
                                     <field name="destination" placeholder="Specific destination address..." readonly="state != 'draft'"/>
                                 </group>
                                 <group string="Distance &amp; Duration">
-                                    <field name="planned_distance"/>
                                     <field name="actual_distance"/>
-                                    <field name="planned_duration"/>
-                                    <field name="actual_duration"/>
                                     <field name="actual_duration_display"/>
                                     <field name="cargo_required" widget="boolean_toggle"/>
                                 </group>
@@ -257,54 +252,19 @@
                             </field>
                         </page>
 
-                        <page name="reconciliation_page" string="Trip Reconciliation">
-                            <group>
-                                <group string="Distance &amp; Schedule Performance">
-                                    <field name="planned_distance"/>
-                                    <field name="actual_distance"/>
-                                    <field name="variance_distance" class="fw-bold" decoration-danger="variance_distance &gt; 20"/>
-                                    <field name="variance_distance_pct" widget="percentage" decoration-danger="variance_distance_pct &gt; 15"/>
-                                    <separator string="Duration &amp; Schedule Adherence"/>
-                                    <field name="planned_duration"/>
-                                    <field name="actual_duration"/>
-                                    <field name="actual_duration_display"/>
-                                    <field name="variance_duration" class="fw-bold"/>
-                                    <field name="variance_duration_pct" widget="percentage"/>
-                                    <field name="time_status" widget="badge"
-                                           decoration-success="time_status == 'on_time'"
-                                           decoration-warning="time_status == 'slight_delay'"
-                                           decoration-danger="time_status == 'major_delay'"/>
+                        <page name="fuel_logs_page" string="Fuel Refuels">
+                            <group string="Trip Fuel Summary">
+                                <group>
+                                    <field name="start_fuel"/>
+                                    <field name="end_fuel"/>
                                 </group>
-                                <group string="Fuel Control &amp; Cost KPIs">
-                                    <field name="start_fuel" readonly="state != 'draft'"/>
-                                    <field name="end_fuel" readonly="state not in ('completed', 'reconciled', 'closed')" invisible="state not in ('completed', 'reconciled', 'closed')"/>
-                                    <field name="current_fuel" invisible="state in ('completed', 'reconciled', 'closed')"/>
-                                    <field name="total_refueled"/>
-                                    <field name="expected_fuel"/>
+                                <group>
                                     <field name="actual_fuel"/>
-                                    <field name="fuel_consumed_gps" invisible="fuel_consumed_gps == 0"/>
-                                    <field name="fuel_consumed_norm" invisible="fuel_consumed_gps &gt; 0"/>
-                                    <field name="fuel_consumption_method" widget="badge"/>
-                                    <field name="fuel_theft_suspected" widget="boolean_toggle" decoration-danger="fuel_theft_suspected"/>
-                                    <field name="variance_fuel" class="fw-bold" decoration-danger="variance_fuel &gt; 5"/>
-                                    <field name="variance_fuel_pct" widget="percentage" decoration-danger="variance_fuel_pct &gt; 10"/>
-                                    <field name="fuel_utilization_status" widget="badge"
-                                           decoration-success="fuel_utilization_status == 'efficient'"
-                                           decoration-info="fuel_utilization_status == 'normal'"
-                                           decoration-danger="fuel_utilization_status == 'excess'"/>
-                                    <separator string="Financial &amp; Operating Cost"/>
+                                    <field name="total_refueled"/>
                                     <field name="fuel_consumption_rate" class="fw-bold text-primary"/>
-                                    <field name="planned_cost"/>
-                                    <field name="total_trip_cost" class="fw-bold fs-5 text-primary"/>
-                                    <field name="consumed_fuel_cost"/>
-                                    <field name="cost_per_km"/>
-                                    <field name="variance_cost" class="fw-bold" decoration-danger="variance_cost &gt; 0"/>
-                                    <field name="variance_cost_pct" widget="percentage" decoration-danger="variance_cost_pct &gt; 10"/>
                                 </group>
                             </group>
-                        </page>
-
-                        <page name="fuel_logs_page" string="Fuel Refuels">
+                            <separator string="Refuel Logs &amp; Receipts"/>
                             <field name="fuel_log_ids">
                                 <list editable="bottom">
                                     <field name="date"/>

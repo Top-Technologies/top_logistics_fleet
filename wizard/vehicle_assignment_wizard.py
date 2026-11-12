@@ -188,6 +188,7 @@ class VehicleAssignmentWizard(models.TransientModel):
         req_vals = {
             'assigned_vehicle_id': self.vehicle_id.id,
             'assigned_driver_id': self.driver_id.id,
+            'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,
             'trip_id': trip.id,
             'state': 'assigned',
             'post_trip_review_required': post_trip,

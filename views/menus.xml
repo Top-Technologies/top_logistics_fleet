@@ -13,7 +13,7 @@
               parent="menu_top_logistics_root"
               action="action_top_logistics_dashboard_client"
               sequence="5"
-              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+              groups="top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
 
     <!-- 0.1 Secondary Vehicle Analytics Dashboard -->
     <menuitem id="menu_top_vehicle_dashboard"
@@ -21,7 +21,7 @@
               parent="menu_top_logistics_root"
               action="action_top_vehicle_dashboard_client"
               sequence="6"
-              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
+              groups="top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management"/>
 
     <!-- 1. Transport Requests Menu Header -->
     <menuitem id="menu_transport_request_parent"
@@ -33,7 +33,8 @@
               name="All Requests"
               parent="menu_transport_request_parent"
               action="action_top_transport_request_all"
-              sequence="10"/>
+              sequence="10"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
     <menuitem id="menu_transport_request_my"
               name="My Requests"
@@ -46,21 +47,21 @@
               parent="menu_transport_request_parent"
               action="action_top_transport_request_to_approve"
               sequence="30"
-              groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
     <menuitem id="menu_transport_request_allocation"
               name="Vehicle Allocation"
               parent="menu_transport_request_parent"
               action="action_top_transport_request_allocation"
               sequence="40"
-              groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
     <!-- 1.5. Vehicle Technical Inspection Header -->
     <menuitem id="menu_top_fleet_inspection_parent"
               name="Inspection"
               parent="menu_top_logistics_root"
               sequence="15"
-              groups="top_logistics_fleet.group_transport_request_user"/>
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
 
     <menuitem id="menu_top_fleet_vehicle_inspection_all"
               name="All Inspections"
@@ -241,7 +242,7 @@
               name="Configuration"
               parent="menu_top_logistics_root"
               sequence="90"
-              groups="top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_admin"/>
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_admin"/>
 
     <menuitem id="menu_top_gps_provider"
               name="GPS API Providers"

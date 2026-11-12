@@ -54,26 +54,22 @@
                     <button name="action_submit" string="Submit Request" type="object" class="btn-primary"
                             invisible="state != 'draft'"/>
                     
-                    <button name="action_review" string="Review" type="object" class="btn-secondary"
+                    <button name="action_submit_to_manager" string="Submit for Manager Approval" type="object" class="btn-primary"
                             invisible="state != 'submitted'"
-                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
-                    <button name="action_approve" string="Approve" type="object" class="btn-primary"
-                            invisible="state not in ('submitted', 'under_review')"
-                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
+                    <button name="action_approve" string="Approve Request" type="object" class="btn-success"
+                            invisible="state != 'under_review'"
+                            groups="top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="%(action_transport_request_reject_wizard)d" string="Reject" type="action" class="btn-danger"
                             invisible="state not in ('submitted', 'under_review')"
-                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_department_approver,top_logistics_fleet.group_fleet_manager"/>
-                    
-                    <button name="action_vehicle_search" string="Search Vehicle" type="object" class="btn-secondary"
-                            invisible="state != 'approved'"
-                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
                     <!-- Vehicle Assignment Wizard Trigger -->
-                    <button name="action_open_assignment_wizard" string="Assign Vehicle &amp; Driver" type="object" class="btn-primary"
-                            invisible="state not in ('approved', 'vehicle_search') and (priority != 'emergency' or state in ('assigned', 'dispatched', 'in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled'))"
-                            groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
+                    <button name="action_open_assignment_wizard" string="Assign Vehicle &amp; Driver" type="object" class="btn-secondary"
+                            invisible="state not in ('submitted', 'under_review', 'approved', 'vehicle_search') or (state in ('assigned', 'dispatched', 'in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled'))"
+                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
                     <button name="action_cancel" string="Cancel" type="object" class="btn-secondary"
                             invisible="state in ('in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled')"/>
@@ -83,7 +79,7 @@
 
                     <!-- Status Bar -->
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,submitted,approved,assigned,dispatched,in_transit,completed,closed"/>
+                           statusbar_visible="draft,submitted,under_review,assigned,dispatched,completed,closed"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -115,12 +111,12 @@
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_details" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Request Approval (Subject)..." readonly="state != 'draft'"/>
-                            <field name="trip_type_id" readonly="state != 'draft'"/>
-                            <field name="priority" widget="priority" readonly="state != 'draft'"/>
+                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Request Approval (Subject)..." readonly="state not in ('draft', 'submitted')"/>
+                            <field name="trip_type_id" readonly="state not in ('draft', 'submitted')"/>
+                            <field name="priority" widget="priority" readonly="state not in ('draft', 'submitted')"/>
                             <field name="request_date"/>
-                            <field name="required_date" readonly="state != 'draft'"/>
-                            <field name="return_date" readonly="state != 'draft'"/>
+                            <field name="required_date" readonly="state not in ('draft', 'submitted')"/>
+                            <field name="return_date" readonly="state not in ('draft', 'submitted')"/>
                         </group>
                     </group>
 
@@ -128,16 +124,43 @@
                         <page name="route_cargo" string="Route &amp; Endpoints">
                             <group>
                                 <group name="route_info" string="Predefined Locations &amp; Endpoints">
-                                    <field name="origin_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Origin..." readonly="state != 'draft'"/>
-                                    <field name="origin" placeholder="e.g. Head Office / Addis Ababa" readonly="state != 'draft'"/>
-                                    <field name="destination_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Destination..." readonly="state != 'draft'"/>
-                                    <field name="destination" placeholder="e.g. Project Site / Adama" readonly="state != 'draft'"/>
-                                    <field name="passenger_count" readonly="state != 'draft'"/>
+                                    <field name="origin_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Origin..." readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="origin" placeholder="e.g. Head Office / Addis Ababa" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="destination_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Destination..." readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="destination" placeholder="e.g. Project Site / Adama" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="passenger_count" readonly="state not in ('draft', 'submitted')"/>
                                 </group>
                                 <group name="transport_spec" string="Vehicle &amp; Cargo Requirements">
-                                    <field name="vehicle_type_id" placeholder="e.g. Pickup, Sedan, Truck" readonly="state != 'draft'"/>
-                                    <field name="driver_required" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                    <field name="cargo_required" widget="boolean_toggle" readonly="state != 'draft'"/>
+                                    <field name="vehicle_type_id" placeholder="e.g. Pickup, Sedan, Truck" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="driver_required" widget="boolean_toggle" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="cargo_required" widget="boolean_toggle" readonly="state not in ('draft', 'submitted')"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page name="allocation_page" string="Vehicle &amp; Driver Allocation" groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager">
+                            <div class="alert alert-info py-2 mb-2 d-flex justify-content-between align-items-center" role="status">
+                                <div>
+                                    <i class="fa fa-truck me-1"/>
+                                    <strong>Fleet Allocation:</strong> Allocate an approved vehicle and driver for this request before forwarding for Manager approval.
+                                </div>
+                                <div>
+                                    <button name="action_open_assignment_wizard" string="Allocation Wizard" type="object" class="btn btn-sm btn-outline-primary" invisible="state in ('assigned', 'dispatched', 'in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled')"/>
+                                </div>
+                            </div>
+                            <group>
+                                <group string="Assigned Vehicle">
+                                    <field name="assigned_vehicle_id" options="{'no_create': True}" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="vehicle_last_service_date"/>
+                                    <field name="vehicle_next_service_date"/>
+                                    <field name="vehicle_service_status" widget="badge"/>
+                                    <field name="vehicle_is_service_due" invisible="not vehicle_is_service_due" widget="boolean_toggle"/>
+                                </group>
+                                <group string="Assigned Driver">
+                                    <field name="assigned_driver_id" options="{'no_create': True}" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="backup_driver_id" options="{'no_create': True}" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="driver_license_expiry_date"/>
+                                    <field name="driver_is_license_expired" invisible="not driver_is_license_expired" widget="boolean_toggle"/>
                                 </group>
                             </group>
                         </page>
@@ -148,13 +171,13 @@
                                     <i class="fa fa-map-signs me-1"/> 
                                     <strong>Multi-Stop Flexibility:</strong> Add intermediate pickups, dropoffs, or waypoints. Stops can be cancelled or marked visited individually.
                                 </div>
-                                <div class="text-end">
+                                <div>
                                     <span class="badge text-bg-primary me-1"><field name="total_stops_count"/> Planned</span>
                                     <span class="badge text-bg-success me-1"><field name="completed_stops_count"/> Visited</span>
                                     <span class="badge text-bg-danger"><field name="cancelled_stops_count"/> Cancelled</span>
                                 </div>
                             </div>
-                            <field name="stop_ids" readonly="state in ('completed', 'reconciled', 'closed', 'cancelled')">
+                            <field name="stop_ids" readonly="state not in ('draft', 'submitted')">
                                 <list editable="bottom" decoration-muted="state == 'pending'" decoration-success="state == 'completed'" decoration-danger="state == 'cancelled'">
                                     <field name="sequence" widget="handle"/>
                                     <field name="location_id" options="{'no_create_edit': False}" placeholder="Predefined Location..."/>
@@ -175,26 +198,26 @@
                         </page>
 
                         <page name="purpose_page" string="Purpose &amp; Description">
-                            <field name="purpose" placeholder="Provide a detailed explanation of the travel or transport purpose..." readonly="state != 'draft'"/>
+                            <field name="purpose" placeholder="Provide a detailed explanation of the travel or transport purpose..." readonly="state not in ('draft', 'submitted')"/>
                         </page>
 
                         <page name="cargo_page" string="Cargo" invisible="not cargo_required">
                             <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications">
                                 <group string="Loading Type &amp; Product">
-                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
-                                    <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state != 'draft'"/>
-                                    <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Grain..." readonly="state != 'draft'"/>
-                                    <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state != 'draft'"/>
+                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Grain..." readonly="state not in ('draft', 'submitted')"/>
+                                    <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state not in ('draft', 'submitted')"/>
                                 </group>
                                 <group string="Capacity, Quantity &amp; Tariff">
                                     <label for="cargo_amount_qty" string="Amount In Quintal"/>
                                     <div class="o_row">
-                                        <field name="cargo_amount_qty" readonly="state != 'draft'"/>
-                                        <field name="cargo_uom_id" options="{'no_create': True}" placeholder="UoM..." readonly="state != 'draft'"/>
+                                        <field name="cargo_amount_qty" readonly="state not in ('draft', 'submitted')"/>
+                                        <field name="cargo_uom_id" options="{'no_create': True}" placeholder="UoM..." readonly="state not in ('draft', 'submitted')"/>
                                     </div>
                                     <label for="cargo_tariff_unit_price" string="Tariff (Unit Price) / Quintal"/>
                                     <div class="o_row">
-                                        <field name="cargo_tariff_unit_price" readonly="state != 'draft'"/>
+                                        <field name="cargo_tariff_unit_price" readonly="state not in ('draft', 'submitted')"/>
                                         <span class="text-muted ms-1 me-1"> per Quintal </span>
                                         <field name="cargo_uom_id" readonly="1" class="oe_inline"/>
                                     </div>
@@ -202,10 +225,10 @@
                                     <field name="cargo_total_tariff" widget="monetary" readonly="1"/>
                                     <label for="cargo_load_capacity" string="Load Capacity"/>
                                     <div class="o_row">
-                                        <field name="cargo_load_capacity" readonly="state != 'draft'"/>
-                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}" placeholder="Capacity UoM..." readonly="state != 'draft'"/>
+                                        <field name="cargo_load_capacity" readonly="state not in ('draft', 'submitted')"/>
+                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}" placeholder="Capacity UoM..." readonly="state not in ('draft', 'submitted')"/>
                                     </div>
-                                    <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state != 'draft'"/>
+                                    <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state not in ('draft', 'submitted')"/>
                                 </group>
                             </group>
                         </page>
@@ -384,6 +407,6 @@
         <field name="name">Requests for Vehicle Assignment</field>
         <field name="res_model">top.transport.request</field>
         <field name="view_mode">list,kanban,form</field>
-        <field name="domain">[('state', 'in', ['approved', 'vehicle_search'])]</field>
+        <field name="domain">[('state', 'in', ['submitted', 'under_review', 'approved', 'vehicle_search'])]</field>
     </record>
 </odoo>
