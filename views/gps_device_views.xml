@@ -43,7 +43,7 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="Hardware Specifications (Section 19)">
+                        <group string="Hardware Specifications">
                             <field name="device_id"/>
                             <field name="imei"/>
                             <field name="sim_number"/>

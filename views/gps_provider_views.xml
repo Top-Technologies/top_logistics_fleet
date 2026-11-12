@@ -33,7 +33,7 @@
                     <button name="action_test_connection" string="⚡ Test Connection" type="object" class="btn-primary"/>
                     <button name="action_discover_wialon_devices" string="🔍 Discover &amp; Sync Units" type="object" class="btn-primary"/>
                     <button name="action_sync_now" string="🔄 Sync Telemetry Now" type="object" class="btn-secondary"/>
-                    <button name="action_purge_old_positions" string="Purge Historical GPS (Section 48)" type="object" class="btn-outline-danger"
+                    <button name="action_purge_old_positions" string="Purge Historical GPS" type="object" class="btn-outline-danger"
                             confirm="Are you sure you want to purge raw GPS positions older than the configured retention threshold?"/>
                     <field name="sync_status" widget="statusbar" statusbar_visible="not_synced,success,failed"/>
                 </header>
@@ -45,14 +45,14 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="API Connection Endpoint (Section 23)">
+                        <group string="API Connection Endpoint">
                             <field name="api_url"/>
                             <field name="auth_type"/>
                             <field name="api_key" password="True"/>
                             <field name="username"/>
                             <field name="password" password="True"/>
                         </group>
-                        <group string="Synchronization &amp; Retention (Sections 22 &amp; 48)">
+                        <group string="Synchronization &amp; Retention">
                             <field name="polling_interval"/>
                             <field name="timeout"/>
                             <field name="retention_days"/>

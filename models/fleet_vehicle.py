@@ -19,17 +19,17 @@ class FleetVehicle(models.Model):
         ('heavy', 'Heavy Fleet'),
     ], string='Fleet Classification', default='light', required=True, tracking=True, index=True)
 
-    # Compliance & Validity (Section 12)
+    # Compliance & Validity
     registration_expiry = fields.Date(string='Registration Expiry Date', tracking=True)
     insurance_expiry = fields.Date(string='Insurance Expiry Date', tracking=True)
     inspection_expiry = fields.Date(string='Inspection Expiry Date', tracking=True)
 
-    # Operational Capacity & Location (Section 10)
+    # Operational Capacity & Location
     current_location = fields.Char(string='Current Location', default='Main Depot')
     capacity_passengers = fields.Integer(string='Passenger Capacity', default=4)
     capacity_cargo_kg = fields.Float(string='Cargo Capacity (kg)', default=500.0)
 
-    # GPS Linkage (Sections 20 & 25)
+    # GPS Linkage
     gps_device_id = fields.Many2one(
         'top.gps.device',
         string='GPS Tracking Device',
@@ -85,7 +85,7 @@ class FleetVehicle(models.Model):
     assigned_hours = fields.Float(string='Assigned Hours', compute='_compute_vehicle_operating_costs', store=True)
     utilization_rate = fields.Float(string='Vehicle Utilization (%)', compute='_compute_vehicle_operating_costs', store=True)
 
-    # Maintenance Service Schedule (Section 33 & Extended)
+    # Maintenance Service Schedule
     service_interval_km = fields.Float(string='Service Interval (km)', default=5000.0)
     last_service_odometer = fields.Float(string='Last Service Odometer (km)', default=0.0)
     next_service_odometer = fields.Float(
@@ -265,7 +265,7 @@ class FleetVehicle(models.Model):
                 vehicle.document_compliance_status = _("Valid & Compliant")
 
     def action_view_on_map(self):
-        """Opens live vehicle location according to configured map provider (Sections 25 & 52)."""
+        """Opens live vehicle location according to configured map provider."""
         self.ensure_one()
         lat = self.live_latitude or (self.gps_device_id and self.gps_device_id.latitude)
         lng = self.live_longitude or (self.gps_device_id and self.gps_device_id.longitude)
@@ -285,7 +285,7 @@ class FleetVehicle(models.Model):
         }
 
     def trigger_service_maintenance_request(self):
-        """Automatically triggers a maintenance service ticket when service interval is reached (Section 33 & 50)."""
+        """Automatically triggers a maintenance service ticket when service interval is reached."""
         self.ensure_one()
         maintenance_model = self.env.get('maintenance.request')
         if maintenance_model:

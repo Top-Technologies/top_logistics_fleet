@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="1">
-        <!-- 1. Default GPS API Provider (Section 19 & 55) -->
+        <!-- 1. Default GPS API Provider -->
         <record id="gps_provider_wialon_default" model="top.gps.provider">
             <field name="name">Primary GPS Gateway (Wialon Protocol)</field>
             <field name="api_url">https://hst-api.wialon.com/wialon/ajax.html</field>
@@ -13,7 +13,7 @@
             <field name="active" eval="True"/>
         </record>
 
-        <!-- 2. Master Geofences (Section 27 & 55) -->
+        <!-- 2. Master Geofences -->
         <record id="geofence_main_depot" model="top.gps.geofence">
             <field name="name">Central Logistics Depot &amp; Workshop</field>
             <field name="category">warehouse</field>
@@ -143,7 +143,7 @@
             <field name="active" eval="True"/>
         </record>
 
-        <!-- 3. Default Fleet Safety & Alert Parameters (Section 53 & 55) -->
+        <!-- 3. Default Fleet Safety & Alert Parameters -->
         <record id="fleet_alert_config_default" model="top.fleet.alert.config">
             <field name="name">Standard Corporate Fleet Safety Thresholds</field>
             <field name="overspeed_threshold_kmh">80.0</field>
@@ -159,7 +159,7 @@
             <field name="mapping_provider">google</field>
         </record>
 
-        <!-- 4. Master Vehicle Categories / Types (Section 10 & 55) -->
+        <!-- 4. Master Vehicle Categories / Types -->
         <record id="vehicle_category_sedan" model="fleet.vehicle.model.category">
             <field name="name">Executive Sedan</field>
         </record>

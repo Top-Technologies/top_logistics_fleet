@@ -35,7 +35,7 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="Vehicle &amp; Trip (Section 30)">
+                        <group string="Vehicle &amp; Trip">
                             <field name="vehicle_id"/>
                             <field name="driver_id"/>
                             <field name="trip_id"/>

@@ -9,7 +9,7 @@ class LogisticsDashboard(models.Model):
 
     name = fields.Char(string='Dashboard Overview', default='Logistics Live Metrics')
 
-    # Requests Metrics (Section 38 & 39)
+    # Requests Metrics
     total_requests = fields.Integer(string='Total Requests', compute='_compute_all_metrics')
     pending_approval_requests = fields.Integer(string='Pending Approval', compute='_compute_all_metrics')
     approved_requests = fields.Integer(string='Approved Requests', compute='_compute_all_metrics')
@@ -20,7 +20,7 @@ class LogisticsDashboard(models.Model):
     rejected_requests = fields.Integer(string='Rejected Requests', compute='_compute_all_metrics')
     emergency_requests = fields.Integer(string='Emergency Requests', compute='_compute_all_metrics')
 
-    # Fleet Vehicles Metrics (Section 38 & 39)
+    # Fleet Vehicles Metrics
     total_vehicles = fields.Integer(string='Total Vehicles', compute='_compute_all_metrics')
     available_vehicles = fields.Integer(string='Available Vehicles', compute='_compute_all_metrics')
     assigned_vehicles = fields.Integer(string='Assigned Vehicles', compute='_compute_all_metrics')
@@ -28,18 +28,18 @@ class LogisticsDashboard(models.Model):
     maintenance_vehicles = fields.Integer(string='Vehicles in Maintenance', compute='_compute_all_metrics')
     gps_offline_vehicles = fields.Integer(string='GPS Offline Vehicles', compute='_compute_all_metrics')
 
-    # Trips Metrics (Section 39)
+    # Trips Metrics
     active_trips = fields.Integer(string='Active Trips', compute='_compute_all_metrics')
     completed_trips = fields.Integer(string='Completed Trips', compute='_compute_all_metrics')
     cancelled_trips = fields.Integer(string='Cancelled Trips', compute='_compute_all_metrics')
 
-    # GPS & Telematics Events (Section 39)
+    # GPS & Telematics Events
     gps_online_count = fields.Integer(string='GPS Devices Online', compute='_compute_all_metrics')
     gps_offline_count = fields.Integer(string='GPS Devices Offline', compute='_compute_all_metrics')
     overspeed_events_count = fields.Integer(string='Overspeed Events', compute='_compute_all_metrics')
     route_deviations_count = fields.Integer(string='Route Deviations', compute='_compute_all_metrics')
 
-    # Financial & Cost Consolidation (Section 39)
+    # Financial & Cost Consolidation
     total_fuel_cost = fields.Float(string='Total Fuel Cost', compute='_compute_all_metrics')
     total_maintenance_cost = fields.Float(string='Maintenance Repair Cost', compute='_compute_all_metrics')
     avg_cost_per_km = fields.Float(string='Average Cost / KM', compute='_compute_all_metrics')

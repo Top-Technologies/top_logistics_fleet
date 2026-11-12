@@ -51,7 +51,7 @@
                     </div>
 
                     <group>
-                        <group string="Incident Specifics (Section 34)">
+                        <group string="Incident Specifics">
                             <field name="vehicle_id"/>
                             <field name="driver_id"/>
                             <field name="trip_id"/>

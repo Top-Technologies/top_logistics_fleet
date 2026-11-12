@@ -4,7 +4,7 @@ from odoo.exceptions import UserError
 
 class FleetDispatchWizard(models.TransientModel):
     _name = 'top.fleet.dispatch.wizard'
-    _description = 'Pre-Dispatch Vehicle Condition Checklist Wizard (Sections 17 & 35)'
+    _description = 'Pre-Dispatch Vehicle Condition Checklist Wizard'
 
     trip_id = fields.Many2one(
         'top.fleet.trip',
@@ -159,7 +159,7 @@ class FleetDispatchWizard(models.TransientModel):
                 )
 
         trip.message_post(
-            body=_("Pre-dispatch condition checklist passed (Section 35). Vehicle dispatched by %s.") % self.env.user.name
+            body=_("Pre-dispatch condition checklist passed. Vehicle dispatched by %s.") % self.env.user.name
         )
 
         # Section 50: Send "Trip Dispatched" notification

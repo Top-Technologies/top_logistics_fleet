@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class TripReturnWizard(models.TransientModel):
     _name = 'top.trip.return.wizard'
-    _description = 'Post-Trip Return Inspection Checklist Wizard (Section 36)'
+    _description = 'Post-Trip Return Inspection Checklist Wizard'
 
     trip_id = fields.Many2one('top.fleet.trip', string='Trip', required=True)
     vehicle_id = fields.Many2one(related='trip_id.vehicle_id', string='Vehicle', readonly=True)
@@ -51,7 +51,7 @@ class TripReturnWizard(models.TransientModel):
         'trip_return_attachment_rel',
         'wizard_id',
         'attachment_id',
-        string='Damage Photos / Evidence (Section 51)',
+        string='Damage Photos / Evidence',
     )
     missing_equipment = fields.Char(string='Missing Equipment / Tools (if any)')
     new_defects = fields.Text(string='New Mechanical / Electrical Defects')
@@ -97,7 +97,7 @@ class TripReturnWizard(models.TransientModel):
         if trip.backup_driver_id:
             trip.backup_driver_id.write({'driver_status': 'available'})
 
-        # 3. Handle Damage (Section 36: Auto-create incident & maintenance record)
+        # 3. Handle Damage
         if self.has_damage:
             accident = self.env['top.fleet.accident'].create({
                 'vehicle_id': trip.vehicle_id.id,
@@ -126,7 +126,7 @@ class TripReturnWizard(models.TransientModel):
 
         trip.write(trip_vals)
 
-        # 4. Check for high mileage service interval (Section 33)
+        # 4. Check for high mileage service interval
         if trip.vehicle_id.is_service_due:
             trip.vehicle_id.trigger_service_maintenance_request()
 

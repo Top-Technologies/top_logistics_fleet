@@ -16,7 +16,7 @@
                         </div>
                     </div>
                     <group>
-                        <group string="Vehicle Selection (Section 10 &amp; 11)">
+                        <group string="Vehicle Selection">
                             <field name="request_id" invisible="1"/>
                             <field name="vehicle_id" placeholder="Select vehicle..."
                                    domain="[('operational_status', 'in', ['available', 'assigned']), ('has_document_expired', '=', False), ('is_inspection_valid', '=', True)]"
@@ -24,7 +24,7 @@
                             <field name="vehicle_status_info" class="text-muted fw-bold" readonly="1"/>
                             <field name="vehicle_service_info" class="text-info" readonly="1"/>
                         </group>
-                        <group string="Driver Selection (Section 11 &amp; 13)">
+                        <group string="Driver Selection">
                             <field name="driver_id" placeholder="Select primary driver..."
                                    domain="[('is_driver', '=', True), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]"
                                    options="{'no_create': True}"/>
@@ -35,7 +35,7 @@
                                    options="{'no_create': True}"/>
                         </group>
                     </group>
-                    <group string="Trip Planning (Section 16)">
+                    <group string="Trip Planning">
                         <group>
                             <field name="trip_type_id"/>
                             <field name="trip_coordinator_id"/>

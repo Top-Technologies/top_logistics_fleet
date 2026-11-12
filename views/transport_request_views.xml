@@ -70,7 +70,7 @@
                             invisible="state != 'approved'"
                             groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>
                     
-                    <!-- Vehicle Assignment Wizard Trigger (Sections 10, 11, 12) -->
+                    <!-- Vehicle Assignment Wizard Trigger -->
                     <button name="action_open_assignment_wizard" string="Assign Vehicle &amp; Driver" type="object" class="btn-primary"
                             invisible="state not in ('approved', 'vehicle_search') and (priority != 'emergency' or state in ('assigned', 'dispatched', 'in_transit', 'completed', 'reconciled', 'closed', 'rejected', 'cancelled'))"
                             groups="top_logistics_fleet.group_fleet_supervisor,top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager"/>

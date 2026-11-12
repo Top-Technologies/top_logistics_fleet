@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Live Fleet Vehicle Tracking Kanban (Section 52) -->
+    <!-- Live Fleet Vehicle Tracking Kanban -->
     <record id="view_top_fleet_vehicle_live_map_kanban" model="ir.ui.view">
         <field name="name">fleet.vehicle.live.map.kanban</field>
         <field name="model">fleet.vehicle</field>
@@ -59,7 +59,7 @@
 
     <!-- Action for Live Vehicle Tracking -->
     <record id="action_top_fleet_live_map" model="ir.actions.act_window">
-        <field name="name">Live Fleet Tracking (Section 52)</field>
+        <field name="name">Live Fleet Tracking</field>
         <field name="res_model">fleet.vehicle</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="view_top_fleet_vehicle_live_map_kanban"/>

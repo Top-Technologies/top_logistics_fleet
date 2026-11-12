@@ -265,7 +265,7 @@ class TransportRequest(models.Model):
         copy=False,
     )
 
-    # Workflow & Approval Metadata (Section 9)
+    # Workflow & Approval Metadata
     reviewed_by_id = fields.Many2one(
         'res.users',
         string='Reviewed By',
@@ -294,7 +294,7 @@ class TransportRequest(models.Model):
         help="Flagged when an emergency request bypasses standard approval for immediate assignment.",
     )
 
-    # Assignment & Trip Linkage (Sections 10, 11, 14)
+    # Assignment & Trip Linkage
     assigned_vehicle_id = fields.Many2one(
         'fleet.vehicle',
         string='Assigned Vehicle',
@@ -603,7 +603,7 @@ class TransportRequest(models.Model):
             record.write({'state': 'vehicle_search'})
 
     def action_open_assignment_wizard(self):
-        """Opens vehicle and driver assignment wizard (Section 11)."""
+        """Opens vehicle and driver assignment wizard."""
         self.ensure_one()
         # In emergency mode, allows direct assignment
         context = {

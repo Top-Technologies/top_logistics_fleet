@@ -6,21 +6,21 @@
 FMS Logistics & Fleet Management
 ================================
 Enterprise Logistics & Fleet Operations module covering the full lifecycle:
-- Transport Request creation and multi-level approval workflows (Sections 1-9)
-- Dynamic vehicle and driver availability checking with document compliance (Sections 10-12)
-- Driver profile and license management (Section 13)
-- Trip planning, execution, and intermediate waypoints (Sections 14-16)
-- Pre-dispatch condition inspection checklist and vehicle release (Sections 17 & 35)
-- GPS Device Master, API Providers, and standardized telemetry synchronization (Sections 18-26)
-- Geofencing and automated trip events (Sections 27-28)
-- Trip mileage, duration, and fuel reconciliation (Section 29)
-- Fuel logging, consumption rate calculation (L/100km), and operating cost/km (Sections 30-32)
-- Automated maintenance interval checks and service triggers (Section 33)
-- Fleet Accident & Incident reporting with insurance and damage tracking (Section 34)
-- Post-trip vehicle return inspection checklist with auto-incident creation (Section 36)
-- Vehicle availability schedule calendar (Section 37)
-- Dispatch pipeline board and executive logistics dashboard (Sections 38-39)
-- Printable Trip Waybills and Vehicle Utilization PDF reports (Section 40)
+- Transport Request creation and multi-level approval workflows
+- Dynamic vehicle and driver availability checking with document compliance
+- Driver profile and license management
+- Trip planning, execution, and intermediate waypoints
+- Pre-dispatch condition inspection checklist and vehicle release
+- GPS Device Master, API Providers, and standardized telemetry synchronization
+- Geofencing and automated trip events
+- Trip mileage, duration, and fuel reconciliation
+- Fuel logging, consumption rate calculation (L/100km), and operating cost/km
+- Automated maintenance interval checks and service triggers
+- Fleet Accident & Incident reporting with insurance and damage tracking
+- Post-trip vehicle return inspection checklist with auto-incident creation
+- Vehicle availability schedule calendar
+- Dispatch pipeline board and executive logistics dashboard
+- Printable Trip Waybills and Vehicle Utilization PDF reports
 - Role-based security (Requester, Approver, Fleet Officer, Fleet Manager, GPS Operator, Finance, Admin)
     """,
     'category': 'Operations/Fleet',

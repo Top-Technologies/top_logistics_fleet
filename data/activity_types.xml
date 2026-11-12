@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="1">
-        <!-- 1. Transport Request Notifications (Section 50) -->
+        <!-- 1. Transport Request Notifications -->
         <record id="mail_act_request_awaiting_approval" model="mail.activity.type">
             <field name="name">Transport Request Awaiting Approval</field>
             <field name="icon">fa-check-square-o</field>
@@ -20,7 +20,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 2. Trip Notifications (Section 50) -->
+        <!-- 2. Trip Notifications -->
         <record id="mail_act_trip_dispatched" model="mail.activity.type">
             <field name="name">Trip Dispatched</field>
             <field name="icon">fa-road</field>
@@ -39,7 +39,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 3. Maintenance Due (Section 33 & 50) -->
+        <!-- 3. Maintenance Due -->
         <record id="mail_act_maintenance_due" model="mail.activity.type">
             <field name="name">Vehicle Maintenance Due</field>
             <field name="icon">fa-wrench</field>
@@ -49,7 +49,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 4. Driver License Expiring (Section 13 & 50) -->
+        <!-- 4. Driver License Expiring -->
         <record id="mail_act_license_expiring" model="mail.activity.type">
             <field name="name">Driver License Expiring</field>
             <field name="icon">fa-id-card</field>
@@ -59,7 +59,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 5. Vehicle Document Expiring (Section 12 & 53) -->
+        <!-- 5. Vehicle Document Expiring -->
         <record id="mail_act_doc_expiring" model="mail.activity.type">
             <field name="name">Vehicle Document Expiring</field>
             <field name="icon">fa-file-text-o</field>
@@ -69,7 +69,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 6. Overspeed Event Detected (Section 28, 50, 53) -->
+        <!-- 6. Overspeed Event Detected -->
         <record id="mail_act_overspeed" model="mail.activity.type">
             <field name="name">Overspeed Event Detected</field>
             <field name="icon">fa-tachometer</field>
@@ -79,7 +79,7 @@
             <field name="category">default</field>
         </record>
 
-        <!-- 7. Vehicle GPS Offline (Section 50 & 53) -->
+        <!-- 7. Vehicle GPS Offline -->
         <record id="mail_act_gps_offline" model="mail.activity.type">
             <field name="name">Vehicle GPS Offline</field>
             <field name="icon">fa-signal</field>

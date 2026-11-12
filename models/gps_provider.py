@@ -366,13 +366,13 @@ class GPSProvider(models.Model):
                     if device.odometer and device.odometer > (v.odometer or 0.0):
                         v.write({'odometer': device.odometer})
                     
-                    # Check active trip for this vehicle (Section 26)
+                    # Check active trip for this vehicle
                     active_trip = self.env['top.fleet.trip'].search([
                         ('vehicle_id', '=', v.id),
                         ('state', '=', 'in_transit'),
                     ], limit=1)
 
-                    # Step 7: Record position log during active trip or operational shift (Section 21)
+                    # Step 7: Record position log during active trip or operational shift
                     if device.latitude and device.longitude:
                         Position.create({
                             'device_id': device.id,
@@ -402,7 +402,7 @@ class GPSProvider(models.Model):
                         if trip_vals:
                             active_trip.write(trip_vals)
 
-                    # Step 9: Evaluate Automatic Safety Alerts & Geofences (Section 53)
+                    # Step 9: Evaluate Automatic Safety Alerts & Geofences
                     self._evaluate_telemetry_alerts(device, v, active_trip, now)
 
             self.write({
@@ -448,7 +448,7 @@ class GPSProvider(models.Model):
         """Evaluates telematics data against safety rules and alerts configured in Section 53."""
         config = self.env['top.fleet.alert.config'].get_active_config()
 
-        # 1. Overspeed Alert (Section 50 & 53)
+        # 1. Overspeed Alert
         if device.speed and config.overspeed_threshold_kmh and device.speed > config.overspeed_threshold_kmh:
             event = self.env['top.gps.event'].create({
                 'name': _("Overspeed Alert: %s km/h (Threshold: %s km/h)") % (device.speed, config.overspeed_threshold_kmh),
@@ -475,7 +475,7 @@ class GPSProvider(models.Model):
             if template:
                 template.send_mail(event.id, force_send=False)
 
-        # 2. Movement Outside Working Hours / Unauthorized Movement (Section 53)
+        # 2. Movement Outside Working Hours / Unauthorized Movement
         if config.alert_on_unauthorized_movement and (device.ignition or (device.speed and device.speed > 5.0)):
             hour = now.hour
             is_night = hour >= 20 or hour < 6
@@ -493,7 +493,7 @@ class GPSProvider(models.Model):
                     'notes': _("Vehicle motion recorded outside authorized working hours (20:00-06:00) or without active trip assignment."),
                 })
 
-        # 3. Geofence Evaluation (Section 27 & 53)
+        # 3. Geofence Evaluation
         if config.alert_on_geofence and device.latitude and device.longitude:
             geofences = self.env['top.gps.geofence'].search([('active', '=', True)])
             for gf in geofences:
@@ -542,7 +542,7 @@ class GPSProvider(models.Model):
 
     @api.model
     def cron_sync_all_active_providers(self):
-        """Cron job to sync telemetry for all active providers (Section 22 & 47)."""
+        """Cron job to sync telemetry for all active providers."""
         providers = self.search([('active', '=', True)])
         for p in providers:
             p._sync_provider_telemetry()

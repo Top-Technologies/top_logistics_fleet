@@ -111,7 +111,7 @@ class FleetTrip(models.Model):
         required=True,
     )
 
-    # Route & Schedule (Sections 14 & 16)
+    # Route & Schedule
     origin_location_id = fields.Many2one(
         'top.logistics.location',
         string='Origin Location',
@@ -187,7 +187,7 @@ class FleetTrip(models.Model):
     cargo_description = fields.Text(string='Cargo / Handling Notes')
     actual_duration_display = fields.Char(string='Time Taken Display', compute='_compute_actual_duration_display')
 
-    # Fuel & Operating Costs (Sections 30, 31, 32)
+    # Fuel & Operating Costs
     expected_fuel = fields.Float(string='Planned Fuel (L)', compute='_compute_expected_fuel', store=True, readonly=False, help='Estimated fuel required for planned distance.')
     fuel_log_ids = fields.One2many('top.fleet.fuel.log', 'trip_id', string='Fuel Logs')
     total_refueled = fields.Float(string='Total Refueled (L)', compute='_compute_fuel_metrics', store=True, help='Total litres purchased and added to tank during this trip from fuel logs.')
@@ -206,12 +206,12 @@ class FleetTrip(models.Model):
     cost_per_km = fields.Float(string='Trip Cost / KM', compute='_compute_trip_costs', store=True)
     fuel_consumption_rate = fields.Float(string='Fuel Rate (L/100km)', compute='_compute_trip_costs', store=True)
 
-    # Reconciliation Variances (Section 29)
+    # Reconciliation Variances
     variance_distance = fields.Float(string='Distance Variance (km)', compute='_compute_variances', store=True)
     variance_duration = fields.Float(string='Duration Variance (Hours)', compute='_compute_variances', store=True)
     variance_fuel = fields.Float(string='Fuel Variance (L)', compute='_compute_variances', store=True)
 
-    # GPS Telemetry & Tracking (Sections 14, 18, 26)
+    # GPS Telemetry & Tracking
     gps_device_id = fields.Many2one(
         'top.gps.device',
         string='GPS Device',
@@ -239,7 +239,7 @@ class FleetTrip(models.Model):
     event_ids = fields.One2many('top.gps.event', 'trip_id', string='GPS Events / Alerts')
     position_ids = fields.One2many('top.gps.position', 'trip_id', string='Trip Track Points')
 
-    # Pre-Dispatch Vehicle Condition Checklist (Section 17 & 35)
+    # Pre-Dispatch Vehicle Condition Checklist
     chk_tires = fields.Boolean(string='Tires Condition & Pressure Checked', default=True)
     chk_engine = fields.Boolean(string='Engine Sound & Operation Checked', default=True)
     chk_oil = fields.Boolean(string='Engine Oil Level Checked', default=True)
@@ -270,7 +270,7 @@ class FleetTrip(models.Model):
     dispatched_by_id = fields.Many2one('res.users', string='Dispatched By', readonly=True)
     dispatch_date = fields.Datetime(string='Dispatch Timestamp', readonly=True)
 
-    # Post-Trip Return Checklist (Section 36)
+    # Post-Trip Return Checklist
     vehicle_returned = fields.Boolean(string='Vehicle Returned to Depot', readonly=True)
     end_odometer = fields.Float(string='Ending Odometer (km)', readonly=True)
     end_fuel = fields.Float(string='Ending Fuel Level (L)', tracking=True, readonly=True, help='Final fuel in vehicle tank in Litres upon return inspection.')
@@ -596,7 +596,7 @@ class FleetTrip(models.Model):
         self.ensure_one()
         live_fuel = self.vehicle_id.live_fuel_level or (self.vehicle_id.gps_device_id and self.vehicle_id.gps_device_id.fuel_level) or 0.0
         return {
-            'name': _('Pre-Dispatch Inspection Checklist (Section 35)'),
+            'name': _('Pre-Dispatch Inspection Checklist'),
             'type': 'ir.actions.act_window',
             'res_model': 'top.fleet.dispatch.wizard',
             'view_mode': 'form',
@@ -609,12 +609,12 @@ class FleetTrip(models.Model):
         }
 
     def action_open_return_wizard(self):
-        """Opens Post-Trip Return Checklist Wizard (Section 36)."""
+        """Opens Post-Trip Return Checklist Wizard."""
         self.ensure_one()
         end_odo = self.gps_device_id.odometer if (self.gps_device_id and self.gps_device_id.odometer) else (self.start_odometer or 0.0)
         live_fuel = self.vehicle_id.live_fuel_level or (self.vehicle_id.gps_device_id and self.vehicle_id.gps_device_id.fuel_level) or 0.0
         return {
-            'name': _('Post-Trip Return Inspection Checklist (Section 36)'),
+            'name': _('Post-Trip Return Inspection Checklist'),
             'type': 'ir.actions.act_window',
             'res_model': 'top.trip.return.wizard',
             'view_mode': 'form',
@@ -706,7 +706,7 @@ class FleetTrip(models.Model):
             if trip.request_id and trip.request_id.state != 'reconciled':
                 trip.request_id.write({'state': 'reconciled'})
             trip.message_post(
-                body=_("<strong>Trip Reconciled (Section 29)</strong><br/>Distance Variance: %s km<br/>Duration Variance: %s hrs<br/>Fuel Variance: %s L<br/>Consumption Rate: %s L/100km") % (
+                body=_("<strong>Trip Reconciled</strong><br/>Distance Variance: %s km<br/>Duration Variance: %s hrs<br/>Fuel Variance: %s L<br/>Consumption Rate: %s L/100km") % (
                     trip.variance_distance, trip.variance_duration, trip.variance_fuel, trip.fuel_consumption_rate
                 )
             )
@@ -732,13 +732,13 @@ class FleetTrip(models.Model):
             trip.message_post(body=_("Trip cancelled."))
 
     # -------------------------------------------------------------------------
-    # MOBILE & NOTIFICATION ACTIONS (Sections 50 & 51)
+    # MOBILE & NOTIFICATION ACTIONS
     # -------------------------------------------------------------------------
     def action_record_fuel(self):
         """Section 51 Mobile: Quickly record fuel consumption/receipt from trip."""
         self.ensure_one()
         return {
-            'name': _('Record Fuel Consumption (Section 30 & 51)'),
+            'name': _('Record Fuel Consumption'),
             'type': 'ir.actions.act_window',
             'res_model': 'top.fleet.fuel.log',
             'view_mode': 'form',
@@ -755,7 +755,7 @@ class FleetTrip(models.Model):
         """Section 51 Mobile: Report incident/accident and upload photo directly from trip."""
         self.ensure_one()
         return {
-            'name': _('Report Incident / Damage (Section 34 & 51)'),
+            'name': _('Report Incident / Damage'),
             'type': 'ir.actions.act_window',
             'res_model': 'top.fleet.accident',
             'view_mode': 'form',

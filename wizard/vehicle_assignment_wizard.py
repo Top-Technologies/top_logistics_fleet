@@ -125,12 +125,12 @@ class VehicleAssignmentWizard(models.TransientModel):
             if not b_ok:
                 raise ValidationError(_("Backup Driver Assignment Error: %s") % b_msg)
 
-        # Emergency bypass handling (Section 9)
+        # Emergency bypass handling
         post_trip = False
         if req.priority == 'emergency' and req.state in ['draft', 'submitted', 'under_review']:
             post_trip = True
 
-        # Create Trip record (Section 14)
+        # Create Trip record
         trip_vals = {
             'request_id': req.id,
             'request_ids': [(4, req.id)],

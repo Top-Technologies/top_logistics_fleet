@@ -10,7 +10,7 @@
             <field name="company_id" eval="False"/>
         </record>
 
-        <!-- Fleet Trip Sequence (Section 14) -->
+        <!-- Fleet Trip Sequence -->
         <record id="seq_top_fleet_trip" model="ir.sequence">
             <field name="name">Fleet Trip</field>
             <field name="code">top.fleet.trip</field>
@@ -19,7 +19,7 @@
             <field name="company_id" eval="False"/>
         </record>
 
-        <!-- Fuel Log Sequence (Section 30) -->
+        <!-- Fuel Log Sequence -->
         <record id="seq_top_fleet_fuel_log" model="ir.sequence">
             <field name="name">Fuel Log Transaction</field>
             <field name="code">top.fleet.fuel.log</field>
@@ -28,7 +28,7 @@
             <field name="company_id" eval="False"/>
         </record>
 
-        <!-- Accident Sequence (Section 34) -->
+        <!-- Accident Sequence -->
         <record id="seq_top_fleet_accident" model="ir.sequence">
             <field name="name">Accident Record</field>
             <field name="code">top.fleet.accident</field>

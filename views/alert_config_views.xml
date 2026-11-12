@@ -13,7 +13,7 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="GPS Telematics Safety Thresholds (Section 53)">
+                        <group string="GPS Telematics Safety Thresholds">
                             <field name="overspeed_threshold_kmh"/>
                             <field name="max_idling_minutes"/>
                             <field name="alert_on_gps_offline" widget="boolean_toggle"/>
@@ -22,11 +22,11 @@
                             <field name="alert_on_geofence" widget="boolean_toggle"/>
                             <field name="alert_on_unauthorized_movement" widget="boolean_toggle"/>
                         </group>
-                        <group string="Compliance Expiration Alerts (Section 50 &amp; 53)">
+                        <group string="Compliance Expiration Alerts">
                             <field name="license_expiry_warning_days"/>
                             <field name="insurance_expiry_warning_days"/>
                             <field name="registration_expiry_warning_days"/>
-                            <separator string="Mapping Provider Interface (Section 52)"/>
+                            <separator string="Mapping Provider Interface"/>
                             <field name="mapping_provider"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>

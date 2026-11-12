@@ -7,7 +7,7 @@
               web_icon="top_logistics_fleet,static/description/icon.png"
               groups="top_logistics_fleet.group_transport_request_user"/>
 
-    <!-- 0. Live Management Dashboard (Section 38 & 39) -->
+    <!-- 0. Live Management Dashboard -->
     <menuitem id="menu_top_logistics_dashboard"
               name="Dashboard"
               parent="menu_top_logistics_root"
@@ -98,7 +98,7 @@
               action="action_top_fleet_drivers_available"
               sequence="60"/>
 
-    <!-- 2. Trips & Dispatch Header (Sections 14, 17, 34, 37) -->
+    <!-- 2. Trips & Dispatch Header -->
     <menuitem id="menu_top_fleet_trip_parent"
               name="Trips &amp; Dispatch"
               parent="menu_top_logistics_root"
@@ -135,7 +135,7 @@
               action="action_top_fleet_accident"
               sequence="40"/>
 
-    <!-- 3. Fuel & Costs Header (Sections 30 & 31) -->
+    <!-- 3. Fuel & Costs Header -->
     <menuitem id="menu_top_fleet_fuel_parent"
               name="Fuel &amp; Costs"
               parent="menu_top_logistics_root"
@@ -174,7 +174,7 @@
 
 
 
-    <!-- 5. GPS & Telemetry Header (Sections 18, 19, 21, 27, 28, 52) -->
+    <!-- 5. GPS & Telemetry Header -->
     <menuitem id="menu_top_gps_device_parent"
               name="GPS Telematics"
               parent="menu_top_logistics_root"

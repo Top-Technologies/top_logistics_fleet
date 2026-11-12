@@ -4,7 +4,7 @@
         <field name="name">top.trip.return.wizard.form</field>
         <field name="model">top.trip.return.wizard</field>
         <field name="arch" type="xml">
-            <form string="Post-Trip Return Inspection Checklist (Section 36)">
+            <form string="Post-Trip Return Inspection Checklist">
                 <sheet>
                     <div class="alert alert-info" role="alert">
                         <strong>Vehicle Return Confirmation:</strong> Inspect the vehicle upon depot arrival, record ending mileage and verify condition.
@@ -16,7 +16,7 @@
                             <field name="driver_id" readonly="1"/>
                             <field name="start_odometer" readonly="1"/>
                         </group>
-                        <group string="Return Readings (Section 36)">
+                        <group string="Return Readings">
                             <field name="vehicle_returned" widget="boolean_toggle"/>
                             <field name="end_odometer"/>
                             <field name="start_fuel"/>
@@ -39,7 +39,7 @@
                     <div class="alert alert-warning" role="alert" invisible="not has_damage">
                         <strong>Automatic Incident Creation:</strong> Submitting with damage flagged will automatically generate an Incident record and Corrective Maintenance ticket.
                     </div>
-                    <group string="Damage Evidence &amp; Photos (Section 51)" invisible="not has_damage">
+                    <group string="Damage Evidence &amp; Photos" invisible="not has_damage">
                         <field name="damage_photo_ids" widget="many2many_binary"/>
                     </group>
                     <notebook>

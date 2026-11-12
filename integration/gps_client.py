@@ -1,5 +1,5 @@
 """
-Provider-independent GPS Integration API Layer (Section 45).
+Provider-independent GPS Integration API Layer.
 Standard interface for external GPS/telematics platforms (Wialon, Teltonika, Concox, etc.).
 """
 
@@ -43,7 +43,7 @@ class GPSProviderBase(ABC):
     @abstractmethod
     def get_positions(self, device_ids=None):
         """
-        Retrieves latest GPS telemetry positions for units (Section 24).
+        Retrieves latest GPS telemetry positions for units.
         Returns: list of dicts:
         [{
             'device_id': 'GPS123',

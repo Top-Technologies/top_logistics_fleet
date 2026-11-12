@@ -20,7 +20,7 @@
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-secondary border-bottom pb-2">
-                                <i class="fa fa-exchange me-1"/> Transport Request &amp; Dispatch Pipeline (Section 38)
+                                <i class="fa fa-exchange me-1"/> Transport Request &amp; Dispatch Pipeline
                             </h4>
                         </div>
                         <div class="col-md-2 col-sm-4 text-center p-2">
@@ -61,11 +61,11 @@
                         </div>
                     </div>
 
-                    <!-- Row 2: Fleet Status & Vehicle Allocation (Section 38 & 39) -->
+                    <!-- Row 2: Fleet Status & Vehicle Allocation -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-secondary border-bottom pb-2">
-                                <i class="fa fa-truck me-1"/> Fleet Operational Status (Section 38 &amp; 39)
+                                <i class="fa fa-truck me-1"/> Fleet Operational Status
                             </h4>
                         </div>
                         <div class="col-md-4 col-sm-6 text-center p-2">
@@ -91,11 +91,11 @@
                         </div>
                     </div>
 
-                    <!-- Row 3: GPS Telematics & Alerts (Section 39) -->
+                    <!-- Row 3: GPS Telematics & Alerts -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-secondary border-bottom pb-2">
-                                <i class="fa fa-satellite-dish me-1"/> GPS Telematics &amp; Safety Events (Section 39)
+                                <i class="fa fa-satellite-dish me-1"/> GPS Telematics &amp; Safety Events
                             </h4>
                         </div>
                         <div class="col-md-3 col-sm-6 text-center p-2">
@@ -124,11 +124,11 @@
                         </div>
                     </div>
 
-                    <!-- Row 4: Financial KPIs (Section 39) -->
+                    <!-- Row 4: Financial KPIs -->
                     <div class="row">
                         <div class="col-12">
                             <h4 class="text-secondary border-bottom pb-2">
-                                <i class="fa fa-money me-1"/> Operating Costs &amp; Efficiency (Section 39)
+                                <i class="fa fa-money me-1"/> Operating Costs &amp; Efficiency
                             </h4>
                         </div>
                         <div class="col-md-3 col-sm-6 text-center p-2">

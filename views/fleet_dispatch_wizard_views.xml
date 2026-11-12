@@ -4,7 +4,7 @@
         <field name="name">top.fleet.dispatch.wizard.form</field>
         <field name="model">top.fleet.dispatch.wizard</field>
         <field name="arch" type="xml">
-            <form string="Pre-Dispatch Inspection Checklist (Section 17 &amp; 35)">
+            <form string="Pre-Dispatch Inspection Checklist">
                 <sheet>
                     <div class="alert alert-success mb-2" role="alert" invisible="not has_valid_inspection">
                         <field name="inspection_summary" class="fw-bold"/>
@@ -25,7 +25,7 @@
                             <field name="destination" readonly="1"/>
                         </group>
                     </group>
-                    <group string="11-Point Vehicle Condition Checklist (Section 35)">
+                    <group string="11-Point Vehicle Condition Checklist">
                         <group string="Mechanical &amp; Fluids">
                             <field name="chk_tires" widget="boolean_toggle"/>
                             <field name="chk_engine" widget="boolean_toggle"/>

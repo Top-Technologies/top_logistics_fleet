@@ -30,14 +30,14 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Logistics &amp; Compliance (FMS)" name="logistics_compliance">
                     <group>
-                        <group string="Document Compliance &amp; Expiry (Section 12)">
+                        <group string="Document Compliance &amp; Expiry">
                             <field name="registration_expiry"/>
                             <field name="insurance_expiry"/>
                             <field name="inspection_expiry"/>
                             <field name="has_document_expired" invisible="1"/>
                             <field name="document_compliance_status" readonly="1" class="fw-bold"/>
                         </group>
-                        <group string="Operational Capacity &amp; Location (Section 10)">
+                        <group string="Operational Capacity &amp; Location">
                             <field name="fleet_type" widget="badge"/>
                             <field name="current_location"/>
                             <field name="capacity_passengers"/>
@@ -45,7 +45,7 @@
                         </group>
                     </group>
                     <group>
-                        <group string="GPS Tracker &amp; Live Telemetry (Section 20 &amp; 25)">
+                        <group string="GPS Tracker &amp; Live Telemetry">
                             <field name="gps_device_id"/>
                             <field name="live_address"/>
                             <field name="live_last_communication"/>
@@ -63,14 +63,14 @@
                         </group>
                     </group>
                     <group>
-                        <group string="Cost Analysis &amp; Utilization KPIs (Section 54)">
+                        <group string="Cost Analysis &amp; Utilization KPIs">
                             <field name="cost_per_km" class="fw-bold fs-5 text-primary"/>
                             <field name="fuel_cost_per_km"/>
                             <field name="cost_per_trip"/>
                             <field name="total_fuel_cost"/>
                             <field name="total_fuel_litres"/>
                         </group>
-                        <group string="Utilization &amp; Maintenance Schedule (Sections 33 &amp; 54)">
+                        <group string="Utilization &amp; Maintenance Schedule">
                             <field name="utilization_rate" widget="progressbar"/>
                             <field name="assigned_hours"/>
                             <field name="available_hours"/>

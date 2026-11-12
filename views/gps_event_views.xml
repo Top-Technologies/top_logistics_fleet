@@ -33,7 +33,7 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="Classification (Section 28)">
+                        <group string="Classification">
                             <field name="event_type"/>
                             <field name="severity" widget="badge"/>
                             <field name="timestamp"/>

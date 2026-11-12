@@ -152,7 +152,7 @@
                         </div>
                     </div>
 
-                    <!-- GPS Live Telemetry Banner (Section 14, 18, 25, 26) -->
+                    <!-- GPS Live Telemetry Banner -->
                     <div class="alert alert-secondary d-flex justify-content-between align-items-center mt-2" role="alert">
                         <div>
                             <strong><i class="fa fa-map-marker text-danger me-1"/> GPS Telemetry:</strong>
@@ -168,7 +168,7 @@
                     </div>
 
                     <notebook>
-                        <page name="route_page" string="Route &amp; Waypoints (Section 16)">
+                        <page name="route_page" string="Route &amp; Waypoints">
                             <group>
                                 <group string="Trip Endpoints">
                                     <field name="origin_location_id" options="{'no_create_edit': False}" placeholder="Select Predefined Origin..." readonly="state != 'draft'"/>
@@ -238,7 +238,7 @@
                             </field>
                         </page>
 
-                        <page name="reconciliation_page" string="Trip Reconciliation (Section 29)">
+                        <page name="reconciliation_page" string="Trip Reconciliation">
                             <group>
                                 <group string="Planned vs. Actual Comparison">
                                     <field name="planned_distance"/>
@@ -249,7 +249,7 @@
                                     <field name="actual_duration"/>
                                     <field name="variance_duration" class="fw-bold"/>
                                 </group>
-                                <group string="Fuel Control &amp; Cost KPIs (Sections 31 &amp; 32)">
+                                <group string="Fuel Control &amp; Cost KPIs">
                                     <field name="start_fuel" readonly="state != 'draft'"/>
                                     <field name="end_fuel" readonly="state not in ('completed', 'reconciled', 'closed')" invisible="state not in ('completed', 'reconciled', 'closed')"/>
                                     <field name="current_fuel" invisible="state in ('completed', 'reconciled', 'closed')"/>
@@ -270,7 +270,7 @@
                             </group>
                         </page>
 
-                        <page name="fuel_logs_page" string="Fuel Refuels (Section 30)">
+                        <page name="fuel_logs_page" string="Fuel Refuels">
                             <field name="fuel_log_ids">
                                 <list editable="bottom">
                                     <field name="date"/>
@@ -284,7 +284,7 @@
                             </field>
                         </page>
 
-                        <page name="events_page" string="GPS Events &amp; Alerts (Section 28)">
+                        <page name="events_page" string="GPS Events &amp; Alerts">
                             <field name="event_ids">
                                 <list decoration-danger="severity == 'danger'" decoration-warning="severity == 'warning'">
                                     <field name="timestamp"/>
@@ -297,9 +297,9 @@
                             </field>
                         </page>
 
-                        <page name="checklist_page" string="Pre-Dispatch Condition Checklist (Section 35)">
+                        <page name="checklist_page" string="Pre-Dispatch Condition Checklist">
                             <group>
-                                <group string="Mechanical &amp; Fluids (Section 35)">
+                                <group string="Mechanical &amp; Fluids">
                                     <field name="chk_tires" readonly="1"/>
                                     <field name="chk_engine" readonly="1"/>
                                     <field name="chk_oil" readonly="1"/>
@@ -307,7 +307,7 @@
                                     <field name="chk_brakes" readonly="1"/>
                                     <field name="chk_lights" readonly="1"/>
                                 </group>
-                                <group string="Safety Tools &amp; Body (Section 35)">
+                                <group string="Safety Tools &amp; Body">
                                     <field name="chk_spare_tire" readonly="1"/>
                                     <field name="chk_tools" readonly="1"/>
                                     <field name="chk_fire_extinguisher" readonly="1"/>
@@ -330,7 +330,7 @@
                             </group>
                         </page>
 
-                        <page name="return_inspection_page" string="Post-Trip Return Inspection (Section 36)" invisible="state not in ('completed', 'reconciled', 'closed')">
+                        <page name="return_inspection_page" string="Post-Trip Return Inspection" invisible="state not in ('completed', 'reconciled', 'closed')">
                             <group>
                                 <group string="Mileage &amp; Fuel on Return">
                                     <field name="vehicle_returned"/>
@@ -407,12 +407,12 @@
         </field>
     </record>
 
-    <!-- Trip Calendar View (Section 37) -->
+    <!-- Trip Calendar View -->
     <record id="view_top_fleet_trip_calendar" model="ir.ui.view">
         <field name="name">top.fleet.trip.calendar</field>
         <field name="model">top.fleet.trip</field>
         <field name="arch" type="xml">
-            <calendar string="Vehicle Availability &amp; Trip Schedule (Section 37)" date_start="planned_departure" date_stop="planned_arrival" color="vehicle_id" mode="month">
+            <calendar string="Vehicle Availability &amp; Trip Schedule" date_start="planned_departure" date_stop="planned_arrival" color="vehicle_id" mode="month">
                 <field name="name"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>

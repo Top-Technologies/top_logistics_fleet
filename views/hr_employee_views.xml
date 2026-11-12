@@ -9,7 +9,7 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Driver &amp; Logistics (FMS)" name="driver_management">
                     <group>
-                        <group string="Driver Status &amp; Qualification (Section 13)">
+                        <group string="Driver Status &amp; Qualification">
                             <field name="is_driver" widget="boolean_toggle"/>
                             <field name="driver_status" widget="badge"
                                    decoration-success="driver_status == 'available'"
@@ -18,7 +18,7 @@
                                    decoration-danger="driver_status in ('leave', 'suspended', 'inactive')"/>
                             <field name="driver_assigned_vehicle_id"/>
                         </group>
-                        <group string="Driving License Compliance (Section 12)">
+                        <group string="Driving License Compliance">
                             <field name="driver_license_number"/>
                             <field name="license_category"/>
                             <field name="license_issue_date"/>

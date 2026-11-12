@@ -35,7 +35,7 @@ class GPSDevice(models.Model):
         ('unassigned', 'Unassigned'),
     ], string='Device Status', default='unassigned', tracking=True, index=True)
 
-    # Real-time Telemetry Data (Sections 20, 21, 25)
+    # Real-time Telemetry Data
     last_communication = fields.Datetime(string='Last Communication', tracking=True)
     latitude = fields.Float(string='Latitude', digits=(10, 6))
     longitude = fields.Float(string='Longitude', digits=(10, 6))

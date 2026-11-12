@@ -29,7 +29,7 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="Zone Type &amp; Purpose (Section 27)">
+                        <group string="Zone Type &amp; Purpose">
                             <field name="category"/>
                             <field name="geofence_type"/>
                             <field name="color" widget="color"/>
