@@ -289,6 +289,24 @@ class GPSProvider(models.Model):
                     old_fuel = device.fuel_level or 0.0
                     new_fuel = float(unit_data.get('fuel_level') or 0.0)
                     if old_fuel > 0.0 and new_fuel > 0.0 and device.vehicle_id:
+                        driver_emp = False
+                        active_trip = self.env['top.fleet.trip'].search([
+                            ('vehicle_id', '=', device.vehicle_id.id),
+                            ('state', 'in', ['in_transit', 'dispatched', 'ready'])
+                        ], order='id desc', limit=1)
+                        if active_trip and active_trip.driver_id:
+                            driver_emp = active_trip.driver_id
+                        else:
+                            driver_emp = self.env['hr.employee'].search([
+                                ('driver_assigned_vehicle_id', '=', device.vehicle_id.id),
+                                ('is_driver', '=', True)
+                            ], limit=1)
+                            if not driver_emp and device.vehicle_id.driver_id:
+                                driver_emp = self.env['hr.employee'].search([
+                                    '|',
+                                    ('work_contact_id', '=', device.vehicle_id.driver_id.id),
+                                    ('user_id.partner_id', '=', device.vehicle_id.driver_id.id)
+                                ], limit=1)
                         fuel_diff = new_fuel - old_fuel
                         if fuel_diff >= 10.0:
                             self.env['top.gps.fuel.transaction'].create({
@@ -296,7 +314,7 @@ class GPSProvider(models.Model):
                                 'timestamp': unit_data.get('last_communication') or now,
                                 'vehicle_id': device.vehicle_id.id,
                                 'device_id': device.id,
-                                'driver_id': device.vehicle_id.driver_id.id if device.vehicle_id.driver_id else False,
+                                'driver_id': driver_emp.id if driver_emp else False,
                                 'initial_fuel': round(old_fuel, 2),
                                 'final_fuel': round(new_fuel, 2),
                                 'volume': round(fuel_diff, 2),
@@ -312,7 +330,7 @@ class GPSProvider(models.Model):
                                 'timestamp': unit_data.get('last_communication') or now,
                                 'vehicle_id': device.vehicle_id.id,
                                 'device_id': device.id,
-                                'driver_id': device.vehicle_id.driver_id.id if device.vehicle_id.driver_id else False,
+                                'driver_id': driver_emp.id if driver_emp else False,
                                 'initial_fuel': round(old_fuel, 2),
                                 'final_fuel': round(new_fuel, 2),
                                 'volume': round(abs(fuel_diff), 2),

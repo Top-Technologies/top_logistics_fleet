@@ -241,8 +241,20 @@ class FleetVehicleInspection(models.Model):
         if self.vehicle_id:
             if self.vehicle_id.odometer:
                 self.odometer = self.vehicle_id.odometer
-            if hasattr(self.vehicle_id, 'driver_id') and self.vehicle_id.driver_id:
-                self.driver_id = self.vehicle_id.driver_id
+            driver_emp = self.env['hr.employee'].search([
+                ('driver_assigned_vehicle_id', '=', self.vehicle_id.id),
+                ('is_driver', '=', True),
+            ], limit=1)
+            if not driver_emp and self.vehicle_id.driver_id:
+                driver_emp = self.env['hr.employee'].search([
+                    '|',
+                    ('work_contact_id', '=', self.vehicle_id.driver_id.id),
+                    ('user_id.partner_id', '=', self.vehicle_id.driver_id.id),
+                ], limit=1)
+            if driver_emp:
+                self.driver_id = driver_emp.id
+            elif not self.driver_id:
+                self.driver_id = False
 
     @api.depends('vehicle_id')
     def _compute_fleet_type(self):
