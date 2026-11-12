@@ -10,13 +10,24 @@
                 <field name="date"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>
-                <field name="trip_id"/>
-                <field name="fuel_station"/>
-                <field name="fuel_type" widget="badge"/>
+                <field name="trip_id" optional="show"/>
+                <field name="start_odometer" string="Start Odo (km)" optional="show"/>
+                <field name="odometer" string="Refuel Odo (km)"/>
+                <field name="odometer_diff" string="Distance (km)" class="fw-bold"/>
                 <field name="quantity" sum="Total Litres"/>
-                <field name="unit_price"/>
+                <field name="unit_price" optional="show"/>
                 <field name="total_cost" sum="Total Fuel Cost"/>
-                <field name="payment_method"/>
+                <field name="consumption_rate" string="Rate (L/100km)" class="fw-bold text-primary"/>
+                <field name="km_per_liter" string="km/L" optional="show"/>
+                <field name="utilization_status" widget="badge"
+                       decoration-success="utilization_status == 'efficient'"
+                       decoration-info="utilization_status == 'normal'"
+                       decoration-danger="utilization_status == 'high'"/>
+                <field name="odometer_source" widget="badge" optional="show"
+                       decoration-info="odometer_source == 'gps'"
+                       decoration-muted="odometer_source == 'manual'"/>
+                <field name="fuel_station" optional="show"/>
+                <field name="payment_method" optional="show"/>
             </list>
         </field>
     </record>
@@ -27,6 +38,10 @@
         <field name="model">top.fleet.fuel.log</field>
         <field name="arch" type="xml">
             <form string="Fuel Transaction Record">
+                <header>
+                    <button name="action_fetch_gps_odometer" type="object" string="Fetch Live GPS Odometer" class="btn-outline-primary"
+                            invisible="not gps_available" icon="fa-satellite-dish"/>
+                </header>
                 <sheet>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" string="Fuel Ref"/>
@@ -36,14 +51,15 @@
                     </div>
                     <group>
                         <group string="Vehicle &amp; Trip">
-                            <field name="vehicle_id"/>
-                            <field name="driver_id"/>
-                            <field name="trip_id"/>
+                            <field name="vehicle_id" options="{'no_create': True}"/>
+                            <field name="driver_id" options="{'no_create': True}"/>
+                            <field name="trip_id" options="{'no_create': True}"/>
                             <field name="date"/>
-                            <field name="odometer"/>
+                            <field name="odometer_source" widget="radio" options="{'horizontal': true}"/>
+                            <field name="gps_available" invisible="1"/>
                         </group>
                         <group string="Fuel Details &amp; Cost">
-                            <field name="fuel_station"/>
+                            <field name="fuel_station" placeholder="Station name / location..."/>
                             <field name="fuel_type"/>
                             <field name="quantity"/>
                             <field name="unit_price"/>
@@ -51,6 +67,50 @@
                             <field name="payment_method"/>
                         </group>
                     </group>
+
+                    <group string="Odometer &amp; Fuel Utilization Analysis">
+                        <group string="Odometer &amp; Distance">
+                            <label for="start_odometer" string="Starting Odometer"/>
+                            <div class="o_row">
+                                <field name="start_odometer"/>
+                                <span class="text-muted ms-1">km</span>
+                            </div>
+                            <label for="odometer" string="Odometer at Refuel"/>
+                            <div class="o_row">
+                                <field name="odometer"/>
+                                <span class="text-muted ms-1">km</span>
+                            </div>
+                            <label for="odometer_diff" string="Distance Covered (Diff)"/>
+                            <div class="o_row">
+                                <field name="odometer_diff" class="fw-bold text-dark"/>
+                                <span class="text-muted ms-1">km</span>
+                            </div>
+                        </group>
+                        <group string="Consumption &amp; Utilization">
+                            <label for="consumption_rate" string="Consumption Rate"/>
+                            <div class="o_row">
+                                <field name="consumption_rate" class="fw-bold fs-5 text-primary"/>
+                                <span class="text-muted ms-1">L / 100 km</span>
+                            </div>
+                            <label for="km_per_liter" string="Fuel Economy"/>
+                            <div class="o_row">
+                                <field name="km_per_liter" class="fw-bold text-success"/>
+                                <span class="text-muted ms-1">km / L</span>
+                            </div>
+                            <label for="benchmark_rate" string="Expected Benchmark"/>
+                            <div class="o_row">
+                                <field name="benchmark_rate" readonly="1"/>
+                                <span class="text-muted ms-1">L / 100 km</span>
+                            </div>
+                            <field name="consumption_variance" string="Variance vs Norm" widget="percentage"/>
+                            <field name="utilization_status" widget="badge"
+                                   decoration-success="utilization_status == 'efficient'"
+                                   decoration-info="utilization_status == 'normal'"
+                                   decoration-danger="utilization_status == 'high'"
+                                   decoration-muted="utilization_status == 'no_distance'"/>
+                        </group>
+                    </group>
+
                     <notebook>
                         <page string="Receipt &amp; Notes">
                             <group>

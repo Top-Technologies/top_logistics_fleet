@@ -735,8 +735,18 @@ class FleetTrip(models.Model):
     # MOBILE & NOTIFICATION ACTIONS
     # -------------------------------------------------------------------------
     def action_record_fuel(self):
-        """Section 51 Mobile: Quickly record fuel consumption/receipt from trip."""
+        """Quickly record fuel consumption/receipt from trip with automated odometer and utilization."""
         self.ensure_one()
+        prev_log = self.env['top.fleet.fuel.log'].search([
+            ('vehicle_id', '=', self.vehicle_id.id)
+        ], order='date desc, id desc', limit=1)
+        prev_odo = prev_log.odometer if (prev_log and prev_log.odometer) else (self.start_odometer or self.vehicle_id.odometer or 0.0)
+
+        gps = self.vehicle_id.gps_device_id
+        live_odo = self.current_odometer or self.vehicle_id.live_odometer or (gps.odometer if gps else 0.0)
+        is_gps_live = bool(gps and live_odo > 0 and gps.status in ('online', 'standby'))
+        refuel_odo = live_odo if is_gps_live else (self.current_odometer or self.vehicle_id.odometer or prev_odo)
+
         return {
             'name': _('Record Fuel Consumption'),
             'type': 'ir.actions.act_window',
@@ -746,8 +756,10 @@ class FleetTrip(models.Model):
             'context': {
                 'default_trip_id': self.id,
                 'default_vehicle_id': self.vehicle_id.id,
-                'default_driver_id': self.driver_id.id,
-                'default_odometer': self.vehicle_id.odometer or self.start_odometer or 0.0,
+                'default_driver_id': self.driver_id.id if self.driver_id else False,
+                'default_start_odometer': prev_odo,
+                'default_odometer': refuel_odo,
+                'default_odometer_source': 'gps' if is_gps_live else 'manual',
             }
         }
 

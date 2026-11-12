@@ -276,9 +276,17 @@
                                     <field name="date"/>
                                     <field name="fuel_station"/>
                                     <field name="fuel_type"/>
+                                    <field name="start_odometer" string="Start Odo"/>
+                                    <field name="odometer" string="Refuel Odo"/>
+                                    <field name="odometer_diff" string="Distance (km)"/>
                                     <field name="quantity" sum="Total Litres"/>
                                     <field name="unit_price"/>
                                     <field name="total_cost" sum="Total Cost"/>
+                                    <field name="consumption_rate" string="L/100km" class="fw-bold text-primary"/>
+                                    <field name="utilization_status" widget="badge"
+                                           decoration-success="utilization_status == 'efficient'"
+                                           decoration-info="utilization_status == 'normal'"
+                                           decoration-danger="utilization_status == 'high'"/>
                                     <field name="payment_method"/>
                                 </list>
                             </field>
