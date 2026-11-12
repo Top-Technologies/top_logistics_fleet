@@ -522,6 +522,76 @@ class FleetTrip(models.Model):
             trip.driver_id.write({'driver_status': 'assigned'})
             trip.message_post(body=_("Trip confirmed and marked as ready for dispatch."))
 
+    def action_dispatch(self):
+        """Dispatches the trip directly, skipping pre-dispatch wizard since inspection is done in advance."""
+        now = fields.Datetime.now()
+        for trip in self:
+            if trip.state != 'ready':
+                raise UserError(_("Only trips in 'Ready / Assigned' status can be dispatched."))
+
+            # Auto-link latest approved inspection if not already set
+            if not trip.inspection_id and trip.vehicle_id.last_inspection_id:
+                trip.inspection_id = trip.vehicle_id.last_inspection_id.id
+
+            live_fuel = trip.vehicle_id.live_fuel_level or (trip.vehicle_id.gps_device_id and trip.vehicle_id.gps_device_id.fuel_level) or 0.0
+            start_odo = trip.start_odometer or trip.vehicle_id.gps_device_id.odometer or trip.vehicle_id.odometer or 0.0
+            start_fuel = trip.start_fuel or (trip.inspection_id.fuel_level if trip.inspection_id and trip.inspection_id.fuel_level else live_fuel)
+            start_fuel_lvl = trip.start_fuel_level or (trip.inspection_id.fuel_gauge if trip.inspection_id and trip.inspection_id.fuel_gauge else 'half')
+
+            trip_vals = {
+                'state': 'dispatched',
+                'actual_departure': now,
+                'dispatch_date': now,
+                'dispatched_by_id': self.env.user.id,
+                'start_odometer': start_odo,
+                'start_fuel': start_fuel,
+                'start_fuel_level': start_fuel_lvl,
+            }
+            # Auto-populate checklist flags from the linked approved inspection
+            if trip.inspection_id:
+                for f in ('chk_tires', 'chk_engine', 'chk_oil', 'chk_coolant', 'chk_brakes', 'chk_lights',
+                          'chk_spare_tire', 'chk_tools', 'chk_fire_extinguisher', 'chk_first_aid',
+                          'chk_body_condition', 'chk_gps_online', 'chk_documents_valid'):
+                    if hasattr(trip.inspection_id, f):
+                        trip_vals[f] = getattr(trip.inspection_id, f)
+            else:
+                for f in ('chk_tires', 'chk_engine', 'chk_oil', 'chk_coolant', 'chk_brakes', 'chk_lights',
+                          'chk_spare_tire', 'chk_tools', 'chk_fire_extinguisher', 'chk_first_aid',
+                          'chk_body_condition', 'chk_gps_online', 'chk_documents_valid'):
+                    trip_vals[f] = True
+
+            trip_vals['chk_driver_confirmed'] = True
+            trip.write(trip_vals)
+
+            trip.vehicle_id.write({'operational_status': 'on_trip'})
+            trip.driver_id.write({'driver_status': 'on_trip'})
+            if trip.backup_driver_id:
+                trip.backup_driver_id.write({'driver_status': 'on_trip'})
+
+            for req in (trip.request_ids | trip.request_id):
+                if req.state != 'in_transit':
+                    req_vals = {}
+                    if 'dispatched' in dict(req._fields['state'].selection):
+                        req_vals['state'] = 'dispatched'
+                    req.write(req_vals)
+                    req.message_post(
+                        body=_("Vehicle <strong>%s</strong> dispatched for mission by <strong>%s</strong>.<br/>"
+                               "Inspection: <strong>%s</strong> | Start Odometer: %s km | Fuel: %s") % (
+                            trip.vehicle_id.name, self.env.user.name,
+                            trip.inspection_id.name if trip.inspection_id else _("Verified in Advance"),
+                            start_odo, start_fuel_lvl
+                        )
+                    )
+
+            trip.message_post(
+                body=_("Vehicle <strong>%s</strong> dispatched directly into service by <strong>%s</strong>.<br/>"
+                       "Pre-Trip Inspection: <strong>%s</strong> | Start Odometer: %s km | Fuel: %s") % (
+                    trip.vehicle_id.name, self.env.user.name,
+                    trip.inspection_id.name if trip.inspection_id else _("Verified in Advance"),
+                    start_odo, start_fuel_lvl
+                )
+            )
+
     def action_open_dispatch_wizard(self):
         self.ensure_one()
         live_fuel = self.vehicle_id.live_fuel_level or (self.vehicle_id.gps_device_id and self.vehicle_id.gps_device_id.fuel_level) or 0.0
