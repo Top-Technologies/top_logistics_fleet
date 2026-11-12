@@ -32,10 +32,10 @@ class FleetTrip(models.Model):
         help='Multiple transport requests served together in this consolidated transport order.',
     )
     fleet_order_type_id = fields.Many2one(
-        'approval.category',
+        'approval.request',
         string='Fleet Order Type',
         tracking=True,
-        help="Approval category from the Approvals module representing this fleet order type.",
+        help="Approval request from the Approvals module representing this fleet order approval subject.",
     )
     inspection_id = fields.Many2one(
         'top.fleet.vehicle.inspection',
@@ -44,9 +44,10 @@ class FleetTrip(models.Model):
         help='Technical condition inspection record conducted prior to dispatch.',
     )
     trip_type_id = fields.Many2one(
-        'top.fleet.trip.type',
+        'top.transport.request.type',
         string='Trip Type',
         tracking=True,
+        help="Trip type classification from transport request.",
     )
     vehicle_id = fields.Many2one(
         'fleet.vehicle',

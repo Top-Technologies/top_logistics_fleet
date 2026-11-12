@@ -113,7 +113,7 @@
                             <field name="trip_coordinator_id" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_group" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Approval Type..." readonly="state != 'draft'"/>
+                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Request Approval (Subject)..." readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="inspection_id" readonly="state != 'draft'"/>
                             <field name="request_id" readonly="1"/>

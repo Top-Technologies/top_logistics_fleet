@@ -19,7 +19,7 @@ class VehicleAssignmentWizard(models.TransientModel):
     vehicle_type_id = fields.Many2one(related='request_id.vehicle_type_id', string='Requested Vehicle Type', readonly=True)
 
     fleet_order_type_id = fields.Many2one(
-        'approval.category',
+        'approval.request',
         related='request_id.fleet_order_type_id',
         string='Fleet Order Type',
         readonly=True,
@@ -52,12 +52,27 @@ class VehicleAssignmentWizard(models.TransientModel):
         default=lambda self: self.env.user,
     )
     trip_type_id = fields.Many2one(
-        'top.fleet.trip.type',
+        'top.transport.request.type',
         string='Trip Type',
     )
     planned_distance = fields.Float(string='Planned Distance (km)')
     planned_duration = fields.Float(string='Planned Duration (Hours)')
     special_instructions = fields.Text(string='Special Instructions')
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        req_id = res.get('request_id') or self.env.context.get('default_request_id')
+        if req_id:
+            req = self.env['top.transport.request'].browse(req_id)
+            if 'trip_type_id' in fields_list and req.trip_type_id and not res.get('trip_type_id'):
+                res['trip_type_id'] = req.trip_type_id.id
+        return res
+
+    @api.onchange('request_id')
+    def _onchange_request_id(self):
+        if self.request_id and self.request_id.trip_type_id:
+            self.trip_type_id = self.request_id.trip_type_id
 
     @api.onchange('vehicle_id')
     def _onchange_vehicle_id(self):
@@ -124,7 +139,7 @@ class VehicleAssignmentWizard(models.TransientModel):
             'driver_id': self.driver_id.id,
             'backup_driver_id': self.backup_driver_id.id if self.backup_driver_id else False,
             'trip_coordinator_id': self.trip_coordinator_id.id if self.trip_coordinator_id else self.env.user.id,
-            'trip_type_id': self.trip_type_id.id if self.trip_type_id else False,
+            'trip_type_id': self.trip_type_id.id if self.trip_type_id else (req.trip_type_id.id if req.trip_type_id else False),
             'origin_location_id': req.origin_location_id.id if req.origin_location_id else False,
             'destination_location_id': req.destination_location_id.id if req.destination_location_id else False,
             'origin': req.origin,

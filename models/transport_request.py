@@ -70,10 +70,10 @@ class TransportRequest(models.Model):
         tracking=True,
     )
     fleet_order_type_id = fields.Many2one(
-        'approval.category',
+        'approval.request',
         string='Fleet Order Type',
         tracking=True,
-        help="Approval category from the Approvals module representing this fleet order type.",
+        help="Approval request from the Approvals module representing this fleet order approval subject.",
     )
     approver_ids = fields.One2many(
         'top.transport.request.approver',
@@ -377,20 +377,29 @@ class TransportRequest(models.Model):
 
     @api.onchange('fleet_order_type_id')
     def _onchange_fleet_order_type_id(self):
-        if self.fleet_order_type_id and not self.approver_ids:
-            if hasattr(self.fleet_order_type_id, 'approver_ids'):
+        if self.fleet_order_type_id:
+            if not self.approver_ids and hasattr(self.fleet_order_type_id, 'approver_ids'):
                 lines = []
                 seq = 10
-                for cat_app in self.fleet_order_type_id.approver_ids:
+                for app_line in self.fleet_order_type_id.approver_ids:
+                    st = 'approved' if getattr(app_line, 'status', '') == 'approved' else 'rejected' if getattr(app_line, 'status', '') == 'refused' else 'pending'
                     lines.append((0, 0, {
-                        'user_id': cat_app.user_id.id,
-                        'role': getattr(cat_app.user_id.partner_id, 'function', False) or _('Approver'),
+                        'user_id': app_line.user_id.id,
+                        'role': getattr(app_line.user_id.partner_id, 'function', False) or _('Approver'),
                         'sequence': seq,
-                        'status': 'pending',
+                        'status': st,
                     }))
                     seq += 10
                 if lines:
                     self.approver_ids = lines
+            if not self.purpose and hasattr(self.fleet_order_type_id, 'reason') and self.fleet_order_type_id.reason:
+                self.purpose = self.fleet_order_type_id.reason
+            if not self.required_date and hasattr(self.fleet_order_type_id, 'date_start') and self.fleet_order_type_id.date_start:
+                self.required_date = self.fleet_order_type_id.date_start
+            if not self.return_date and hasattr(self.fleet_order_type_id, 'date_end') and self.fleet_order_type_id.date_end:
+                self.return_date = self.fleet_order_type_id.date_end
+            if not self.destination and hasattr(self.fleet_order_type_id, 'location') and self.fleet_order_type_id.location:
+                self.destination = self.fleet_order_type_id.location
 
     @api.onchange('origin_location_id')
     def _onchange_origin_location_id(self):
@@ -599,6 +608,7 @@ class TransportRequest(models.Model):
         # In emergency mode, allows direct assignment
         context = {
             'default_request_id': self.id,
+            'default_trip_type_id': self.trip_type_id.id if self.trip_type_id else False,
             'default_planned_distance': 0.0,
         }
         return {
