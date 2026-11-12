@@ -118,9 +118,88 @@ class TransportRequest(models.Model):
     cargo_required = fields.Boolean(
         string='Cargo Required',
         default=False,
+        tracking=True,
+    )
+    cargo_load_type = fields.Selection(
+        [
+            ('full', 'Full Load (ሙሉ ጭነት)'),
+            ('empty', 'Empty Load (ባዶ ጭነት)'),
+        ],
+        string='Load Type',
+        default='full',
+        tracking=True,
+    )
+    cargo_product_id = fields.Many2one(
+        'product.product',
+        string='Loading Type / Product',
+        tracking=True,
+        help="Select or search the product / commodity being loaded and transported.",
+    )
+    cargo_loading_type_desc = fields.Char(
+        string='Product / Commodity Description',
+        tracking=True,
+        help="Detailed name or description of the product/goods to be loaded.",
+    )
+    cargo_location_description = fields.Text(
+        string='Location Description',
+        tracking=True,
+        help="Precise loading bay, warehouse gate, address, or offloading area details.",
+    )
+    cargo_approver_id = fields.Many2one(
+        'res.users',
+        string='Cargo Approver',
+        default=lambda self: self.env.user,
+        tracking=True,
+        help="Supervisor or manager responsible for approving this cargo shipment.",
+    )
+    cargo_amount_qty = fields.Float(
+        string='Cargo Amount (Qty)',
+        digits='Product Unit of Measure',
+        default=0.0,
+        tracking=True,
+        help="Amount or quantity of the cargo in the specified unit of measurement.",
+    )
+    cargo_uom_id = fields.Many2one(
+        'uom.uom',
+        string='Amount Unit of Measure',
+        tracking=True,
+        help="Unit of measurement for the cargo amount (e.g. Kg, Quintal, Liters, Bags, Ton).",
+    )
+    cargo_tariff_unit_price = fields.Float(
+        string='Tariff (Unit Price) / UoM',
+        digits='Product Price',
+        default=0.0,
+        tracking=True,
+        help="Tariff or unit price per unit of measurement.",
+    )
+    cargo_currency_id = fields.Many2one(
+        'res.currency',
+        string='Tariff Currency',
+        default=lambda self: self.env.company.currency_id,
+    )
+    cargo_total_tariff = fields.Monetary(
+        string='Total Tariff Amount',
+        currency_field='cargo_currency_id',
+        compute='_compute_cargo_total_tariff',
+        store=True,
+        help="Computed total tariff amount (Amount Qty * Tariff Unit Price).",
+    )
+    cargo_load_capacity = fields.Float(
+        string='Load Capacity',
+        digits='Product Unit of Measure',
+        default=0.0,
+        tracking=True,
+        help="Rated transport or vehicle load capacity for this cargo.",
+    )
+    cargo_capacity_uom_id = fields.Many2one(
+        'uom.uom',
+        string='Capacity UoM',
+        tracking=True,
+        help="Unit of measurement for the load capacity.",
     )
     cargo_description = fields.Text(
-        string='Cargo Description',
+        string='Cargo / Handling Notes',
+        help="Additional instructions regarding handling, weight, volume, or fragility.",
     )
     priority = fields.Selection(
         [
@@ -280,6 +359,28 @@ class TransportRequest(models.Model):
     def _onchange_destination_location_id(self):
         if self.destination_location_id:
             self.destination = self.destination_location_id.display_name or self.destination_location_id.name
+
+    @api.depends('cargo_amount_qty', 'cargo_tariff_unit_price')
+    def _compute_cargo_total_tariff(self):
+        for rec in self:
+            rec.cargo_total_tariff = (rec.cargo_amount_qty or 0.0) * (rec.cargo_tariff_unit_price or 0.0)
+
+    @api.onchange('cargo_product_id')
+    def _onchange_cargo_product_id(self):
+        if self.cargo_product_id:
+            if not self.cargo_loading_type_desc:
+                self.cargo_loading_type_desc = self.cargo_product_id.display_name
+            if self.cargo_product_id.uom_id and not self.cargo_uom_id:
+                self.cargo_uom_id = self.cargo_product_id.uom_id
+
+    @api.onchange('assigned_vehicle_id')
+    def _onchange_assigned_vehicle_capacity(self):
+        if self.assigned_vehicle_id and hasattr(self.assigned_vehicle_id, 'capacity_cargo_kg') and self.assigned_vehicle_id.capacity_cargo_kg:
+            if not self.cargo_load_capacity:
+                self.cargo_load_capacity = self.assigned_vehicle_id.capacity_cargo_kg
+            kg_uom = self.env.ref('uom.product_uom_kgm', raise_if_not_found=False)
+            if kg_uom and not self.cargo_capacity_uom_id:
+                self.cargo_capacity_uom_id = kg_uom.id
 
     @api.depends('stop_ids.state')
     def _compute_stops_summary(self):

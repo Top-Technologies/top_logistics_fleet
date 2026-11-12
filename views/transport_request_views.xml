@@ -22,6 +22,12 @@
                 <field name="return_date"/>
                 <field name="assigned_vehicle_id"/>
                 <field name="assigned_driver_id"/>
+                <field name="cargo_required" widget="boolean_toggle" optional="hide"/>
+                <field name="cargo_load_type" widget="badge" optional="hide"/>
+                <field name="cargo_product_id" optional="hide"/>
+                <field name="cargo_amount_qty" optional="hide"/>
+                <field name="cargo_uom_id" optional="hide"/>
+                <field name="cargo_total_tariff" widget="monetary" optional="hide"/>
                 <field name="priority" widget="badge" 
                        decoration-danger="priority == 'emergency'" 
                        decoration-warning="priority == 'high'" 
@@ -134,7 +140,38 @@
                                     <field name="vehicle_type_id" placeholder="e.g. Pickup, Sedan, Truck" readonly="state != 'draft'"/>
                                     <field name="driver_required" widget="boolean_toggle" readonly="state != 'draft'"/>
                                     <field name="cargo_required" widget="boolean_toggle" readonly="state != 'draft'"/>
-                                    <field name="cargo_description" invisible="not cargo_required" readonly="state != 'draft'" placeholder="Details about cargo weight, volume, or fragility..."/>
+                                </group>
+                            </group>
+
+                            <!-- Cargo & Freight Specifications (Disappears when Cargo Required toggle is OFF; Appears when ON) -->
+                            <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications" invisible="not cargo_required">
+                                <group string="Loading Type, Product &amp; Location">
+                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                                    <field name="cargo_product_id" options="{'no_create_edit': False}" placeholder="Select Loading Type / Product..." readonly="state != 'draft'"/>
+                                    <field name="cargo_loading_type_desc" placeholder="e.g. Washed Coffee Beans Grade 1, Fertilizer Bags, Spare Parts..." readonly="state != 'draft'"/>
+                                    <field name="cargo_approver_id" options="{'no_create': True}" placeholder="Select Cargo Approver..." readonly="state != 'draft'"/>
+                                    <field name="cargo_location_description" placeholder="Location description (e.g. Loading dock, warehouse gate, address, or handling instructions)..." readonly="state != 'draft'"/>
+                                </group>
+                                <group string="Capacity, Quantity &amp; Tariff">
+                                    <label for="cargo_amount_qty" string="Amount In UoM"/>
+                                    <div class="o_row">
+                                        <field name="cargo_amount_qty" readonly="state != 'draft'"/>
+                                        <field name="cargo_uom_id" options="{'no_create': True}" placeholder="Amount UoM..." readonly="state != 'draft'"/>
+                                    </div>
+                                    <label for="cargo_load_capacity" string="Load Capacity"/>
+                                    <div class="o_row">
+                                        <field name="cargo_load_capacity" readonly="state != 'draft'"/>
+                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}" placeholder="Capacity UoM..." readonly="state != 'draft'"/>
+                                    </div>
+                                    <label for="cargo_tariff_unit_price" string="Tariff (Unit Price) / UoM"/>
+                                    <div class="o_row">
+                                        <field name="cargo_tariff_unit_price" readonly="state != 'draft'"/>
+                                        <span class="text-muted ms-1 me-1"> per </span>
+                                        <field name="cargo_uom_id" readonly="1" class="oe_inline"/>
+                                    </div>
+                                    <field name="cargo_currency_id" invisible="1"/>
+                                    <field name="cargo_total_tariff" widget="monetary" readonly="1"/>
+                                    <field name="cargo_description" placeholder="Additional cargo notes, weight, volume, or fragility instructions..." readonly="state != 'draft'"/>
                                 </group>
                             </group>
                         </page>
@@ -304,12 +341,17 @@
                 <separator/>
                 <filter string="Light Fleet Orders" name="filter_light_fleet" domain="[('fleet_order_type', '=', 'light')]"/>
                 <filter string="Heavy Fleet Orders" name="filter_heavy_fleet" domain="[('fleet_order_type', '=', 'heavy')]"/>
+                <filter string="Cargo Requests" name="filter_cargo" domain="[('cargo_required', '=', True)]"/>
+                <filter string="Full Load" name="filter_full_load" domain="[('cargo_load_type', '=', 'full'), ('cargo_required', '=', True)]"/>
+                <filter string="Empty Load" name="filter_empty_load" domain="[('cargo_load_type', '=', 'empty'), ('cargo_required', '=', True)]"/>
                 <filter string="Emergency Priority" name="filter_emergency" domain="[('priority', '=', 'emergency')]"/>
                 <filter string="High Priority" name="filter_high" domain="[('priority', 'in', ['high', 'emergency'])]"/>
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
                     <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type'}"/>
+                    <filter string="Cargo Load Type" name="group_cargo_load_type" context="{'group_by': 'cargo_load_type'}"/>
+                    <filter string="Cargo Product" name="group_cargo_product" context="{'group_by': 'cargo_product_id'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>
                     <filter string="Requester" name="group_by_requester" context="{'group_by': 'requester_id'}"/>
                     <filter string="Trip Type" name="group_by_trip_type" context="{'group_by': 'trip_type_id'}"/>

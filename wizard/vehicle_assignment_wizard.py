@@ -134,6 +134,18 @@ class VehicleAssignmentWizard(models.TransientModel):
             'planned_duration': self.planned_duration,
             'purpose': req.purpose,
             'special_instructions': self.special_instructions,
+            'cargo_required': req.cargo_required,
+            'cargo_load_type': req.cargo_load_type,
+            'cargo_product_id': req.cargo_product_id.id if req.cargo_product_id else False,
+            'cargo_loading_type_desc': req.cargo_loading_type_desc,
+            'cargo_location_description': req.cargo_location_description,
+            'cargo_approver_id': req.cargo_approver_id.id if req.cargo_approver_id else False,
+            'cargo_amount_qty': req.cargo_amount_qty,
+            'cargo_uom_id': req.cargo_uom_id.id if req.cargo_uom_id else False,
+            'cargo_tariff_unit_price': req.cargo_tariff_unit_price,
+            'cargo_load_capacity': req.cargo_load_capacity,
+            'cargo_capacity_uom_id': req.cargo_capacity_uom_id.id if req.cargo_capacity_uom_id else False,
+            'cargo_description': req.cargo_description,
             'state': 'ready',
         }
         trip = self.env['top.fleet.trip'].create(trip_vals)

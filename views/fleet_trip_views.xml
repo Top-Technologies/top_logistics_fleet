@@ -184,6 +184,37 @@
                                     <field name="planned_duration"/>
                                     <field name="actual_duration"/>
                                     <field name="actual_duration_display"/>
+                                    <field name="cargo_required" widget="boolean_toggle"/>
+                                </group>
+                            </group>
+                            <group name="cargo_details" string="📦 Cargo &amp; Freight Specifications" invisible="not cargo_required">
+                                <group string="Loading Type, Product &amp; Location">
+                                    <field name="cargo_load_type" widget="radio" options="{'horizontal': true}"/>
+                                    <field name="cargo_product_id" options="{'no_create_edit': False}"/>
+                                    <field name="cargo_loading_type_desc"/>
+                                    <field name="cargo_approver_id" options="{'no_create': True}"/>
+                                    <field name="cargo_location_description"/>
+                                </group>
+                                <group string="Capacity, Quantity &amp; Tariff">
+                                    <label for="cargo_amount_qty" string="Amount In UoM"/>
+                                    <div class="o_row">
+                                        <field name="cargo_amount_qty"/>
+                                        <field name="cargo_uom_id" options="{'no_create': True}"/>
+                                    </div>
+                                    <label for="cargo_load_capacity" string="Load Capacity"/>
+                                    <div class="o_row">
+                                        <field name="cargo_load_capacity"/>
+                                        <field name="cargo_capacity_uom_id" options="{'no_create': True}"/>
+                                    </div>
+                                    <label for="cargo_tariff_unit_price" string="Tariff (Unit Price) / UoM"/>
+                                    <div class="o_row">
+                                        <field name="cargo_tariff_unit_price"/>
+                                        <span class="text-muted ms-1 me-1">per</span>
+                                        <field name="cargo_uom_id" readonly="1" class="oe_inline"/>
+                                    </div>
+                                    <field name="cargo_currency_id" invisible="1"/>
+                                    <field name="cargo_total_tariff" widget="monetary" readonly="1"/>
+                                    <field name="cargo_description"/>
                                 </group>
                             </group>
                             <separator string="Intermediate Stops &amp; Consolidations"/>

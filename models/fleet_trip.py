@@ -158,6 +158,30 @@ class FleetTrip(models.Model):
     actual_distance = fields.Float(string='Actual Distance (km)', compute='_compute_actual_distance', store=True, readonly=False, tracking=True)
     planned_duration = fields.Float(string='Planned Duration (Hours)')
     actual_duration = fields.Float(string='Actual Duration (Hours)', compute='_compute_actual_duration', store=True)
+
+    # Cargo & Freight Details
+    cargo_required = fields.Boolean(string='Cargo Required', default=False, tracking=True)
+    cargo_load_type = fields.Selection(
+        [
+            ('full', 'Full Load (ሙሉ ጭነት)'),
+            ('empty', 'Empty Load (ባዶ ጭነት)'),
+        ],
+        string='Load Type',
+        default='full',
+        tracking=True,
+    )
+    cargo_product_id = fields.Many2one('product.product', string='Loading Type / Product', tracking=True)
+    cargo_loading_type_desc = fields.Char(string='Product / Commodity Description', tracking=True)
+    cargo_location_description = fields.Text(string='Location Description', tracking=True)
+    cargo_approver_id = fields.Many2one('res.users', string='Cargo Approver', tracking=True)
+    cargo_amount_qty = fields.Float(string='Cargo Amount (Qty)', digits='Product Unit of Measure', default=0.0, tracking=True)
+    cargo_uom_id = fields.Many2one('uom.uom', string='Amount Unit of Measure', tracking=True)
+    cargo_tariff_unit_price = fields.Float(string='Tariff (Unit Price) / UoM', digits='Product Price', default=0.0, tracking=True)
+    cargo_currency_id = fields.Many2one('res.currency', string='Tariff Currency', default=lambda self: self.env.company.currency_id)
+    cargo_total_tariff = fields.Monetary(string='Total Tariff Amount', currency_field='cargo_currency_id', compute='_compute_cargo_total_tariff', store=True)
+    cargo_load_capacity = fields.Float(string='Load Capacity', digits='Product Unit of Measure', default=0.0, tracking=True)
+    cargo_capacity_uom_id = fields.Many2one('uom.uom', string='Capacity UoM', tracking=True)
+    cargo_description = fields.Text(string='Cargo / Handling Notes')
     actual_duration_display = fields.Char(string='Time Taken Display', compute='_compute_actual_duration_display')
 
     # Fuel & Operating Costs (Sections 30, 31, 32)
@@ -451,6 +475,11 @@ class FleetTrip(models.Model):
                 trip.actual_duration = round(delta.total_seconds() / 3600.0, 2)
             else:
                 trip.actual_duration = 0.0
+
+    @api.depends('cargo_amount_qty', 'cargo_tariff_unit_price')
+    def _compute_cargo_total_tariff(self):
+        for rec in self:
+            rec.cargo_total_tariff = (rec.cargo_amount_qty or 0.0) * (rec.cargo_tariff_unit_price or 0.0)
 
     @api.constrains('planned_departure', 'planned_arrival')
     def _check_planned_dates(self):
