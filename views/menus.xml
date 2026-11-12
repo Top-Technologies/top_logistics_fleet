@@ -211,6 +211,31 @@
               action="action_top_gps_position"
               sequence="40"/>
 
+    <!-- 5.5. Reporting Menu Header -->
+    <menuitem id="menu_top_logistics_reporting_parent"
+              name="Reporting"
+              parent="menu_top_logistics_root"
+              sequence="80"
+              groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_management,top_logistics_fleet.group_logistics_finance"/>
+
+    <menuitem id="menu_top_report_trip_performance"
+              name="Trip Planned vs. Actual"
+              parent="menu_top_logistics_reporting_parent"
+              action="action_top_fleet_trip_reporting"
+              sequence="10"/>
+
+    <menuitem id="menu_top_report_fuel_analytics"
+              name="Fuel &amp; Efficiency Analytics"
+              parent="menu_top_logistics_reporting_parent"
+              action="action_top_fleet_fuel_analysis"
+              sequence="20"/>
+
+    <menuitem id="menu_top_report_fuel_consumption"
+              name="Fuel Consumption Report"
+              parent="menu_top_logistics_reporting_parent"
+              action="action_top_fuel_consumption_report_wizard"
+              sequence="30"/>
+
     <!-- 6. Configuration Menu Header -->
     <menuitem id="menu_top_logistics_config_parent"
               name="Configuration"

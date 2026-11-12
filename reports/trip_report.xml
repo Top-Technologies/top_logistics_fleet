@@ -12,6 +12,18 @@
         <field name="binding_type">report</field>
     </record>
 
+    <!-- Trip Planned vs Actual Performance Report Action -->
+    <record id="action_report_trip_planned_vs_actual" model="ir.actions.report">
+        <field name="name">Trip Planned vs Actual Report (Time, KM, Fuel &amp; Cost)</field>
+        <field name="model">top.fleet.trip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">top_logistics_fleet.report_trip_planned_vs_actual_template</field>
+        <field name="report_file">top_logistics_fleet.report_trip_planned_vs_actual_template</field>
+        <field name="print_report_name">'Trip_Planned_vs_Actual_%s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_top_fleet_trip"/>
+        <field name="binding_type">report</field>
+    </record>
+
     <!-- Transport Request Waybill Action -->
     <record id="action_report_transport_request_waybill" model="ir.actions.report">
         <field name="name">Transport Order Waybill</field>
@@ -166,6 +178,18 @@
                                         <td><span t-field="doc.actual_fuel"/> L <span class="text-muted small">(Refueled: <span t-field="doc.total_refueled"/> L)</span></td>
                                         <td><span t-field="doc.variance_fuel"/> L</td>
                                     </tr>
+                                    <tr>
+                                        <td><strong>Operating Cost</strong></td>
+                                        <td><span t-field="doc.planned_cost"/></td>
+                                        <td><span t-field="doc.total_trip_cost"/></td>
+                                        <td><span t-field="doc.variance_cost"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cost / KM</strong></td>
+                                        <td>-</td>
+                                        <td><span t-field="doc.cost_per_km"/></td>
+                                        <td>-</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -284,6 +308,401 @@
                             <div class="col-4 text-center">
                                 _______________________<br/>
                                 <strong>Driver Signature</strong>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Planned vs Actual Comprehensive Audit Report Template -->
+    <template id="report_trip_planned_vs_actual_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-size: 13px;">
+                        <!-- Report Header -->
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <div>
+                                <h2 class="mb-0 text-primary fw-bold">Trip Performance &amp; Planned vs Actual Report</h2>
+                                <h5 class="text-muted mb-0">
+                                    <span t-field="doc.name"/>
+                                    <span t-if="doc.fleet_order_type_id" class="badge text-bg-primary ms-2" t-field="doc.fleet_order_type_id.name"/>
+                                    <span t-if="doc.trip_type_id" class="badge text-bg-info ms-1" t-field="doc.trip_type_id.name"/>
+                                </h5>
+                            </div>
+                            <div class="text-end">
+                                <div><strong>Report Generated: </strong><span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/></div>
+                                <div><strong>Trip Status: </strong><span class="badge text-bg-success" t-field="doc.state"/></div>
+                                <div t-if="doc.request_id"><strong>Order Ref: </strong><span t-field="doc.request_id.name"/></div>
+                            </div>
+                        </div>
+
+                        <!-- Anomaly / Theft Alert Banner if triggered -->
+                        <div t-if="doc.fuel_theft_suspected" class="alert alert-danger p-2 mb-3 d-flex align-items-center" role="alert">
+                            <strong class="me-2"><i class="fa fa-exclamation-triangle fa-lg me-1"/>AUDIT ALERT:</strong>
+                            <span>Suspected abnormal fuel drain or siphoning detected! Fuel consumed exceeds vehicle expected benchmark norm by over 35%.</span>
+                        </div>
+
+                        <!-- Trip Metadata & Resource Allocation Overview -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="card p-2 h-100 border-primary">
+                                    <h6 class="text-primary border-bottom pb-1 fw-bold">1. Route &amp; Assignment Context</h6>
+                                    <table class="table table-borderless table-sm mb-0">
+                                        <tr>
+                                            <td style="width: 35%;"><strong>Origin Depot:</strong></td>
+                                            <td><span t-field="doc.origin"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Destination:</strong></td>
+                                            <td><span t-field="doc.destination"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Order Requester:</strong></td>
+                                            <td><span t-if="doc.request_id" t-field="doc.request_id.requester_id.name"/> <span t-if="doc.request_id and doc.request_id.department_id">(<span t-field="doc.request_id.department_id.name"/>)</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Trip Coordinator:</strong></td>
+                                            <td><span t-field="doc.trip_coordinator_id.name"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card p-2 h-100 border-secondary">
+                                    <h6 class="text-secondary border-bottom pb-1 fw-bold">2. Fleet &amp; Driver Allocation</h6>
+                                    <table class="table table-borderless table-sm mb-0">
+                                        <tr>
+                                            <td style="width: 35%;"><strong>Vehicle:</strong></td>
+                                            <td><span t-field="doc.vehicle_id.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Primary Driver:</strong></td>
+                                            <td><span t-field="doc.driver_id.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Benchmark Norm:</strong></td>
+                                            <td><span t-field="doc.vehicle_id.expected_fuel_consumption"/> L/100km</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Measurement:</strong></td>
+                                            <td><span t-field="doc.fuel_consumption_method"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Executive KPI Scorecards: 4 Key Pillars -->
+                        <div class="row mb-3 g-2 text-center">
+                            <!-- Pillar 1: Time -->
+                            <div class="col-3">
+                                <div class="card p-2 h-100 border-info bg-light">
+                                    <div class="text-info fw-bold text-uppercase small"><i class="fa fa-clock-o me-1"/>1. Time &amp; Schedule</div>
+                                    <div class="fs-5 fw-bold my-1"><span t-field="doc.actual_duration"/> hrs</div>
+                                    <div class="small text-muted">Planned: <span t-field="doc.planned_duration"/> hrs</div>
+                                    <div class="small mt-1">
+                                        <strong>Variance: </strong>
+                                        <span t-if="doc.variance_duration &gt; 0" class="text-danger fw-bold">+<span t-field="doc.variance_duration"/> hrs (<span t-field="doc.variance_duration_pct"/>%)</span>
+                                        <span t-else="" class="text-success fw-bold"><span t-field="doc.variance_duration"/> hrs</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span t-if="doc.time_status == 'on_time'" class="badge text-bg-success">On Time</span>
+                                        <span t-elif="doc.time_status == 'slight_delay'" class="badge text-bg-warning">Minor Delay</span>
+                                        <span t-else="" class="badge text-bg-danger">Major Delay</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pillar 2: Distance (KM) -->
+                            <div class="col-3">
+                                <div class="card p-2 h-100 border-primary bg-light">
+                                    <div class="text-primary fw-bold text-uppercase small"><i class="fa fa-road me-1"/>2. Distance (KM)</div>
+                                    <div class="fs-5 fw-bold my-1"><span t-field="doc.actual_distance"/> km</div>
+                                    <div class="small text-muted">Planned: <span t-field="doc.planned_distance"/> km</div>
+                                    <div class="small mt-1">
+                                        <strong>Variance: </strong>
+                                        <span t-if="doc.variance_distance &gt; 0" class="text-danger fw-bold">+<span t-field="doc.variance_distance"/> km (<span t-field="doc.variance_distance_pct"/>%)</span>
+                                        <span t-else="" class="text-success fw-bold"><span t-field="doc.variance_distance"/> km</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        Odo: <span t-field="doc.start_odometer"/> &#8594; <span t-field="doc.end_odometer"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pillar 3: Fuel (Litres) -->
+                            <div class="col-3">
+                                <div class="card p-2 h-100 border-warning bg-light">
+                                    <div class="text-warning-emphasis fw-bold text-uppercase small"><i class="fa fa-tint me-1"/>3. Fuel Burn (L)</div>
+                                    <div class="fs-5 fw-bold my-1"><span t-field="doc.actual_fuel"/> L</div>
+                                    <div class="small text-muted">Expected: <span t-field="doc.expected_fuel"/> L</div>
+                                    <div class="small mt-1">
+                                        <strong>Variance: </strong>
+                                        <span t-if="doc.variance_fuel &gt; 0" class="text-danger fw-bold">+<span t-field="doc.variance_fuel"/> L (<span t-field="doc.variance_fuel_pct"/>%)</span>
+                                        <span t-else="" class="text-success fw-bold"><span t-field="doc.variance_fuel"/> L</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge text-bg-info"><span t-field="doc.fuel_consumption_rate"/> L/100km</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pillar 4: Cost -->
+                            <div class="col-3">
+                                <div class="card p-2 h-100 border-success bg-light">
+                                    <div class="text-success fw-bold text-uppercase small"><i class="fa fa-money me-1"/>4. Total Cost</div>
+                                    <div class="fs-5 fw-bold my-1"><span t-field="doc.total_trip_cost" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></div>
+                                    <div class="small text-muted">Planned: <span t-field="doc.planned_cost" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></div>
+                                    <div class="small mt-1">
+                                        <strong>Variance: </strong>
+                                        <span t-if="doc.variance_cost &gt; 0" class="text-danger fw-bold">+<span t-field="doc.variance_cost"/></span>
+                                        <span t-else="" class="text-success fw-bold"><span t-field="doc.variance_cost"/></span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        Cost/KM: <span t-field="doc.cost_per_km"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Side-by-Side Planned vs Actual Detailed Matrix -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-balance-scale me-1"/>Planned vs. Actual Detailed Performance Matrix</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-bordered table-striped mb-0 text-center align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th class="text-start" style="width: 25%;">Operational Dimension</th>
+                                            <th style="width: 10%;">Unit</th>
+                                            <th style="width: 15%;">Planned / Target</th>
+                                            <th style="width: 15%;">Actual Recorded</th>
+                                            <th style="width: 15%;">Variance (Diff)</th>
+                                            <th style="width: 10%;">Variance %</th>
+                                            <th style="width: 10%;">Evaluation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-start"><strong>Distance Covered</strong></td>
+                                            <td>Kilometres</td>
+                                            <td><span t-field="doc.planned_distance"/></td>
+                                            <td><span t-field="doc.actual_distance"/></td>
+                                            <td t-att-class="'fw-bold ' + ('text-danger' if doc.variance_distance &gt; 10 else 'text-success')">
+                                                <span t-field="doc.variance_distance"/> km
+                                            </td>
+                                            <td><span t-field="doc.variance_distance_pct"/>%</td>
+                                            <td>
+                                                <span t-if="abs(doc.variance_distance_pct) &lt;= 10" class="badge text-bg-success">On Route</span>
+                                                <span t-else="" class="badge text-bg-warning">Deviation</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start"><strong>Trip Duration</strong></td>
+                                            <td>Hours</td>
+                                            <td><span t-field="doc.planned_duration"/> h</td>
+                                            <td><span t-field="doc.actual_duration"/> h</td>
+                                            <td t-att-class="'fw-bold ' + ('text-danger' if doc.variance_duration &gt; 0.5 else 'text-success')">
+                                                <span t-field="doc.variance_duration"/> hrs
+                                            </td>
+                                            <td><span t-field="doc.variance_duration_pct"/>%</td>
+                                            <td>
+                                                <span t-if="doc.time_status == 'on_time'" class="badge text-bg-success">On Time</span>
+                                                <span t-elif="doc.time_status == 'slight_delay'" class="badge text-bg-warning">Delay</span>
+                                                <span t-else="" class="badge text-bg-danger">Severe Delay</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start"><strong>Fuel Consumed</strong></td>
+                                            <td>Litres</td>
+                                            <td><span t-field="doc.expected_fuel"/> L</td>
+                                            <td><span t-field="doc.actual_fuel"/> L</td>
+                                            <td t-att-class="'fw-bold ' + ('text-danger' if doc.variance_fuel &gt; 5 else 'text-success')">
+                                                <span t-field="doc.variance_fuel"/> L
+                                            </td>
+                                            <td><span t-field="doc.variance_fuel_pct"/>%</td>
+                                            <td>
+                                                <span t-if="doc.fuel_utilization_status == 'efficient'" class="badge text-bg-success">Efficient</span>
+                                                <span t-elif="doc.fuel_utilization_status == 'normal'" class="badge text-bg-info">Normal</span>
+                                                <span t-else="" class="badge text-bg-danger">High Burn</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start"><strong>Fuel Consumption Rate</strong></td>
+                                            <td>L / 100km</td>
+                                            <td><span t-field="doc.vehicle_id.expected_fuel_consumption"/></td>
+                                            <td><span t-field="doc.fuel_consumption_rate"/></td>
+                                            <td class="fw-bold">
+                                                <span t-esc="round((doc.fuel_consumption_rate or 0.0) - (doc.vehicle_id.expected_fuel_consumption or 0.0), 2)"/>
+                                            </td>
+                                            <td>
+                                                <span t-if="doc.vehicle_id.expected_fuel_consumption" t-esc="round((((doc.fuel_consumption_rate or 0.0) - (doc.vehicle_id.expected_fuel_consumption or 0.0)) / doc.vehicle_id.expected_fuel_consumption) * 100.0, 1)"/>%
+                                            </td>
+                                            <td>
+                                                <span t-if="(doc.fuel_consumption_rate or 0) &lt;= (doc.vehicle_id.expected_fuel_consumption or 12)" class="badge text-bg-success">Within Norm</span>
+                                                <span t-else="" class="badge text-bg-warning">Above Norm</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start"><strong>Total Trip Operating Cost</strong></td>
+                                            <td>Currency</td>
+                                            <td><span t-field="doc.planned_cost"/></td>
+                                            <td><span t-field="doc.total_trip_cost"/></td>
+                                            <td t-att-class="'fw-bold ' + ('text-danger' if doc.variance_cost &gt; 0 else 'text-success')">
+                                                <span t-field="doc.variance_cost"/>
+                                            </td>
+                                            <td><span t-field="doc.variance_cost_pct"/>%</td>
+                                            <td>
+                                                <span t-if="doc.variance_cost &lt;= 0" class="badge text-bg-success">Under Budget</span>
+                                                <span t-else="" class="badge text-bg-danger">Over Budget</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start"><strong>Operating Cost / KM</strong></td>
+                                            <td>Cost / km</td>
+                                            <td>-</td>
+                                            <td><span t-field="doc.cost_per_km"/></td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td><span class="badge text-bg-secondary">KPI Baseline</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Refueling Events During Trip (if any) -->
+                        <div t-if="doc.fuel_log_ids" class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-tint me-1"/>Refueling Purchases Logged During Trip</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-bordered mb-0 text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Station / Location</th>
+                                            <th>Fuel Type</th>
+                                            <th>Start Odo</th>
+                                            <th>Refuel Odo</th>
+                                            <th>Distance (km)</th>
+                                            <th>Litres</th>
+                                            <th>Unit Price</th>
+                                            <th>Total Cost</th>
+                                            <th>Economy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="doc.fuel_log_ids" t-as="flog">
+                                            <td><span t-field="flog.date"/></td>
+                                            <td><span t-field="flog.fuel_station"/></td>
+                                            <td><span t-field="flog.fuel_type"/></td>
+                                            <td><span t-field="flog.start_odometer"/></td>
+                                            <td><span t-field="flog.odometer"/></td>
+                                            <td><span t-field="flog.odometer_diff"/></td>
+                                            <td class="fw-bold"><span t-field="flog.quantity"/> L</td>
+                                            <td><span t-field="flog.unit_price"/></td>
+                                            <td class="fw-bold"><span t-field="flog.total_cost"/></td>
+                                            <td><span t-field="flog.consumption_rate"/> L/100km</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Intermediate Waypoints (if any) -->
+                        <div t-if="doc.waypoint_ids" class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-map-signs me-1"/>Intermediate Waypoints &amp; Consolidation Stops</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%;">#</th>
+                                            <th style="width: 30%;">Waypoint / Stop Location</th>
+                                            <th style="width: 15%;">Stop Type</th>
+                                            <th style="width: 15%;">Estimated Arrival</th>
+                                            <th style="width: 15%;">Actual Arrival</th>
+                                            <th style="width: 10%;">Dwell (hrs)</th>
+                                            <th style="width: 10%;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="doc.waypoint_ids" t-as="wp">
+                                            <td><span t-field="wp.sequence"/></td>
+                                            <td>
+                                                <span t-field="wp.location_name"/>
+                                                <small t-if="wp.cargo_or_passenger_notes" class="d-block text-muted"><span t-field="wp.cargo_or_passenger_notes"/></small>
+                                            </td>
+                                            <td><span t-field="wp.stop_type"/></td>
+                                            <td><span t-field="wp.estimated_arrival"/></td>
+                                            <td><span t-field="wp.actual_arrival"/></td>
+                                            <td><span t-field="wp.time_spent_hours"/></td>
+                                            <td>
+                                                <span t-if="wp.state == 'completed'" class="badge text-bg-success">Visited</span>
+                                                <span t-elif="wp.state == 'cancelled'" class="badge text-bg-danger">Cancelled</span>
+                                                <span t-else="" class="badge text-bg-secondary">Pending</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Post-Trip Return Inspection & Condition Debrief -->
+                        <div t-if="doc.state in ('completed', 'reconciled', 'closed')" class="card mb-3">
+                            <div class="card-header bg-light py-2">
+                                <strong class="text-dark"><i class="fa fa-check-circle me-1"/>Post-Trip Condition &amp; Debrief Audit</strong>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong>Vehicle Returned: </strong>
+                                        <span t-if="doc.vehicle_returned" class="text-success fw-bold"><i class="fa fa-check"/> Yes, Confirmed at Depot</span>
+                                        <span t-else="" class="text-danger fw-bold"><i class="fa fa-times"/> Pending Return</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong>Cleanliness: </strong>
+                                        <span t-field="doc.return_cleanliness"/>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong>Damage Identified: </strong>
+                                        <span t-if="doc.has_damage" class="badge text-bg-danger">New Damage Reported</span>
+                                        <span t-else="" class="badge text-bg-success">No Damage</span>
+                                    </div>
+                                </div>
+                                <div t-if="doc.has_damage and doc.damage_description" class="mt-2 text-danger">
+                                    <strong>Damage Details: </strong><span t-field="doc.damage_description"/>
+                                </div>
+                                <div t-if="doc.driver_comments" class="mt-2">
+                                    <strong>Driver Debrief Remarks: </strong><span t-field="doc.driver_comments"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Signatures & Authorization -->
+                        <div class="row mt-4 pt-3 border-top text-center">
+                            <div class="col-3">
+                                _______________________<br/>
+                                <strong>Trip Coordinator</strong><br/>
+                                <small class="text-muted"><span t-field="doc.trip_coordinator_id.name"/></small>
+                            </div>
+                            <div class="col-3">
+                                _______________________<br/>
+                                <strong>Fleet Supervisor</strong><br/>
+                                <small class="text-muted">Operations Verification</small>
+                            </div>
+                            <div class="col-3">
+                                _______________________<br/>
+                                <strong>Assigned Driver</strong><br/>
+                                <small class="text-muted"><span t-field="doc.driver_id.name"/></small>
+                            </div>
+                            <div class="col-3">
+                                _______________________<br/>
+                                <strong>Logistics / Finance Audit</strong><br/>
+                                <small class="text-muted">Reconciliation &amp; Sign-off</small>
                             </div>
                         </div>
                     </div>

@@ -58,6 +58,12 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
         'views/fleet_dispatch_wizard_views.xml',
         'views/trip_return_wizard_views.xml',
 
+        # Reports
+        'reports/trip_report.xml',
+        'reports/fleet_utilization.xml',
+        'reports/fuel_report.xml',
+        'reports/fleet_fuel_efficiency_report.xml',
+
         # Operational Views
         'views/logistics_location_views.xml',
         'views/vehicle_inspection_views.xml',
@@ -85,12 +91,6 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
 
         # Menus
         'views/menus.xml',
-
-        # Reports
-        'reports/trip_report.xml',
-        'reports/fleet_utilization.xml',
-        'reports/fuel_report.xml',
-        'reports/fleet_fuel_efficiency_report.xml',
     ],
     'assets': {
         'web.assets_backend': [

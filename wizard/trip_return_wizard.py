@@ -89,10 +89,10 @@ class TripReturnWizard(models.TransientModel):
         }
 
         # 2. Update Vehicle Odometer
-        trip.vehicle_id.write({
-            'odometer': self.end_odometer,
-            'operational_status': 'available',
-        })
+        vehicle_vals = {'operational_status': 'available'}
+        if self.end_odometer >= (trip.vehicle_id.odometer or 0.0):
+            vehicle_vals['odometer'] = self.end_odometer
+        trip.vehicle_id.write(vehicle_vals)
         trip.driver_id.write({'driver_status': 'available'})
         if trip.backup_driver_id:
             trip.backup_driver_id.write({'driver_status': 'available'})

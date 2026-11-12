@@ -110,6 +110,12 @@ class FleetTrip(models.Model):
         default=lambda self: self.env.company,
         required=True,
     )
+    currency_id = fields.Many2one(
+        'res.currency',
+        string='Currency',
+        related='company_id.currency_id',
+        readonly=True,
+    )
 
     # Route & Schedule
     origin_location_id = fields.Many2one(
@@ -205,11 +211,32 @@ class FleetTrip(models.Model):
     total_trip_cost = fields.Float(string='Total Trip Cost', compute='_compute_trip_costs', store=True)
     cost_per_km = fields.Float(string='Trip Cost / KM', compute='_compute_trip_costs', store=True)
     fuel_consumption_rate = fields.Float(string='Fuel Rate (L/100km)', compute='_compute_trip_costs', store=True)
+    planned_cost = fields.Float(
+        string='Planned / Budgeted Cost',
+        compute='_compute_trip_costs',
+        store=True,
+        help='Planned trip fuel budget: Expected Fuel * Estimated Unit Price.'
+    )
 
-    # Reconciliation Variances
+    # Reconciliation Variances (Section 29)
     variance_distance = fields.Float(string='Distance Variance (km)', compute='_compute_variances', store=True)
     variance_duration = fields.Float(string='Duration Variance (Hours)', compute='_compute_variances', store=True)
     variance_fuel = fields.Float(string='Fuel Variance (L)', compute='_compute_variances', store=True)
+    variance_cost = fields.Float(string='Cost Variance', compute='_compute_variances', store=True)
+    variance_distance_pct = fields.Float(string='Distance Variance (%)', compute='_compute_variances', store=True, digits=(10, 1))
+    variance_duration_pct = fields.Float(string='Duration Variance (%)', compute='_compute_variances', store=True, digits=(10, 1))
+    variance_fuel_pct = fields.Float(string='Fuel Variance (%)', compute='_compute_variances', store=True, digits=(10, 1))
+    variance_cost_pct = fields.Float(string='Cost Variance (%)', compute='_compute_variances', store=True, digits=(10, 1))
+    time_status = fields.Selection([
+        ('on_time', 'On Time / Ahead'),
+        ('slight_delay', 'Minor Delay (<= 1h)'),
+        ('major_delay', 'Major Delay (> 1h)'),
+    ], string='Schedule Adherence', compute='_compute_variances', store=True)
+    fuel_utilization_status = fields.Selection([
+        ('efficient', 'Optimal / Under Benchmark'),
+        ('normal', 'Normal Standard'),
+        ('excess', 'High Consumption / Above Norm'),
+    ], string='Fuel Utilization Status', compute='_compute_variances', store=True)
 
     # GPS Telemetry & Tracking
     gps_device_id = fields.Many2one(
@@ -418,8 +445,10 @@ class FleetTrip(models.Model):
             else:
                 trip.fuel_theft_suspected = False
 
-    @api.depends('total_fuel_cost', 'consumed_fuel_cost', 'actual_distance', 'actual_fuel', 'planned_distance', 'start_odometer', 'end_odometer')
+    @api.depends('total_fuel_cost', 'consumed_fuel_cost', 'actual_distance', 'actual_fuel', 'planned_distance', 'start_odometer', 'end_odometer', 'expected_fuel', 'total_refueled')
     def _compute_trip_costs(self):
+        recent_log = self.env['top.fleet.fuel.log'].search([], order='date desc, id desc', limit=1)
+        fallback_price = recent_log.unit_price if (recent_log and recent_log.unit_price) else 100.0
         for trip in self:
             trip.total_trip_cost = trip.consumed_fuel_cost if trip.consumed_fuel_cost > 0.0 else trip.total_fuel_cost
             dist = trip.actual_distance or (trip.end_odometer - trip.start_odometer if (trip.end_odometer and trip.start_odometer and trip.end_odometer > trip.start_odometer) else 0.0) or trip.planned_distance or 0.0
@@ -430,6 +459,10 @@ class FleetTrip(models.Model):
                 trip.cost_per_km = 0.0
                 trip.fuel_consumption_rate = 0.0
 
+            # Planned fuel budget cost: expected fuel * fuel price
+            unit_p = (trip.total_fuel_cost / trip.total_refueled) if (trip.total_refueled and trip.total_refueled > 0.0) else fallback_price
+            trip.planned_cost = round((trip.expected_fuel or 0.0) * unit_p, 2)
+
     @api.onchange('planned_distance', 'vehicle_id')
     def _onchange_planned_distance(self):
         if self.planned_distance and self.vehicle_id:
@@ -437,14 +470,55 @@ class FleetTrip(models.Model):
             if not self.expected_fuel or self.expected_fuel == 0.0:
                 self.expected_fuel = round((self.planned_distance * rate) / 100.0, 2)
 
-    @api.depends('actual_distance', 'planned_distance', 'actual_duration', 'planned_duration', 'actual_fuel', 'expected_fuel', 'start_odometer', 'end_odometer')
+    @api.depends(
+        'actual_distance', 'planned_distance', 'actual_duration', 'planned_duration',
+        'actual_fuel', 'expected_fuel', 'start_odometer', 'end_odometer',
+        'total_trip_cost', 'planned_cost'
+    )
     def _compute_variances(self):
         for trip in self:
-            # Section 29 Reconciliation Formulas
+            # Distance comparison & variance
             dist = trip.actual_distance or (trip.end_odometer - trip.start_odometer if (trip.end_odometer and trip.start_odometer and trip.end_odometer > trip.start_odometer) else 0.0) or (trip.planned_distance or 0.0)
-            trip.variance_distance = round(dist - (trip.planned_distance or 0.0), 2)
-            trip.variance_duration = round((trip.actual_duration or 0.0) - (trip.planned_duration or 0.0), 2)
-            trip.variance_fuel = round((trip.actual_fuel or 0.0) - (trip.expected_fuel or 0.0), 2)
+            p_dist = trip.planned_distance or 0.0
+            trip.variance_distance = round(dist - p_dist, 2)
+            trip.variance_distance_pct = round((trip.variance_distance / p_dist * 100.0), 1) if p_dist > 0.0 else 0.0
+
+            # Time / duration comparison & variance
+            act_dur = trip.actual_duration or 0.0
+            plan_dur = trip.planned_duration or 0.0
+            trip.variance_duration = round(act_dur - plan_dur, 2)
+            trip.variance_duration_pct = round((trip.variance_duration / plan_dur * 100.0), 1) if plan_dur > 0.0 else 0.0
+
+            # Fuel comparison & variance
+            act_f = trip.actual_fuel or 0.0
+            exp_f = trip.expected_fuel or 0.0
+            trip.variance_fuel = round(act_f - exp_f, 2)
+            trip.variance_fuel_pct = round((trip.variance_fuel / exp_f * 100.0), 1) if exp_f > 0.0 else 0.0
+
+            # Cost comparison & variance
+            act_cost = trip.total_trip_cost or 0.0
+            plan_cost = trip.planned_cost or 0.0
+            trip.variance_cost = round(act_cost - plan_cost, 2)
+            trip.variance_cost_pct = round((trip.variance_cost / plan_cost * 100.0), 1) if plan_cost > 0.0 else 0.0
+
+            # Schedule adherence status
+            if trip.variance_duration <= 0.0:
+                trip.time_status = 'on_time'
+            elif trip.variance_duration <= 1.0:
+                trip.time_status = 'slight_delay'
+            else:
+                trip.time_status = 'major_delay'
+
+            # Fuel efficiency utilization status
+            if exp_f > 0.0 and act_f > 0.0:
+                if act_f <= exp_f * 0.95:
+                    trip.fuel_utilization_status = 'efficient'
+                elif act_f <= exp_f * 1.15:
+                    trip.fuel_utilization_status = 'normal'
+                else:
+                    trip.fuel_utilization_status = 'excess'
+            else:
+                trip.fuel_utilization_status = 'normal'
 
     @api.depends('vehicle_id', 'vehicle_id.gps_device_id')
     def _compute_gps_device(self):
@@ -505,6 +579,10 @@ class FleetTrip(models.Model):
     def action_view_on_map(self):
         self.ensure_one()
         return self.vehicle_id.action_view_on_map()
+
+    def action_print_planned_vs_actual_report(self):
+        self.ensure_one()
+        return self.env.ref('top_logistics_fleet.action_report_trip_planned_vs_actual').report_action(self)
 
     def action_confirm(self):
         for trip in self:
