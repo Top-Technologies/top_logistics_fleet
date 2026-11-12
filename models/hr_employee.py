@@ -44,6 +44,34 @@ class HrEmployee(models.Model):
         store=True,
     )
 
+    @api.onchange('job_id')
+    def _onchange_job_id_driver(self):
+        if self.job_id and any(t in (self.job_id.name or '').lower() for t in ['driver', 'chauffeur', 'ሹፌር']):
+            self.is_driver = True
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('is_driver'):
+                job_id = vals.get('job_id')
+                job = self.env['hr.job'].browse(job_id) if job_id else False
+                job_title = vals.get('job_title', '') or ''
+                if (job and any(t in (job.name or '').lower() for t in ['driver', 'chauffeur', 'ሹፌር'])) or \
+                   any(t in job_title.lower() for t in ['driver', 'chauffeur', 'ሹፌር']):
+                    vals['is_driver'] = True
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if 'job_id' in vals and 'is_driver' not in vals:
+            job = self.env['hr.job'].browse(vals['job_id']) if vals.get('job_id') else False
+            if job and any(t in (job.name or '').lower() for t in ['driver', 'chauffeur', 'ሹፌር']):
+                vals['is_driver'] = True
+        elif 'job_title' in vals and 'is_driver' not in vals:
+            job_title = vals.get('job_title', '') or ''
+            if any(t in job_title.lower() for t in ['driver', 'chauffeur', 'ሹፌር']):
+                vals['is_driver'] = True
+        return super().write(vals)
+
     @api.depends('license_expiry_date')
     def _compute_license_compliance(self):
         today = fields.Date.today()

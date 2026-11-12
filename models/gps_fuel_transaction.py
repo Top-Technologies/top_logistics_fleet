@@ -18,7 +18,7 @@ class GPSFuelTransaction(models.Model):
     vehicle_id = fields.Many2one('fleet.vehicle', string='Vehicle', required=True, tracking=True, index=True)
     license_plate = fields.Char(related='vehicle_id.license_plate', string='License Plate', readonly=True)
     device_id = fields.Many2one('top.gps.device', string='GPS Device', tracking=True)
-    driver_id = fields.Many2one('hr.employee', string='Assigned Driver', domain="[('is_driver', '=', True)]")
+    driver_id = fields.Many2one('hr.employee', string='Assigned Driver', domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver')]")
     trip_id = fields.Many2one('top.fleet.trip', string='Associated Trip', index=True)
 
     initial_fuel = fields.Float(string='Starting Fuel Level (L)', digits=(10, 2), tracking=True)

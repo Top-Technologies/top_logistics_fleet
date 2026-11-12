@@ -306,7 +306,7 @@ class TransportRequest(models.Model):
         readonly=False,
         tracking=True,
         copy=False,
-        domain="[('is_driver', '=', True), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]",
+        domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver'), ('driver_status', 'in', ['available', 'assigned']), ('is_license_expired', '=', False)]",
     )
     backup_driver_id = fields.Many2one(
         'hr.employee',
@@ -314,7 +314,7 @@ class TransportRequest(models.Model):
         readonly=False,
         tracking=True,
         copy=False,
-        domain="[('is_driver', '=', True)]",
+        domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver')]",
     )
     trip_id = fields.Many2one(
         'top.fleet.trip',

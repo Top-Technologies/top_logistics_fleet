@@ -10,7 +10,7 @@ class FleetFuelLog(models.Model):
     name = fields.Char(string='Reference', readonly=True, default=lambda self: _('New'))
     date = fields.Datetime(string='Date & Time', default=fields.Datetime.now, required=True, index=True)
     vehicle_id = fields.Many2one('fleet.vehicle', string='Vehicle', required=True, index=True)
-    driver_id = fields.Many2one('hr.employee', string='Driver', domain="[('is_driver', '=', True)]")
+    driver_id = fields.Many2one('hr.employee', string='Driver', domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver')]")
     trip_id = fields.Many2one('top.fleet.trip', string='Associated Trip', index=True)
     
     # Odometer & Telematics Fields

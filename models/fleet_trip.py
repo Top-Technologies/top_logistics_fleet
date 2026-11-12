@@ -75,7 +75,7 @@ class FleetTrip(models.Model):
         'hr.employee',
         string='Assigned Driver',
         required=True,
-        domain="[('is_driver', '=', True)]",
+        domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver')]",
         tracking=True,
         index=True,
     )
@@ -97,7 +97,7 @@ class FleetTrip(models.Model):
     backup_driver_id = fields.Many2one(
         'hr.employee',
         string='Backup Driver',
-        domain="[('is_driver', '=', True)]",
+        domain="['|', ('is_driver', '=', True), ('job_id.name', 'ilike', 'driver')]",
     )
     trip_coordinator_id = fields.Many2one(
         'res.users',
