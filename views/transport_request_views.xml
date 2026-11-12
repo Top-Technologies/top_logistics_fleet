@@ -7,9 +7,7 @@
         <field name="arch" type="xml">
             <list string="Transport Requests" decoration-danger="priority == 'emergency'" decoration-muted="state in ('draft', 'cancelled')" sample="1">
                 <field name="name" decoration-bf="1"/>
-                <field name="fleet_order_type" widget="badge"
-                       decoration-warning="fleet_order_type == 'heavy'"
-                       decoration-info="fleet_order_type == 'light'"/>
+                <field name="fleet_order_type_id" optional="show"/>
                 <field name="requester_id" widget="many2one_avatar_user"/>
                 <field name="department_id"/>
                 <field name="trip_type_id"/>
@@ -89,6 +87,13 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_view_approval_request" type="object" class="oe_stat_button" icon="fa-check-square-o"
+                                invisible="not approval_request_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Approval</span>
+                                <span class="o_stat_text">Request</span>
+                            </div>
+                        </button>
                         <button name="action_view_trip" type="object" class="oe_stat_button" icon="fa-truck"
                                 invisible="trip_count == 0">
                             <field name="trip_count" widget="statinfo" string="Trip"/>
@@ -117,7 +122,8 @@
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_details" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Fleet Order Type (Approval Category)..." readonly="state != 'draft'"/>
+                            <field name="approval_request_id" readonly="1" invisible="not approval_request_id"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="priority" widget="priority" readonly="state != 'draft'"/>
                             <field name="request_date"/>
@@ -339,8 +345,6 @@
                 <filter string="Completed &amp; Closed" name="filter_closed" domain="[('state', 'in', ['completed', 'reconciled', 'closed'])]"/>
                 
                 <separator/>
-                <filter string="Light Fleet Orders" name="filter_light_fleet" domain="[('fleet_order_type', '=', 'light')]"/>
-                <filter string="Heavy Fleet Orders" name="filter_heavy_fleet" domain="[('fleet_order_type', '=', 'heavy')]"/>
                 <filter string="Cargo Requests" name="filter_cargo" domain="[('cargo_required', '=', True)]"/>
                 <filter string="Full Load" name="filter_full_load" domain="[('cargo_load_type', '=', 'full'), ('cargo_required', '=', True)]"/>
                 <filter string="Empty Load" name="filter_empty_load" domain="[('cargo_load_type', '=', 'empty'), ('cargo_required', '=', True)]"/>
@@ -349,7 +353,7 @@
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type'}"/>
+                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type_id'}"/>
                     <filter string="Cargo Load Type" name="group_cargo_load_type" context="{'group_by': 'cargo_load_type'}"/>
                     <filter string="Cargo Product" name="group_cargo_product" context="{'group_by': 'cargo_product_id'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>

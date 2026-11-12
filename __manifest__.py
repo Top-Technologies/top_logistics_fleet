@@ -36,6 +36,7 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
         'web',
         'product',
         'uom',
+        'approvals',
     ],
     'data': [
         # Security
@@ -45,6 +46,7 @@ Enterprise Logistics & Fleet Operations module covering the full lifecycle:
         # Data & Cron
         'data/ir_sequence_data.xml',
         'data/activity_types.xml',
+        'data/approval_category_data.xml',
         'data/mail_template.xml',
         'data/ir_cron_data.xml',
         'data/request_type_data.xml',
