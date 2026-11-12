@@ -64,6 +64,7 @@
                     </group>
                     <group>
                         <group string="Cost Analysis &amp; Utilization KPIs">
+                            <field name="expected_fuel_consumption"/>
                             <field name="cost_per_km" class="fw-bold fs-5 text-primary"/>
                             <field name="fuel_cost_per_km"/>
                             <field name="cost_per_trip"/>
