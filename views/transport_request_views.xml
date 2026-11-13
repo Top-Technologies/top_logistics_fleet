@@ -7,7 +7,6 @@
         <field name="arch" type="xml">
             <list string="Transport Requests" decoration-danger="priority == 'emergency'" decoration-muted="state in ('draft', 'cancelled')" sample="1">
                 <field name="name" decoration-bf="1"/>
-                <field name="fleet_order_type_id"/>
                 <field name="requester_id" widget="many2one_avatar_user"/>
                 <field name="department_id"/>
                 <field name="trip_type_id"/>
@@ -124,7 +123,6 @@
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_details" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Request Approval (Subject)..." readonly="state not in ('draft', 'submitted')"/>
                             <field name="trip_type_id" readonly="state not in ('draft', 'submitted')"/>
                             <field name="priority" widget="priority" readonly="state not in ('draft', 'submitted')"/>
                             <field name="request_date"/>
@@ -374,14 +372,13 @@
                 
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Fleet Order Type" name="group_by_fleet_order_type" context="{'group_by': 'fleet_order_type_id'}"/>
                     <filter string="Cargo Load Type" name="group_cargo_load_type" context="{'group_by': 'cargo_load_type'}"/>
                     <filter string="Cargo Product" name="group_cargo_product" context="{'group_by': 'cargo_product_id'}"/>
                     <filter string="Department" name="group_by_department" context="{'group_by': 'department_id'}"/>
                     <filter string="Requester" name="group_by_requester" context="{'group_by': 'requester_id'}"/>
                     <filter string="Trip Type" name="group_by_trip_type" context="{'group_by': 'trip_type_id'}"/>
                     <filter string="Priority" name="group_by_priority" context="{'group_by': 'priority'}"/>
-                    <filter string="Required Month" name="group_by_date" context="{'group_by': 'required_date:month'}"/>
+                    <filter string="From Month" name="group_by_date" context="{'group_by': 'required_date:month'}"/>
                 </group>
             </search>
         </field>

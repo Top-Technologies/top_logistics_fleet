@@ -50,12 +50,12 @@ class TransportRequest(models.Model):
         readonly=True,
     )
     required_date = fields.Datetime(
-        string='Required Date',
+        string='From',
         required=True,
         tracking=True,
     )
     return_date = fields.Datetime(
-        string='Return Date',
+        string='To',
         required=True,
         tracking=True,
     )
@@ -535,7 +535,7 @@ class TransportRequest(models.Model):
     def _check_dates(self):
         for record in self:
             if record.required_date and record.return_date and record.return_date < record.required_date:
-                raise ValidationError(_("Return Date (%s) cannot be earlier than Required Date (%s).") % (
+                raise ValidationError(_("'To' date (%s) cannot be earlier than 'From' date (%s).") % (
                     record.return_date, record.required_date
                 ))
 

@@ -7,7 +7,6 @@
         <field name="arch" type="xml">
             <list string="Fleet Trips" sample="1">
                 <field name="name" decoration-bf="1"/>
-                <field name="fleet_order_type_id"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id" widget="many2one_avatar_user"/>
                 <field name="origin_location_id" optional="show"/>
@@ -134,7 +133,6 @@
                             <field name="trip_coordinator_id" readonly="state != 'draft'"/>
                         </group>
                         <group name="schedule_group" string="Schedule &amp; Classification">
-                            <field name="fleet_order_type_id" options="{'no_create_edit': False}" placeholder="Select Request Approval (Subject)..." readonly="state != 'draft'"/>
                             <field name="trip_type_id" readonly="state != 'draft'"/>
                             <field name="inspection_id" readonly="state != 'draft'"/>
                             <field name="request_id" readonly="1"/>

@@ -16,7 +16,7 @@
                         <li><strong>Trip Type:</strong> <t t-out="object.trip_type_id.name"/></li>
                         <li><strong>Origin:</strong> <t t-out="object.origin"/></li>
                         <li><strong>Destination:</strong> <t t-out="object.destination"/></li>
-                        <li><strong>Required Date:</strong> <t t-out="object.required_date"/></li>
+                        <li><strong>From:</strong> <t t-out="object.required_date"/></li>
                         <li><strong>Priority:</strong> <t t-out="object.priority"/></li>
                     </ul>
                     <p>You can track the status in your FMS Logistics portal.</p>
@@ -39,7 +39,7 @@
                     <ul>
                         <li><strong>Department:</strong> <t t-out="object.department_id.name"/></li>
                         <li><strong>Route:</strong> <t t-out="object.origin"/> ➔ <t t-out="object.destination"/></li>
-                        <li><strong>Required Date:</strong> <t t-out="object.required_date"/> to <t t-out="object.return_date"/></li>
+                        <li><strong>Schedule:</strong> <t t-out="object.required_date"/> to <t t-out="object.return_date"/></li>
                         <li><strong>Priority:</strong> <t t-out="object.priority"/></li>
                         <li><strong>Purpose:</strong> <t t-out="object.purpose"/></li>
                     </ul>

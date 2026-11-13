@@ -14,8 +14,8 @@ class VehicleAssignmentWizard(models.TransientModel):
     requester_id = fields.Many2one(related='request_id.requester_id', string='Requester', readonly=True)
     origin = fields.Char(related='request_id.origin', string='Origin', readonly=True)
     destination = fields.Char(related='request_id.destination', string='Destination', readonly=True)
-    required_date = fields.Datetime(related='request_id.required_date', string='Required Date', readonly=True)
-    return_date = fields.Datetime(related='request_id.return_date', string='Return Date', readonly=True)
+    required_date = fields.Datetime(related='request_id.required_date', string='From', readonly=True)
+    return_date = fields.Datetime(related='request_id.return_date', string='To', readonly=True)
     vehicle_type_id = fields.Many2one(related='request_id.vehicle_type_id', string='Requested Vehicle Type', readonly=True)
 
     fleet_order_type_id = fields.Many2one(

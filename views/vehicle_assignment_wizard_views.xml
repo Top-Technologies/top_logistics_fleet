@@ -11,9 +11,6 @@
                             <strong>Request:</strong> <field name="origin" class="fw-bold"/> ➔ <field name="destination" class="fw-bold"/>
                             (<field name="required_date"/> to <field name="return_date"/>)
                         </div>
-                        <div>
-                            <field name="fleet_order_type_id"/>
-                        </div>
                     </div>
                     <group>
                         <group string="Vehicle Selection">
