@@ -1,5 +1,5 @@
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError, ValidationError, AccessError
 
 
 class FleetTrip(models.Model):
@@ -298,25 +298,25 @@ class FleetTrip(models.Model):
     dispatch_date = fields.Datetime(string='Dispatch Timestamp', readonly=True)
 
     # Post-Trip Return Checklist
-    vehicle_returned = fields.Boolean(string='Vehicle Returned to Depot', readonly=True)
-    end_odometer = fields.Float(string='Ending Odometer (km)', readonly=True)
-    end_fuel = fields.Float(string='Ending Fuel Level (L)', tracking=True, readonly=True, help='Final fuel in vehicle tank in Litres upon return inspection.')
+    vehicle_returned = fields.Boolean(string='Vehicle Returned to Depot')
+    end_odometer = fields.Float(string='Ending Odometer (km)')
+    end_fuel = fields.Float(string='Ending Fuel Level (L)', tracking=True, help='Final fuel in vehicle tank in Litres upon return inspection.')
     end_fuel_level = fields.Selection([
         ('quarter', '1/4 Tank'),
         ('half', '1/2 Tank'),
         ('three_quarter', '3/4 Tank'),
         ('full', 'Full Tank'),
-    ], string='Ending Fuel Gauge', readonly=True)
+    ], string='Ending Fuel Gauge')
     return_cleanliness = fields.Selection([
         ('clean', 'Clean / Satisfactory'),
         ('acceptable', 'Normal Dust / Acceptable'),
         ('needs_wash', 'Dirty / Requires Wash'),
-    ], string='Cleanliness Status', readonly=True)
-    has_damage = fields.Boolean(string='New Damage Flagged', readonly=True)
-    damage_description = fields.Text(string='Observed Return Damage', readonly=True)
-    missing_equipment = fields.Char(string='Missing Equipment / Tools', readonly=True)
-    new_defects = fields.Text(string='New Defects Reported', readonly=True)
-    driver_comments = fields.Text(string='Driver Debrief Notes', readonly=True)
+    ], string='Cleanliness Status')
+    has_damage = fields.Boolean(string='New Damage Flagged')
+    damage_description = fields.Text(string='Observed Return Damage')
+    missing_equipment = fields.Char(string='Missing Equipment / Tools')
+    new_defects = fields.Text(string='New Defects Reported')
+    driver_comments = fields.Text(string='Driver Debrief Notes')
     accident_id = fields.Many2one('top.fleet.accident', string='Incident Record', readonly=True)
 
     state = fields.Selection([
@@ -778,11 +778,12 @@ class FleetTrip(models.Model):
 
     def action_reconcile(self):
         for trip in self:
-            if trip.state != 'completed':
-                raise UserError(_("Only completed trips can be reconciled."))
+            if trip.state not in ('completed', 'draft'):
+                raise UserError(_("Only completed or revised draft trips can be reconciled."))
             trip.write({'state': 'reconciled'})
-            if trip.request_id and trip.request_id.state != 'reconciled':
-                trip.request_id.write({'state': 'reconciled'})
+            for req in (trip.request_ids | trip.request_id):
+                if req and req.state != 'reconciled':
+                    req.write({'state': 'reconciled'})
             trip.message_post(
                 body=_("<strong>Trip Reconciled</strong><br/>Distance Variance: %s km<br/>Duration Variance: %s hrs<br/>Fuel Variance: %s L<br/>Consumption Rate: %s L/100km") % (
                     trip.variance_distance, trip.variance_duration, trip.variance_fuel, trip.fuel_consumption_rate
@@ -794,9 +795,41 @@ class FleetTrip(models.Model):
             if trip.state != 'reconciled':
                 raise UserError(_("Only reconciled trips can be closed."))
             trip.write({'state': 'closed'})
-            if trip.request_id and trip.request_id.state != 'closed':
-                trip.request_id.write({'state': 'closed'})
+            for req in (trip.request_ids | trip.request_id):
+                if req and req.state != 'closed':
+                    req.write({'state': 'closed'})
             trip.message_post(body=_("Trip successfully closed."))
+
+    def action_reset_draft(self):
+        """Allows FMS Logistics Administrator to reopen a closed or reconciled trip back to Draft
+        for corrections, recalculating readings, fuel reconciliation adjustments, and re-reconciling.
+        """
+        if not (self.env.user.has_group('top_logistics_fleet.group_logistics_admin') or self.env.su):
+            raise AccessError(_("Only users with FMS Logistics Administrator access can reset trips to Draft."))
+
+        for trip in self:
+            if trip.state not in ('closed', 'reconciled', 'cancelled', 'completed'):
+                raise UserError(_("Only closed, reconciled, completed, or cancelled trips can be reset to Draft."))
+
+            prev_state_label = dict(trip._fields['state'].selection).get(trip.state, trip.state)
+            trip.write({'state': 'draft'})
+
+            # If associated transport requests were marked closed or reconciled, reopen them to assigned
+            for req in (trip.request_ids | trip.request_id):
+                if req and req.state in ('closed', 'reconciled'):
+                    req.write({'state': 'assigned'})
+                    req.message_post(
+                        body=_("Parent Trip <strong>%s</strong> was reset from %s to Draft by Administrator <strong>%s</strong> for correction and re-reconciliation.") % (
+                            trip.name, prev_state_label, self.env.user.name
+                        )
+                    )
+
+            trip.message_post(
+                body=_(
+                    "Trip reset from <strong>%s</strong> to <strong>Draft</strong> by Administrator <strong>%s</strong>.<br/>"
+                    "Trip endpoints, odometer readings, fuel consumption, and refuel logs are now open for corrections and re-reconciliation."
+                ) % (prev_state_label, self.env.user.name)
+            )
 
     def action_cancel(self):
         for trip in self:

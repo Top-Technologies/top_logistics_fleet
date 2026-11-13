@@ -64,7 +64,7 @@
             <form string="Fleet Trip">
                 <header>
                     <button name="action_confirm" string="Confirm Trip" type="object" class="btn-primary"
-                            invisible="state != 'draft'"/>
+                            invisible="state != 'draft' or end_odometer &gt; 0"/>
                     
                     <button name="action_dispatch" string="Dispatch" type="object" class="btn-success"
                             invisible="state != 'ready'"
@@ -86,18 +86,23 @@
                             invisible="state in ('draft', 'cancelled')"/>
 
                     <button name="action_print_planned_vs_actual_report" string="Planned vs Actual Report" type="object" class="btn-outline-primary" icon="fa-file-pdf-o"
-                            invisible="state == 'draft'"/>
+                            invisible="state == 'draft' and not end_odometer"/>
 
                     <button name="action_report_accident" string="Report Incident" type="object" icon="fa-exclamation-triangle" class="btn-outline-danger"
                             invisible="state in ('draft', 'cancelled')"/>
                     
                     <button name="action_reconcile" string="Reconcile" type="object" class="btn-secondary"
-                            invisible="state != 'completed'"
-                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_logistics_finance,top_logistics_fleet.group_fleet_manager"/>
+                            invisible="state not in ('completed', 'draft') or (state == 'draft' and not end_odometer)"
+                            groups="top_logistics_fleet.group_fleet_officer,top_logistics_fleet.group_logistics_finance,top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_admin"/>
                     
                     <button name="action_close" string="Close Trip" type="object" class="btn-success"
                             invisible="state != 'reconciled'"
                             groups="top_logistics_fleet.group_fleet_manager,top_logistics_fleet.group_logistics_admin"/>
+
+                    <button name="action_reset_draft" string="Reset to Draft" type="object" class="btn-outline-warning"
+                            invisible="state not in ('closed', 'reconciled')"
+                            groups="top_logistics_fleet.group_logistics_admin"
+                            confirm="Are you sure you want to reset this trip to Draft? This will reopen the trip for corrections and re-reconciliation."/>
                     
                     <button name="action_cancel" string="Cancel Trip" type="object" class="btn-secondary"
                             invisible="state in ('in_transit', 'completed', 'reconciled', 'closed', 'cancelled')"/>
@@ -139,8 +144,8 @@
                             <field name="request_ids" widget="many2many_tags" readonly="1" string="Consolidated Orders"/>
                             <field name="planned_departure" readonly="state != 'draft'"/>
                             <field name="planned_arrival" readonly="state != 'draft'"/>
-                            <field name="actual_departure" readonly="1"/>
-                            <field name="actual_arrival" readonly="1"/>
+                            <field name="actual_departure" readonly="state != 'draft'"/>
+                            <field name="actual_arrival" readonly="state != 'draft'"/>
                         </group>
                     </group>
 
@@ -321,9 +326,9 @@
                             </group>
                             <group string="Release Readings">
                                 <group>
-                                    <field name="start_odometer" readonly="1"/>
-                                    <field name="start_fuel" readonly="1"/>
-                                    <field name="start_fuel_level" readonly="1"/>
+                                    <field name="start_odometer" readonly="state != 'draft'"/>
+                                    <field name="start_fuel" readonly="state != 'draft'"/>
+                                    <field name="start_fuel_level" readonly="state != 'draft'"/>
                                 </group>
                                 <group>
                                     <field name="dispatched_by_id"/>
@@ -332,25 +337,25 @@
                             </group>
                         </page>
 
-                        <page name="return_inspection_page" string="Post-Trip Return Inspection" invisible="state not in ('completed', 'reconciled', 'closed')">
+                        <page name="return_inspection_page" string="Post-Trip Return Inspection" invisible="state not in ('draft', 'completed', 'reconciled', 'closed')">
                             <group>
                                 <group string="Mileage &amp; Fuel on Return">
-                                    <field name="vehicle_returned"/>
-                                    <field name="end_odometer"/>
-                                    <field name="end_fuel"/>
-                                    <field name="end_fuel_level"/>
-                                    <field name="return_cleanliness"/>
+                                    <field name="vehicle_returned" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="end_odometer" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="end_fuel" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="end_fuel_level" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="return_cleanliness" readonly="state not in ('draft', 'completed')"/>
                                 </group>
                                 <group string="Damage &amp; Defects Audit">
-                                    <field name="has_damage"/>
-                                    <field name="damage_description" invisible="not has_damage"/>
+                                    <field name="has_damage" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="damage_description" invisible="not has_damage" readonly="state not in ('draft', 'completed')"/>
                                     <field name="accident_id" invisible="not accident_id"/>
-                                    <field name="missing_equipment"/>
-                                    <field name="new_defects"/>
+                                    <field name="missing_equipment" readonly="state not in ('draft', 'completed')"/>
+                                    <field name="new_defects" readonly="state not in ('draft', 'completed')"/>
                                 </group>
                             </group>
                             <separator string="Driver Debrief &amp; Comments"/>
-                            <field name="driver_comments" readonly="1"/>
+                            <field name="driver_comments" readonly="state not in ('draft', 'completed')"/>
                         </page>
 
                         <page name="instructions_page" string="Purpose &amp; Instructions">
