@@ -80,6 +80,17 @@ class TransportRequest(models.Model):
         string='Approvers',
         copy=True,
     )
+    current_approver_id = fields.Many2one(
+        'res.users',
+        string='Current Approver in Turn',
+        compute='_compute_current_approver',
+        store=True,
+        help="The specific approver whose turn it is to act.",
+    )
+    is_current_user_turn = fields.Boolean(
+        string='Is My Turn to Approve',
+        compute='_compute_is_current_user_turn',
+    )
     approvers_count = fields.Integer(
         string='Approvers Count',
         compute='_compute_approvers_summary',
@@ -382,6 +393,42 @@ class TransportRequest(models.Model):
             record.approvers_count = len(record.approver_ids)
             record.pending_approvers_count = len(record.approver_ids.filtered(lambda a: a.status == 'pending'))
 
+    @api.depends('state', 'approver_ids.status', 'approver_ids.sequence', 'approver_ids.user_id')
+    def _compute_current_approver(self):
+        for record in self:
+            if record.state in ['submitted', 'under_review']:
+                next_app = record._get_next_pending_approver()
+                if next_app:
+                    record.current_approver_id = next_app.user_id
+                elif record.state == 'under_review':
+                    mgr_group = self.env.ref('top_logistics_fleet.group_fleet_manager', raise_if_not_found=False)
+                    record.current_approver_id = mgr_group.users[0] if (mgr_group and mgr_group.users) else False
+                elif record.state == 'submitted':
+                    off_group = self.env.ref('top_logistics_fleet.group_fleet_officer', raise_if_not_found=False)
+                    record.current_approver_id = off_group.users[0] if (off_group and off_group.users) else False
+                else:
+                    record.current_approver_id = False
+            else:
+                record.current_approver_id = False
+
+    def _compute_is_current_user_turn(self):
+        current_user = self.env.user
+        for record in self:
+            if record.state == 'submitted':
+                next_app = record._get_next_pending_approver()
+                if next_app:
+                    record.is_current_user_turn = (next_app.user_id.id == current_user.id)
+                else:
+                    record.is_current_user_turn = current_user.has_group('top_logistics_fleet.group_fleet_officer') or current_user.has_group('top_logistics_fleet.group_fleet_manager')
+            elif record.state == 'under_review':
+                next_app = record._get_next_pending_approver()
+                if next_app:
+                    record.is_current_user_turn = (next_app.user_id.id == current_user.id)
+                else:
+                    record.is_current_user_turn = current_user.has_group('top_logistics_fleet.group_fleet_manager')
+            else:
+                record.is_current_user_turn = False
+
     @api.onchange('fleet_order_type_id')
     def _onchange_fleet_order_type_id(self):
         if self.fleet_order_type_id:
@@ -517,6 +564,76 @@ class TransportRequest(models.Model):
         return super().write(vals)
 
     # -------------------------------------------------------------------------
+    # APPROVAL NOTIFICATIONS & HELPER METHODS
+    # -------------------------------------------------------------------------
+    def _get_next_pending_approver(self):
+        """Returns the first pending approver line in sequence for this request."""
+        self.ensure_one()
+        pending = self.approver_ids.filtered(lambda a: a.status == 'pending').sorted(key=lambda a: (a.sequence, a.id))
+        return pending[0] if pending else False
+
+    def _complete_user_activities(self, user=None):
+        """Completes pending awaiting-approval activities for the user on this record."""
+        target_user = user or self.env.user
+        activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
+        for record in self:
+            acts = record.activity_ids.filtered(
+                lambda a: a.user_id.id == target_user.id and (not activity_type or a.activity_type_id == activity_type)
+            )
+            if acts:
+                acts.action_done()
+
+    def _notify_approver_in_turn(self, approver_line):
+        """Notifies the specific approver whose turn it is via mail activity, chatter mention, and bus toast."""
+        self.ensure_one()
+        user = approver_line.user_id
+        if not user:
+            return
+
+        activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
+        
+        # 1. Schedule Odoo Activity
+        existing = self.activity_ids.filtered(
+            lambda a: a.user_id.id == user.id and (not activity_type or a.activity_type_id == activity_type)
+        )
+        if not existing and activity_type:
+            self.activity_schedule(
+                'top_logistics_fleet.mail_act_request_awaiting_approval',
+                summary=_("Your Turn to Approve: Transport Request %s") % self.name,
+                note=_(
+                    "Transport request <strong>%s</strong> requested by <strong>%s</strong> is now in your turn to review and approve as <strong>%s</strong>."
+                ) % (self.name, self.requester_id.name, approver_line.role or _("Approver")),
+                user_id=user.id,
+            )
+
+        # 2. Post Chatter Notification with user mention
+        if user.partner_id:
+            self.message_post(
+                body=_(
+                    "🔔 <strong>Approval Notice:</strong> It is now the turn of <a href='#' data-oe-model='res.partner' data-oe-id='%s'>@%s</a> "
+                    "(%s) to review and approve Transport Request <strong>%s</strong>."
+                ) % (user.partner_id.id, user.name, approver_line.role or _("Approver"), self.name),
+                partner_ids=[user.partner_id.id],
+                message_type='notification',
+                subtype_xmlid='mail.mt_comment',
+            )
+
+        # 3. Real-time web bus toast notification
+        try:
+            self.env['bus.bus']._sendone(
+                user.partner_id,
+                'simple_notification',
+                {
+                    'title': _("Transport Request Awaiting Your Approval"),
+                    'message': _("Request %s is now in your turn to approve (%s).") % (self.name, approver_line.role or _("Approver")),
+                    'type': 'warning',
+                    'sticky': True,
+                }
+            )
+        except Exception:
+            pass
+
+    # -------------------------------------------------------------------------
     # WORKFLOW ACTIONS
     # -------------------------------------------------------------------------
     def action_submit(self):
@@ -531,26 +648,39 @@ class TransportRequest(models.Model):
                 )
             else:
                 record.message_post(
-                    body=_("Transport request submitted for Fleet Officer review."),
+                    body=_("Transport request submitted for Fleet Officer review and allocation."),
                     message_type='notification',
                 )
 
-            # Section 50: Send "Transport Request Submitted" notification
+            # Send "Transport Request Submitted" notification to requester
             template_submitted = self.env.ref('top_logistics_fleet.mail_template_transport_request_submitted', raise_if_not_found=False)
             if template_submitted:
                 template_submitted.send_mail(record.id, force_send=False)
 
-            # Notify Fleet Officer
+            # 1. If sequential approver matrix exists, notify the first approver in sequence
+            next_approver = record._get_next_pending_approver()
+            if next_approver:
+                record._notify_approver_in_turn(next_approver)
+
+            # 2. Also notify Fleet Officers (they accept, verify route & allocate vehicle/driver)
             officer_group = self.env.ref('top_logistics_fleet.group_fleet_officer', raise_if_not_found=False)
             if officer_group and officer_group.users:
                 activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
                 for off in officer_group.users:
-                    if activity_type:
-                        record.activity_schedule(
-                            'top_logistics_fleet.mail_act_request_awaiting_approval',
-                            summary=_("New Transport Request for Allocation & Review: %s") % record.name,
-                            user_id=off.id,
-                        )
+                    if not next_approver or off.id != next_approver.user_id.id:
+                        existing = record.activity_ids.filtered(lambda a: a.user_id.id == off.id and a.activity_type_id == activity_type)
+                        if not existing and activity_type:
+                            record.activity_schedule(
+                                'top_logistics_fleet.mail_act_request_awaiting_approval',
+                                summary=_("New Transport Request for Allocation & Review: %s") % record.name,
+                                note=_("New transport request submitted by %s awaiting vehicle and driver allocation.") % record.requester_id.name,
+                                user_id=off.id,
+                            )
+                record.message_post(
+                    body=_("🔔 Transport Request submitted and queued for Fleet Officer review and vehicle allocation."),
+                    partner_ids=officer_group.users.mapped('partner_id').ids,
+                    message_type='notification',
+                )
 
     def action_submit_to_manager(self):
         """Fleet Officer accepts/validates request, ensures route & allocation details, and submits to Fleet Manager."""
@@ -606,21 +736,55 @@ class TransportRequest(models.Model):
                 'state': 'under_review',
                 'reviewed_by_id': self.env.user.id,
             })
+            # Complete previous Officer activity
+            record._complete_user_activities(self.env.user)
+
             record.message_post(
                 body=_("Request verified and route/fleet details enriched by %s. Forwarded for Fleet Manager approval.") % self.env.user.name
             )
 
-            # Notify Fleet Manager
+            # Check if an approver line is pending in matrix
+            next_approver = record._get_next_pending_approver()
+            if next_approver:
+                record._notify_approver_in_turn(next_approver)
+
+            # Notify Fleet Managers that it is now their turn for final approval
             manager_group = self.env.ref('top_logistics_fleet.group_fleet_manager', raise_if_not_found=False)
             if manager_group and manager_group.users:
                 activity_type = self.env.ref('top_logistics_fleet.mail_act_request_awaiting_approval', raise_if_not_found=False)
                 for mgr in manager_group.users:
-                    if activity_type:
+                    existing = record.activity_ids.filtered(lambda a: a.user_id.id == mgr.id and a.activity_type_id == activity_type)
+                    if not existing and activity_type:
                         record.activity_schedule(
                             'top_logistics_fleet.mail_act_request_awaiting_approval',
-                            summary=_("Transport Request Ready for Final Approval: %s") % record.name,
+                            summary=_("Your Turn to Approve: Transport Request %s") % record.name,
+                            note=_("Transport request %s has been prepared with vehicle %s and driver %s by Officer %s. Awaiting your approval.") % (
+                                record.name, record.assigned_vehicle_id.name, record.assigned_driver_id.name, self.env.user.name
+                            ),
                             user_id=mgr.id,
                         )
+                record.message_post(
+                    body=_("🔔 <strong>Fleet Officer Review Complete:</strong> Vehicle <strong>%s</strong> and Driver <strong>%s</strong> allocated by <strong>%s</strong>.<br/>"
+                           "Request forwarded to <strong>Fleet Managers</strong> for final approval.") % (
+                        record.assigned_vehicle_id.name, record.assigned_driver_id.name, self.env.user.name
+                    ),
+                    partner_ids=manager_group.users.mapped('partner_id').ids,
+                    message_type='notification',
+                )
+                for mgr in manager_group.users:
+                    try:
+                        self.env['bus.bus']._sendone(
+                            mgr.partner_id,
+                            'simple_notification',
+                            {
+                                'title': _("Transport Request Awaiting Manager Approval"),
+                                'message': _("Request %s is allocated and ready for your approval.") % record.name,
+                                'type': 'warning',
+                                'sticky': True,
+                            }
+                        )
+                    except Exception:
+                        pass
 
     def action_review(self):
         """Allows Officer/Manager to mark as under review."""
@@ -652,15 +816,56 @@ class TransportRequest(models.Model):
                     'status': 'approved',
                     'action_date': fields.Datetime.now(),
                 })
+            
             record.write({
                 'state': 'approved',
                 'approved_by_id': self.env.user.id,
                 'approval_date': fields.Datetime.now(),
             })
+            # Complete Manager's activity
+            record._complete_user_activities(self.env.user)
+
             record.message_post(body=_("Transport request approved by Fleet Manager %s.") % self.env.user.name)
 
             # Auto-generate Trip record in 'ready' state
-            record._create_trip_from_request()
+            trip = record._create_trip_from_request()
+
+            # Notify Fleet Officers that request is APPROVED and Trip is READY to Dispatch!
+            officer_group = self.env.ref('top_logistics_fleet.group_fleet_officer', raise_if_not_found=False)
+            if officer_group and officer_group.users:
+                trip_act = self.env.ref('top_logistics_fleet.mail_act_vehicle_assigned', raise_if_not_found=False)
+                for off in officer_group.users:
+                    if trip_act:
+                        record.activity_schedule(
+                            'top_logistics_fleet.mail_act_vehicle_assigned',
+                            summary=_("Trip Ready for Dispatch: %s") % trip.name,
+                            note=_("Transport request %s has been approved by Fleet Manager %s. Trip %s is Ready for Pre-Dispatch Inspection and Dispatch.") % (
+                                record.name, self.env.user.name, trip.name
+                            ),
+                            user_id=off.id,
+                        )
+                record.message_post(
+                    body=_("🎉 <strong>Transport Request APPROVED by Fleet Manager %s.</strong><br/>"
+                           "Trip <a href='#' data-oe-model='top.fleet.trip' data-oe-id='%s'><strong>%s</strong></a> is generated in <strong>Ready / Assigned</strong> status and ready for Officer dispatch.") % (
+                        self.env.user.name, trip.id, trip.name
+                    ),
+                    partner_ids=officer_group.users.mapped('partner_id').ids,
+                    message_type='notification',
+                )
+                for off in officer_group.users:
+                    try:
+                        self.env['bus.bus']._sendone(
+                            off.partner_id,
+                            'simple_notification',
+                            {
+                                'title': _("Trip Ready for Dispatch"),
+                                'message': _("Trip %s (Request %s) approved by Manager and ready to dispatch.") % (trip.name, record.name),
+                                'type': 'success',
+                                'sticky': True,
+                            }
+                        )
+                    except Exception:
+                        pass
 
     def _create_trip_from_request(self):
         self.ensure_one()
@@ -908,6 +1113,11 @@ class TransportRequestApprover(models.Model):
         default='pending',
         required=True,
     )
+    is_in_turn = fields.Boolean(
+        string='In Turn',
+        compute='_compute_is_in_turn',
+        help='True if this approver is the next one required to act in the sequence.',
+    )
     action_date = fields.Datetime(
         string='Action Date',
         readonly=True,
@@ -916,28 +1126,49 @@ class TransportRequestApprover(models.Model):
         string='Comments / Reason',
     )
 
+    @api.depends('request_id.state', 'request_id.approver_ids.status', 'request_id.approver_ids.sequence')
+    def _compute_is_in_turn(self):
+        for rec in self:
+            if rec.request_id.state in ['submitted', 'under_review'] and rec.status == 'pending':
+                next_app = rec.request_id._get_next_pending_approver()
+                rec.is_in_turn = bool(next_app and next_app.id == rec.id)
+            else:
+                rec.is_in_turn = False
+
     def action_approve(self):
         for rec in self:
             rec.write({
                 'status': 'approved',
                 'action_date': fields.Datetime.now(),
             })
+            # Complete activity for this approver
+            rec.request_id._complete_user_activities(rec.user_id)
+
             rec.request_id.message_post(
-                body=_("Approver <strong>%s</strong> (%s) approved the request.") % (
+                body=_("✅ Approver <strong>%s</strong> (%s) approved the request.") % (
                     rec.user_id.name, rec.role or _("Approver")
                 )
             )
-            # If all approvers have approved, automatically advance request to approved
-            all_approved = all(app.status == 'approved' for app in rec.request_id.approver_ids)
-            if all_approved and rec.request_id.state in ['submitted', 'under_review']:
-                rec.request_id.write({
-                    'state': 'approved',
-                    'approved_by_id': rec.user_id.id,
-                    'approval_date': fields.Datetime.now(),
-                })
-                rec.request_id.message_post(
-                    body=_("All required approvers have approved. Request status moved to <strong>Approved</strong>.")
-                )
+
+            # Check for next pending approver in sequence
+            next_approver = rec.request_id._get_next_pending_approver()
+            if next_approver:
+                # Notify the NEXT approver whose turn it is now!
+                rec.request_id._notify_approver_in_turn(next_approver)
+            else:
+                # All approvers in the matrix have approved!
+                if rec.request_id.state in ['submitted', 'under_review']:
+                    rec.request_id.write({
+                        'state': 'approved',
+                        'approved_by_id': rec.user_id.id,
+                        'approval_date': fields.Datetime.now(),
+                    })
+                    rec.request_id.message_post(
+                        body=_("🎉 All required approvers have approved. Request status moved to <strong>Approved</strong>.")
+                    )
+                    # If vehicle & driver already allocated, generate trip
+                    if rec.request_id.assigned_vehicle_id and rec.request_id.assigned_driver_id:
+                        rec.request_id._create_trip_from_request()
 
     def action_reject(self):
         for rec in self:
@@ -945,11 +1176,15 @@ class TransportRequestApprover(models.Model):
                 'status': 'rejected',
                 'action_date': fields.Datetime.now(),
             })
+            # Complete activity for this approver
+            rec.request_id._complete_user_activities(rec.user_id)
+
             reason = rec.comments or _("Rejected by %s") % rec.user_id.name
             rec.request_id.message_post(
-                body=_("Approver <strong>%s</strong> (%s) rejected the request. Reason: %s") % (
+                body=_("❌ Approver <strong>%s</strong> (%s) rejected the request. Reason: %s") % (
                     rec.user_id.name, rec.role or _("Approver"), reason
-                )
+                ),
+                partner_ids=[rec.request_id.requester_id.partner_id.id],
             )
             if rec.request_id.state in ['submitted', 'under_review']:
                 rec.request_id.write({

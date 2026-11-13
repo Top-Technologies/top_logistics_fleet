@@ -85,9 +85,6 @@
                     <button name="action_record_fuel" string="Log Fuel Refill" type="object" icon="fa-tint" class="btn-outline-info"
                             invisible="state in ('draft', 'cancelled')"/>
 
-                    <button name="action_print_planned_vs_actual_report" string="Planned vs Actual Report" type="object" class="btn-outline-primary" icon="fa-file-pdf-o"
-                            invisible="state == 'draft' and not end_odometer"/>
-
                     <button name="action_report_accident" string="Report Incident" type="object" icon="fa-exclamation-triangle" class="btn-outline-danger"
                             invisible="state in ('draft', 'cancelled')"/>
                     

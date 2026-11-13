@@ -96,6 +96,19 @@
                         <strong>Emergency Fast-Track:</strong> This request was directly assigned. Post-trip review is required upon completion.
                     </div>
 
+                    <!-- Approval Guidance & Turn Alerts -->
+                    <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" invisible="state != 'submitted'">
+                        <span><i class="fa fa-info-circle me-1"/> <strong>Step 1 (Fleet Officer Review):</strong> Request submitted. Fleet Officer must verify route endpoints, cargo details, and allocate vehicle &amp; driver.</span>
+                        <span invisible="not current_approver_id">Current Turn: <strong><field name="current_approver_id" class="fw-bold"/></strong></span>
+                    </div>
+                    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-2" role="alert" invisible="state != 'under_review'">
+                        <span><i class="fa fa-clock-o me-1"/> <strong>Step 2 (Fleet Manager Approval):</strong> Vehicle &amp; driver allocated. Waiting for Fleet Manager's final approval to create trip.</span>
+                        <span invisible="not current_approver_id">Current Approver: <strong><field name="current_approver_id" class="fw-bold"/></strong></span>
+                    </div>
+                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-2" role="alert" invisible="state != 'assigned'">
+                        <span><i class="fa fa-check-circle me-1"/> <strong>Step 3 (Approved &amp; Ready):</strong> Approved by Fleet Manager. Generated Trip is in <strong>Ready / Assigned</strong> status and ready for Fleet Officer dispatch.</span>
+                    </div>
+
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" string="Request Number"/>
                         <h1>
@@ -249,14 +262,19 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="user_id" options="{'no_create': True}"/>
                                     <field name="role" placeholder="e.g. Department Manager, Fleet Supervisor, Cargo Manager..."/>
+                                    <field name="is_in_turn" widget="badge" string="Turn"
+                                           decoration-warning="is_in_turn and status == 'pending'"
+                                           decoration-success="status == 'approved'"
+                                           decoration-danger="status == 'rejected'"
+                                           decoration-muted="not is_in_turn and status == 'pending'"/>
                                     <field name="status" widget="badge"
                                            decoration-info="status == 'pending'"
                                            decoration-success="status == 'approved'"
                                            decoration-danger="status == 'rejected'"/>
                                     <field name="action_date" readonly="1"/>
                                     <field name="comments" placeholder="Comments or approval/rejection remarks..."/>
-                                    <button name="action_approve" type="object" string="Approve" icon="fa-check text-success" invisible="status == 'approved'"/>
-                                    <button name="action_reject" type="object" string="Reject" icon="fa-times text-danger" invisible="status == 'rejected'"/>
+                                    <button name="action_approve" type="object" string="Approve" icon="fa-check text-success" invisible="status == 'approved' or not is_in_turn"/>
+                                    <button name="action_reject" type="object" string="Reject" icon="fa-times text-danger" invisible="status == 'rejected' or not is_in_turn"/>
                                 </list>
                             </field>
                         </page>
